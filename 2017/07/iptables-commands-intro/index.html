@@ -53,7 +53,7 @@
 <link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="net, iptables," />
+  <meta name="keywords" content="net,iptables," />
 
 
 
@@ -70,17 +70,19 @@
 
 
 <meta name="description" content="本文主要参考 http://www.iptables.info 和 http://www.zsythink.net/archives/tag/iptables/，不是详细的原理介绍，权当个人记录的操作笔记。 基本概念借个图看一下，这个图很熟悉了，正是netfilter框架的hook point： iptables是基于netfilter做的，有几个概念：  表一共有filter, nat, man">
-<meta name="keywords" content="net, iptables">
+<meta name="keywords" content="net,iptables">
 <meta property="og:type" content="article">
 <meta property="og:title" content="IPTABLES基础命令">
-<meta property="og:url" content="http://mnstory.net/2017/07/iptables-commands-intro/index/index.html">
+<meta property="og:url" content="http://mnstory.net/2017/07/iptables-commands-intro/index.html">
 <meta property="og:site_name" content="码农故事">
 <meta property="og:description" content="本文主要参考 http://www.iptables.info 和 http://www.zsythink.net/archives/tag/iptables/，不是详细的原理介绍，权当个人记录的操作笔记。 基本概念借个图看一下，这个图很熟悉了，正是netfilter框架的hook point： iptables是基于netfilter做的，有几个概念：  表一共有filter, nat, man">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-10-01T11:00:55.660Z">
+<meta property="og:image" content="http://mnstory.net/2017/07/iptables-commands-intro/netfilter.png">
+<meta property="og:updated_time" content="2017-10-01T13:31:25.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="IPTABLES基础命令">
 <meta name="twitter:description" content="本文主要参考 http://www.iptables.info 和 http://www.zsythink.net/archives/tag/iptables/，不是详细的原理介绍，权当个人记录的操作笔记。 基本概念借个图看一下，这个图很熟悉了，正是netfilter框架的hook point： iptables是基于netfilter做的，有几个概念：  表一共有filter, nat, man">
+<meta name="twitter:image" content="http://mnstory.net/2017/07/iptables-commands-intro/netfilter.png">
 
 
 
@@ -110,7 +112,7 @@
 
 
 
-  <link rel="canonical" href="http://mnstory.net/2017/07/iptables-commands-intro/index/"/>
+  <link rel="canonical" href="http://mnstory.net/2017/07/iptables-commands-intro/"/>
 
 
 
@@ -243,7 +245,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/07/iptables-commands-intro/index/">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/07/iptables-commands-intro/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="mnstory.net">
@@ -316,15 +318,15 @@
 
       
         <p>本文主要参考 <a href="http://www.iptables.info" target="_blank" rel="external">http://www.iptables.info</a> 和 <a href="http://www.zsythink.net/archives/tag/iptables/，不是详细的原理介绍，权当个人记录的操作笔记。" target="_blank" rel="external">http://www.zsythink.net/archives/tag/iptables/，不是详细的原理介绍，权当个人记录的操作笔记。</a></p>
-<h1 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h1><p>借个图看一下，这个图很熟悉了，正是netfilter框架的hook point：</p>
+<h1 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h1><p>借个图看一下，这个图很熟悉了，正是netfilter框架的hook point：<br><img src="/2017/07/iptables-commands-intro/netfilter.png" alt="net filter"></p>
 <p>iptables是基于netfilter做的，有几个概念：</p>
 <ol>
 <li>表一共有filter, nat, mangle, raw四个，用-t参数指定：<br>filter表，用于做包过滤，可以在此表中执行DROP,LOG,ACCEPT,REJECT动作。如果没有指定-t，即默认为此表。<br>nat表，主要用于做NAT规则转换，一条流上的包，只有首包才会<em>匹配</em>此表中的NAT规则，后继包不需要匹配此表，会跟着自动转换。<br>mangle表，主要用于修改包内容或者包头，比如修改TTL，TOS，MSS等，或者给包大一个MASK(并非打在包数据上，而是mbuf上)以供后续规则使用。<br>raw表，是2.6以后新加的，他负责在其他表生效前生效，raw的意思其实就是没有经过任何iptables规则染指过的输入数据和输出数据。最开始输入，其位于PREROUTING前，没有被污染的输出，当然是OUTPUT前。</li>
 <li>chain<br>链，如上图，PREROUTING, INPUT, FORWARD, OUTPUT, POSTROUTING就是默认链，也就是规则生效的HOOK POINT，而用户也可以自定义链，自定义并不是超越这几个链创建了新的HOOK POINT，而是做了一个规则的汇聚。</li>
 <li>targets和jumps：<br>-j参数指定的是targets或者jumps，默认内置了很多targets，例如：<br>ACCEPT, CLASSIFY, CLUSTERIP, CONNMARK, CONNSECMARK, DNAT, DROP, DSCP, ECN, LOG options, MARK, MASQUERADE, MIRROR, NETMAP, NFQUEUE, NOTRACK, QUEUE, REDIRECT, REJECT, RETURN, SAME, SECMARK, SNAT, TCPMSS, TOS, TTL, ULOG<br>jumps是指自定义链的名称，创建自定义链的目的是为了方便管理，就像编程里面有了语句，也希望有函数，通过一个函数名，可以引用函数内的多条语句，通过-j转到自定义链。<a id="more"></a>
-<h1 id="重置规则"><a href="#重置规则" class="headerlink" title="重置规则"></a>重置规则</h1>基本来说，做实验前，需要排除之前设置的iptables干扰，使用-F可以清空iptables规则，如果不指定-t，都表示在filter表中(-t filter)<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -F</div></pre></td></tr></table></figure>
 </li>
 </ol>
+<h1 id="重置规则"><a href="#重置规则" class="headerlink" title="重置规则"></a>重置规则</h1><p>基本来说，做实验前，需要排除之前设置的iptables干扰，使用-F可以清空iptables规则，如果不指定-t，都表示在filter表中(-t filter)<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -F</div></pre></td></tr></table></figure></p>
 <p>-F清空的是默认规则，如果想清空自定义链规则，需要用-X，后面再介绍。这里有个重置iptables规则的命令集，执行即可：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">iptables -t nat -F</div><div class="line">iptables -t nat -X</div><div class="line">iptables -t nat -P PREROUTING ACCEPT</div><div class="line">iptables -t nat -P POSTROUTING ACCEPT</div><div class="line">iptables -t nat -P OUTPUT ACCEPT</div><div class="line">iptables -t mangle -F</div><div class="line">iptables -t mangle -X</div><div class="line">iptables -t mangle -P PREROUTING ACCEPT</div><div class="line">iptables -t mangle -P INPUT ACCEPT</div><div class="line">iptables -t mangle -P FORWARD ACCEPT</div><div class="line">iptables -t mangle -P OUTPUT ACCEPT</div><div class="line">iptables -t mangle -P POSTROUTING ACCEPT</div><div class="line">iptables -F</div><div class="line">iptables -X</div><div class="line">iptables -P FORWARD ACCEPT</div><div class="line">iptables -P INPUT ACCEPT</div><div class="line">iptables -P OUTPUT ACCEPT</div><div class="line">iptables -t raw -F</div><div class="line">iptables -t raw -X</div><div class="line">iptables -t raw -P PREROUTING ACCEPT</div><div class="line">iptables -t raw -P OUTPUT ACCEPT</div></pre></td></tr></table></figure></p>
 <h1 id="查看规则"><a href="#查看规则" class="headerlink" title="查看规则"></a>查看规则</h1><p>清空后，默认规则是ACCEPT，所以任何链接都不会被阻拦或丢弃。使用-L查看某表的规则，例如查看filter表的规则(其他表请自行加-t参数，后面不再赘述)：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables --line-number -L -nv </div><div class="line">Chain INPUT (policy ACCEPT 110 packets, 23541 bytes)</div><div class="line">num   pkts bytes target     prot opt in     out     source               destination</div></pre></td></tr></table></figure></p>
 <p>n和linux大多数网络命令的n类似，表示不解析地址和端口；而v代表verbose输出；–line-number加上后，规则会显示num一列，方便删除的时候使用num序号删除。</p>
@@ -393,7 +395,9 @@
       
         <div class="post-tags">
           
-            <a href="/tags/net-iptables/" rel="tag"># net, iptables</a>
+            <a href="/tags/net/" rel="tag"># net</a>
+          
+            <a href="/tags/iptables/" rel="tag"># iptables</a>
           
         </div>
       
@@ -415,6 +419,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017-07-hello/" rel="prev" title="2017/07/hello">
+                2017/07/hello <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -490,7 +498,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-count">3</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -503,7 +511,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-count">2</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -718,6 +726,18 @@
 
 
 
+
+
+
+
+  
+
+    
+      <div id="plus"></div>
+      <script src="https://qingqing.com/static/js/plus.js"></script>
+    
+
+  
 
 
 

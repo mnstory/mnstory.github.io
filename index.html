@@ -242,7 +242,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/07/iptables-commands-intro/index/">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017-07-hello/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="mnstory.net">
@@ -261,7 +261,126 @@
         
           <h2 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2017/07/iptables-commands-intro/index/" itemprop="url">IPTABLES基础命令</a></h2>
+                <a class="post-title-link" href="/2017-07-hello/" itemprop="url">2017/07/hello</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-01T13:12:53+08:00">
+                2017-10-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/07/iptables-commands-intro/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/07/iptables-commands-intro/" itemprop="url">IPTABLES基础命令</a></h2>
         
 
         <div class="post-meta">
@@ -313,15 +432,15 @@
       
         
           <p>本文主要参考 <a href="http://www.iptables.info" target="_blank" rel="external">http://www.iptables.info</a> 和 <a href="http://www.zsythink.net/archives/tag/iptables/，不是详细的原理介绍，权当个人记录的操作笔记。" target="_blank" rel="external">http://www.zsythink.net/archives/tag/iptables/，不是详细的原理介绍，权当个人记录的操作笔记。</a></p>
-<h1 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h1><p>借个图看一下，这个图很熟悉了，正是netfilter框架的hook point：</p>
+<h1 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h1><p>借个图看一下，这个图很熟悉了，正是netfilter框架的hook point：<br><img src="/2017/07/iptables-commands-intro/netfilter.png" alt="net filter"></p>
 <p>iptables是基于netfilter做的，有几个概念：</p>
 <ol>
 <li>表一共有filter, nat, mangle, raw四个，用-t参数指定：<br>filter表，用于做包过滤，可以在此表中执行DROP,LOG,ACCEPT,REJECT动作。如果没有指定-t，即默认为此表。<br>nat表，主要用于做NAT规则转换，一条流上的包，只有首包才会<em>匹配</em>此表中的NAT规则，后继包不需要匹配此表，会跟着自动转换。<br>mangle表，主要用于修改包内容或者包头，比如修改TTL，TOS，MSS等，或者给包大一个MASK(并非打在包数据上，而是mbuf上)以供后续规则使用。<br>raw表，是2.6以后新加的，他负责在其他表生效前生效，raw的意思其实就是没有经过任何iptables规则染指过的输入数据和输出数据。最开始输入，其位于PREROUTING前，没有被污染的输出，当然是OUTPUT前。</li>
 <li>chain<br>链，如上图，PREROUTING, INPUT, FORWARD, OUTPUT, POSTROUTING就是默认链，也就是规则生效的HOOK POINT，而用户也可以自定义链，自定义并不是超越这几个链创建了新的HOOK POINT，而是做了一个规则的汇聚。</li>
-<li>targets和jumps：<br>-j参数指定的是targets或者jumps，默认内置了很多targets，例如：<br>ACCEPT, CLASSIFY, CLUSTERIP, CONNMARK, CONNSECMARK, DNAT, DROP, DSCP, ECN, LOG options, MARK, MASQUERADE, MIRROR, NETMAP, NFQUEUE, NOTRACK, QUEUE, REDIRECT, REJECT, RETURN, SAME, SECMARK, SNAT, TCPMSS, TOS, TTL, ULOG<br>jumps是指自定义链的名称，创建自定义链的目的是为了方便管理，就像编程里面有了语句，也希望有函数，通过一个函数名，可以引用函数内的多条语句，通过-j转到自定义链。
+<li>targets和jumps：<br>-j参数指定的是targets或者jumps，默认内置了很多targets，例如：<br>ACCEPT, CLASSIFY, CLUSTERIP, CONNMARK, CONNSECMARK, DNAT, DROP, DSCP, ECN, LOG options, MARK, MASQUERADE, MIRROR, NETMAP, NFQUEUE, NOTRACK, QUEUE, REDIRECT, REJECT, RETURN, SAME, SECMARK, SNAT, TCPMSS, TOS, TTL, ULOG<br>jumps是指自定义链的名称，创建自定义链的目的是为了方便管理，就像编程里面有了语句，也希望有函数，通过一个函数名，可以引用函数内的多条语句，通过-j转到自定义链。</li></ol>
           <!--noindex-->
           <div class="post-button text-center">
-            <a class="btn" href="/2017/07/iptables-commands-intro/index/#more" rel="contents">
+            <a class="btn" href="/2017/07/iptables-commands-intro/#more" rel="contents">
               阅读全文 &raquo;
             </a>
           </div>
@@ -532,7 +651,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-count">3</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -545,7 +664,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-count">2</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -744,6 +863,15 @@
 
 
 
+
+
+
+
+  
+
+    
+
+  
 
 
 
