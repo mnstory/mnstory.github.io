@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="net,iptables," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="本文主要参考 http://www.iptables.info 和 http://www.zsythink.net/archives/tag/iptables/ 不是详细的原理介绍，权当个人记录的操作笔记。 基本概念借个图看一下，这个图很熟悉了，正是netfilter框架的hook point：">
+<meta name="keywords" content="net,iptables">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IPTABLES基础命令">
+<meta property="og:url" content="http://mnstory.net/2017/07/17/iptables-commands-intro/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="本文主要参考 http://www.iptables.info 和 http://www.zsythink.net/archives/tag/iptables/ 不是详细的原理介绍，权当个人记录的操作笔记。 基本概念借个图看一下，这个图很熟悉了，正是netfilter框架的hook point：">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2017/07/17/iptables-commands-intro/netfilter.png">
+<meta property="og:image" content="http://mnstory.net/2017/07/17/iptables-commands-intro/tcp-flags.png">
+<meta property="og:updated_time" content="2017-10-01T14:28:44.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="IPTABLES基础命令">
+<meta name="twitter:description" content="本文主要参考 http://www.iptables.info 和 http://www.zsythink.net/archives/tag/iptables/ 不是详细的原理介绍，权当个人记录的操作笔记。 基本概念借个图看一下，这个图很熟悉了，正是netfilter框架的hook point：">
+<meta name="twitter:image" content="http://mnstory.net/2017/07/17/iptables-commands-intro/netfilter.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2017/07/17/iptables-commands-intro/"/>
+
+
+
+
+
+  <title>IPTABLES基础命令 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/07/17/iptables-commands-intro/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">IPTABLES基础命令</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-07-17T03:07:37+00:00">
+                2017-07-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文主要参考 <a href="http://www.iptables.info" target="_blank" rel="external">http://www.iptables.info</a> 和 <a href="http://www.zsythink.net/archives/tag/iptables/" target="_blank" rel="external">http://www.zsythink.net/archives/tag/iptables/</a> 不是详细的原理介绍，权当个人记录的操作笔记。</p>
+<h1 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h1><p>借个图看一下，这个图很熟悉了，正是netfilter框架的hook point：<br><a id="more"></a><br><img src="/2017/07/17/iptables-commands-intro/netfilter.png" alt="net filter"></p>
+<p>iptables是基于netfilter做的，有几个概念：</p>
+<ol>
+<li>表一共有filter, nat, mangle, raw四个，用-t参数指定：<br>filter表，用于做包过滤，可以在此表中执行DROP,LOG,ACCEPT,REJECT动作。如果没有指定-t，即默认为此表。<br>nat表，主要用于做NAT规则转换，一条流上的包，只有首包才会<em>匹配</em>此表中的NAT规则，后继包不需要匹配此表，会跟着自动转换。<br>mangle表，主要用于修改包内容或者包头，比如修改TTL，TOS，MSS等，或者给包大一个MASK(并非打在包数据上，而是mbuf上)以供后续规则使用。<br>raw表，是2.6以后新加的，他负责在其他表生效前生效，raw的意思其实就是没有经过任何iptables规则染指过的输入数据和输出数据。最开始输入，其位于PREROUTING前，没有被污染的输出，当然是OUTPUT前。</li>
+<li>chain<br>链，如上图，PREROUTING, INPUT, FORWARD, OUTPUT, POSTROUTING就是默认链，也就是规则生效的HOOK POINT，而用户也可以自定义链，自定义并不是超越这几个链创建了新的HOOK POINT，而是做了一个规则的汇聚。</li>
+<li>targets和jumps：<br>-j参数指定的是targets或者jumps，默认内置了很多targets，例如：<br>ACCEPT, CLASSIFY, CLUSTERIP, CONNMARK, CONNSECMARK, DNAT, DROP, DSCP, ECN, LOG options, MARK, MASQUERADE, MIRROR, NETMAP, NFQUEUE, NOTRACK, QUEUE, REDIRECT, REJECT, RETURN, SAME, SECMARK, SNAT, TCPMSS, TOS, TTL, ULOG<br>jumps是指自定义链的名称，创建自定义链的目的是为了方便管理，就像编程里面有了语句，也希望有函数，通过一个函数名，可以引用函数内的多条语句，通过-j转到自定义链。</li>
+</ol>
+<h1 id="重置规则"><a href="#重置规则" class="headerlink" title="重置规则"></a>重置规则</h1><p>基本来说，做实验前，需要排除之前设置的iptables干扰，使用-F可以清空iptables规则，如果不指定-t，都表示在filter表中(-t filter)<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -F</div></pre></td></tr></table></figure></p>
+<p>-F清空的是默认规则，如果想清空自定义链规则，需要用-X，后面再介绍。这里有个重置iptables规则的命令集，执行即可：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">iptables -t nat -F</div><div class="line">iptables -t nat -X</div><div class="line">iptables -t nat -P PREROUTING ACCEPT</div><div class="line">iptables -t nat -P POSTROUTING ACCEPT</div><div class="line">iptables -t nat -P OUTPUT ACCEPT</div><div class="line">iptables -t mangle -F</div><div class="line">iptables -t mangle -X</div><div class="line">iptables -t mangle -P PREROUTING ACCEPT</div><div class="line">iptables -t mangle -P INPUT ACCEPT</div><div class="line">iptables -t mangle -P FORWARD ACCEPT</div><div class="line">iptables -t mangle -P OUTPUT ACCEPT</div><div class="line">iptables -t mangle -P POSTROUTING ACCEPT</div><div class="line">iptables -F</div><div class="line">iptables -X</div><div class="line">iptables -P FORWARD ACCEPT</div><div class="line">iptables -P INPUT ACCEPT</div><div class="line">iptables -P OUTPUT ACCEPT</div><div class="line">iptables -t raw -F</div><div class="line">iptables -t raw -X</div><div class="line">iptables -t raw -P PREROUTING ACCEPT</div><div class="line">iptables -t raw -P OUTPUT ACCEPT</div></pre></td></tr></table></figure></p>
+<h1 id="查看规则"><a href="#查看规则" class="headerlink" title="查看规则"></a>查看规则</h1><p>清空后，默认规则是ACCEPT，所以任何链接都不会被阻拦或丢弃。使用-L查看某表的规则，例如查看filter表的规则(其他表请自行加-t参数，后面不再赘述)：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables --line-number -L -nv </div><div class="line">Chain INPUT (policy ACCEPT 110 packets, 23541 bytes)</div><div class="line">num   pkts bytes target     prot opt in     out     source               destination</div></pre></td></tr></table></figure></p>
+<p>n和linux大多数网络命令的n类似，表示不解析地址和端口；而v代表verbose输出；–line-number加上后，规则会显示num一列，方便删除的时候使用num序号删除。</p>
+<p>查看所有表规则：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">iptables --line-number -L -nv</div><div class="line">iptables --line-number -L -nv -t nat</div><div class="line">iptables --line-number -L -nv -t raw</div><div class="line">iptables --line-number -L -nv -t mangle</div></pre></td></tr></table></figure></p>
+<h1 id="增删改规则"><a href="#增删改规则" class="headerlink" title="增删改规则"></a>增删改规则</h1><p>-A表示APPEND，后面的参数是“链”名称，-A是在一个链的后面添加；如果用-I，表示INSERT，是在一个链的前面插入；如果用-R，表示REPLACE，是替换指定num序号的规则；-D表示DELETE指定规则。<br>例如，APPEND一条DROP来自源IP为 200.200.99.190 的包：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -t filter -A INPUT -s 200.200.99.190 -j DROP</div><div class="line">do ~ # iptables --line-number -L -nv </div><div class="line">Chain INPUT (policy ACCEPT 183 packets, 55557 bytes)</div><div class="line">num   pkts bytes target     prot opt in     out     source               destination         </div><div class="line">1        2   168 DROP       all  --  *      *       200.200.99.190       0.0.0.0/0</div></pre></td></tr></table></figure></p>
+<p>现在，你从源IP 200.200.99.190 ping一下do这台机，窗口是没有不回显消息的。</p>
+<p>现在，我们尝试将刚才的DROP规则替换成REJECT，因为num序号显示其为第一条规则，于是-R INPUT后指定1即可：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -t filter -R INPUT 1 -s 200.200.99.190 -j REJECT</div><div class="line">do ~ # iptables --line-number -L -nv </div><div class="line">Chain INPUT (policy ACCEPT 95 packets, 23037 bytes)</div><div class="line">num   pkts bytes target     prot opt in     out     source               destination         </div><div class="line">1        2   168 REJECT     all  --  *      *       200.200.99.190       0.0.0.0/0           reject-with icmp-port-unreachable</div></pre></td></tr></table></figure></p>
+<p>记得，此处的REJECT其实是可以配合–reject-with选项，其值有：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">icmp-net/host/port/proto-unreachable</div><div class="line">icmp-net/host/admin-prohibited</div></pre></td></tr></table></figure></p>
+<p>如果不使用此选项，默认是icmp-port-unreachable，所以，你在此从源IP 200.200.99.190 ping do这台机时候，会显示：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">From 200.200.96.29 icmp_seq=332 Destination Port Unreachable</div></pre></td></tr></table></figure></p>
+<p>上面修改DROP为REJECT后，我们来参数-D删除第一条规则，在-D 表明后面需要跟上规则序号，例如第1条规则：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -D INPUT 1</div><div class="line">do ~ # iptables --line-number -L -nv </div><div class="line">Chain INPUT (policy ACCEPT 254 packets, 84782 bytes)</div><div class="line">num   pkts bytes target     prot opt in     out     source               destination</div></pre></td></tr></table></figure></p>
+<h1 id="默认规则修改"><a href="#默认规则修改" class="headerlink" title="默认规则修改"></a>默认规则修改</h1><p>FORWARD的默认规则为ACCEPT<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables --line-number -L -nv </div><div class="line">Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)</div><div class="line">num   pkts bytes target     prot opt in     out     source               destination</div></pre></td></tr></table></figure></p>
+<p>如果我们想修改为DROP，可以使用-P参数：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -t filter -P FORWARD DROP</div><div class="line">do ~ # iptables --line-number -L -nv </div><div class="line">Chain FORWARD (policy DROP 0 packets, 0 bytes)</div><div class="line">num   pkts bytes target     prot opt in     out     source               destination</div></pre></td></tr></table></figure></p>
+<h1 id="源地址和目标地址"><a href="#源地址和目标地址" class="headerlink" title="源地址和目标地址"></a>源地址和目标地址</h1><p>-s 指定源地址， -d 指定目标地址，两者都可以用逗号分隔多个源或者目标，也可以对该条件取反，用 ! -s ,  ! –d 表示(取反后不能用逗号操作)，例如 -s 192.168.10.100,192.168.10.122 表示来自192.168.10.100或者192.168.10.122的数据，! -s 192.168.10.100表示，除了来自192.168.10.100的数据。假设，我们想要禁止所有的ping包，但是来自200.200.99.190的例外(TCP之类的协议不会受影响)，可以：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -A INPUT ! -s 200.200.99.190 -p icmp -j REJECT</div><div class="line">do ~ # iptables --line-number -L -nv</div><div class="line">Chain INPUT (policy ACCEPT 974 packets, 267K bytes)</div><div class="line">num   pkts bytes target     prot opt in     out     source               destination         </div><div class="line">1       11   924 REJECT     icmp --  *      *      !200.200.99.190       0.0.0.0/0           reject-with icmp-port-unreachable</div></pre></td></tr></table></figure></p>
+<h1 id="输入和输出网口"><a href="#输入和输出网口" class="headerlink" title="输入和输出网口"></a>输入和输出网口</h1><p>-i和-o用于指定入网口和出网口，鉴于有的链上只有输入没有输出，可以理解-i只能适用(PREROUTING INPUT FORARD)链， -o 只能用于(FORWARD OUTPUT POSTROUTING)链。<br>例如，想要禁止来自eth3口的所有ICMP可以：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -A INPUT -i eth3 -p icmp -j REJECT</div><div class="line">同源地址目标地址类似，输入输出网口也可以取反。</div></pre></td></tr></table></figure></p>
+<h1 id="扩展模块tcp"><a href="#扩展模块tcp" class="headerlink" title="扩展模块tcp"></a>扩展模块tcp</h1><p>适用-m参数指定扩展模块名称，有的功能是由非内置提供的，如匹配tcp链接的某端口，就需要-m tcp这个扩展模块，例如，拒绝来自 200.200.90.100 的ssh链接(ssh连接端口22)：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -A INPUT -s 200.200.90.100 -p tcp -m tcp --dport 22 -j REJECT</div><div class="line">do ~ # iptables --line-number -L -nv</div><div class="line">Chain INPUT (policy ACCEPT 158 packets, 38691 bytes)</div><div class="line">num   pkts bytes target     prot opt in     out     source               destination         </div><div class="line">1        0     0 REJECT     tcp  --  *      *       200.200.90.100       0.0.0.0/0           tcp dpt:22 reject-with icmp-port-unreachable</div></pre></td></tr></table></figure></p>
+<p>在200.200.90.100上再次链接会显示：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"># ssh root@200.200.96.29 ls</div><div class="line">ssh: connect to host 200.200.96.29 port 22: Connection refused</div></pre></td></tr></table></figure></p>
+<p>对于已有链接，同样会断开：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"># ssh root@200.200.96.29 </div><div class="line">do ~ # </div><div class="line">do ~ # Write failed: Broken pipe</div></pre></td></tr></table></figure></p>
+<p>如果我们只想禁止新链接，对于原有链接放通，我们可以使用tcp扩展模块的–tcp-flags参数。Tcp-flags定义的是TCP包的头部12个bit的flags：<br><img src="/2017/07/17/iptables-commands-intro/tcp-flags.png" alt="tcp flags"></p>
+<ol>
+<li>–tcp-flags 使用SYN,ACK,FIN,RST,URG,PSH等来表示这些位。</li>
+<li>–tcp-flags 需要指定两个参数，第一个参数，是所有要匹配的位，第二个参数是在这些匹配位中，哪些位需为1，如果没在第二个参数里面出现，表示需为0。</li>
+</ol>
+<p>例如，拒绝新建链接(老的链接依然可用)，可以匹配SYN=1的包：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -A INPUT -s 200.200.90.100 -p tcp -m tcp --dport 22 --tcp-flags SYN,ACK SYN -j REJECT</div><div class="line">do ~ # iptables --line-number -L -nv</div><div class="line">Chain INPUT (policy ACCEPT 419 packets, 135K bytes)</div><div class="line">num   pkts bytes target     prot opt in     out     source               destination         </div><div class="line">1        0     0 REJECT     tcp  --  *      *       200.200.90.100       0.0.0.0/0           tcp dpt:22 flags:0x13/0x02 reject-with icmp-port-unreachable</div></pre></td></tr></table></figure></p>
+<p>当然，有个更简单的写法 -m tcp –sync效果一样。<br>第一个参数如果是想匹配所有flags可以用ALL替代。</p>
+<p>当使用-p指定协议的时候，如果没有指定-m，会自动加载和-p同名的模块来作为扩展模块，所以，如果要指定–dport 22，省略掉-m tcp也可以。<br>–dport和–sport都可以用端口范围表示，例如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">--dport 22:25</div></pre></td></tr></table></figure></p>
+<p>当然，有tcp模块也有udp模块，都有sport和dport。</p>
+<h1 id="扩展模块multiport"><a href="#扩展模块multiport" class="headerlink" title="扩展模块multiport"></a>扩展模块multiport</h1><p>如果想指定多个离散的端口，需要multiport模块：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-p tcp -m multiport --dports 22,139,445</div></pre></td></tr></table></figure></p>
+<p>如果-d -s想匹配一个连续的IP段，需要iprange模块:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">--src-range --dst-range</div></pre></td></tr></table></figure></p>
+<h1 id="扩展模块string"><a href="#扩展模块string" class="headerlink" title="扩展模块string"></a>扩展模块string</h1><p>string模块，可以指定 –algo bm|kmp 来选择匹配算法，–string 来指定匹配的字符串<br>time模块，可以用–timestart来指定起始时间–timestop来指定停止时间， –weekdays 6,7来指定周末，比如周末不能上网，–monthdays 22,23来指定一个月中的日期 </p>
+<h1 id="扩展模块connlimit"><a href="#扩展模块connlimit" class="headerlink" title="扩展模块connlimit"></a>扩展模块connlimit</h1><p>connlimit模块，可以限定IP地址同时连接server的链接数，例如 –connlimit-above 2 -j REJECT，有两个并发就拒绝，–connlimit-mask 24 表示匹配某类网段的链接数量，24表示C类网络地址。<br>limit模块，对报文速率做限制。例如，5s一个ping包可以这样配置：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -A INPUT -s 200.200.90.100 -p icmp -m limit --limit-burst 1 --limit 12/minute -j ACCEPT</div><div class="line">do ~ # iptables -A INPUT -s 200.200.90.100 -p icmp -j REJECT</div><div class="line">do ~ # iptables --line-number -L -nv</div><div class="line">Chain INPUT (policy ACCEPT 460 packets, 98917 bytes)</div><div class="line">num   pkts bytes target     prot opt in     out     source               destination         </div><div class="line">1        0     0 ACCEPT     icmp --  *      *       200.200.90.100       0.0.0.0/0           limit: avg 12/min burst 1 </div><div class="line">2        0     0 REJECT     icmp --  *      *       200.200.90.100       0.0.0.0/0           reject-with icmp-port-unreachable</div></pre></td></tr></table></figure></p>
+<p>序号从小往大匹配，如果匹配到12/minute（5的倍数个）直接放通，如果没有匹配上，会匹配第二条规则，第二条规则是所有ICMP REJECT<br>limit-burst先给限制1个令牌，保证第一个包能通，如果你想保证前3个包能通，需要给3个令牌，默认是5个令牌，不能设置为0。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line"># ping 200.200.96.29</div><div class="line">PING 200.200.96.29 (200.200.96.29) 56(84) bytes of data.</div><div class="line">64 bytes from 200.200.96.29: icmp_req=1 ttl=61 time=1.05 ms</div><div class="line">From 200.200.96.29 icmp_seq=2 Destination Port Unreachable</div><div class="line">From 200.200.96.29 icmp_seq=3 Destination Port Unreachable</div><div class="line">From 200.200.96.29 icmp_seq=4 Destination Port Unreachable</div><div class="line">From 200.200.96.29 icmp_seq=5 Destination Port Unreachable</div><div class="line">64 bytes from 200.200.96.29: icmp_req=6 ttl=61 time=0.997 ms</div><div class="line">From 200.200.96.29 icmp_seq=7 Destination Port Unreachable</div><div class="line">From 200.200.96.29 icmp_seq=8 Destination Port Unreachable</div><div class="line">From 200.200.96.29 icmp_seq=9 Destination Port Unreachable</div><div class="line">From 200.200.96.29 icmp_seq=10 Destination Port Unreachable</div><div class="line">64 bytes from 200.200.96.29: icmp_req=11 ttl=61 time=0.970 ms</div><div class="line">From 200.200.96.29 icmp_seq=12 Destination Port Unreachable</div><div class="line">From 200.200.96.29 icmp_seq=13 Destination Port Unreachable</div><div class="line">From 200.200.96.29 icmp_seq=14 Destination Port Unreachable</div><div class="line">From 200.200.96.29 icmp_seq=15 Destination Port Unreachable</div><div class="line">64 bytes from 200.200.96.29: icmp_req=16 ttl=61 time=1.06 ms</div><div class="line">From 200.200.96.29 icmp_seq=17 Destination Port Unreachable</div></pre></td></tr></table></figure></p>
+<p>除了/minute外，还有/second /hour /day可以用。</p>
+<h1 id="扩展模块icmp"><a href="#扩展模块icmp" class="headerlink" title="扩展模块icmp"></a>扩展模块icmp</h1><p>icmp模块，可以使用–icmp-type设置报文的type，例如，我想主机PING出去能通，但是拒绝别人PING自己，可以：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -A INPUT -p icmp --icmp-type &quot;echo-request&quot; -j REJECT</div><div class="line">do ~ # iptables --line-number -L -nv</div><div class="line">Chain INPUT (policy ACCEPT 338 packets, 71847 bytes)</div><div class="line">num   pkts bytes target     prot opt in     out     source               destination         </div><div class="line">1        0     0 REJECT     icmp --  *      *       0.0.0.0/0            0.0.0.0/0           icmp type 8 reject-with icmp-port-unreachable</div></pre></td></tr></table></figure></p>
+<h1 id="扩展模块state"><a href="#扩展模块state" class="headerlink" title="扩展模块state"></a>扩展模块state</h1><p>如果想实现，我可以访问别人，别人不可以访问我，可以直接禁止INPUT的某些dport，例如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -A INPUT ! -s 127.0.0.0/24 -p tcp -m tcp --dport 80 -j REJECT</div><div class="line">do ~ # iptables -L -nv --line-number</div><div class="line">Chain INPUT (policy ACCEPT 12970 packets, 4276K bytes)</div><div class="line">num   pkts bytes target     prot opt in     out     source               destination         </div><div class="line">1        3   176 REJECT     tcp  --  *      *      !127.0.0.0/24         0.0.0.0/0           tcp dpt:80 reject-with icmp-port-unreachable</div></pre></td></tr></table></figure></p>
+<p>外部再也不能访问我的80端口，但是我可以访问别人的80端口。</p>
+<p>还有一种实现，可以用连接状态state：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -t filter -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT # 已有链接属于ESTABLISHED</div><div class="line">do ~ # iptables -t filter -A INPUT ! -s 127.0.0.0/24 -j REJECT  #记得把本地地址排除，不然127.0.0.1也连接不上</div><div class="line">do ~ # iptables -L -nv --line-number</div><div class="line">Chain INPUT (policy ACCEPT 0 packets, 0 bytes)</div><div class="line">num   pkts bytes target     prot opt in     out     source               destination         </div><div class="line">1       63  5657 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0           state RELATED,ESTABLISHED </div><div class="line">2      320 99576 REJECT     all  --  *      *      !127.0.0.0/24         0.0.0.0/0           reject-with icmp-port-unreachable</div></pre></td></tr></table></figure></p>
+<p>state(可针对所有类型数据tcp,udp,icmp)的状态有NEW, ESTABLISHED, RELATED, INVALID, UNTRACKED，其中，NEW是第一个包，回复了ACK变为ESTABLISHED<br>看我们是在INPUT上接受ESTABLISHED，因为自己主动发起的链接，第一个是在OUTPUT上的NEW，可以通过，而回复的变是ESTABLISHED。<br>反过来，如果是外部的首链接，INPUT处应该是NEW，被拒绝。<br>从而实现本地可以访问外面，外面不能访问本地的作用。</p>
+<h1 id="记录日志"><a href="#记录日志" class="headerlink" title="记录日志"></a>记录日志</h1><p>iptables有一个动作叫LOG，其可以记录日志到syslog，首先应该配置rsyslog.conf，为日志单独选择文件，centos 6.9 默认是kernel输出到/var/log/message</p>
+<p>如下，我配置三条规则，中间一条是LOG<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -t filter -A INPUT -p tcp --dport 22 -m state --state NEW -j ACCEPT</div><div class="line">do ~ # iptables -t filter -A INPUT -p tcp -m state --state NEW -j LOG</div><div class="line">do ~ # iptables -t filter -A INPUT -p tcp --dport 80 -m state --state NEW -j REJECT</div><div class="line">do ~ # iptables -L</div><div class="line">Chain INPUT (policy ACCEPT)</div><div class="line">target     prot opt source               destination         </div><div class="line">ACCEPT     tcp  --  anywhere             anywhere            tcp dpt:ssh state NEW </div><div class="line">LOG        tcp  --  anywhere             anywhere            state NEW LOG level warning </div><div class="line">REJECT     tcp  --  anywhere             anywhere            tcp dpt:http state NEW reject-with icmp-port-unreachable</div></pre></td></tr></table></figure></p>
+<p>当从其他机器分别telnet本机22和80端口时，可以发现，80端口的有日志记录，22的没有，因为，22提前ACCEPT，根本不会走到第二条规则：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">Jul 14 19:21:07 do kernel: IN=eth2 OUT= MAC=fc:aa:14:53:b4:b1:54:be:f7:0d:86:5b:08:00 SRC=200.200.96.28 DST=200.200.96.29 LEN=60 TOS=0x00 PREC=0x00 TTL=64 ID=26436 DF PROTO=TCP SPT=62849 DPT=80 WINDOW=8192 RES=0x00 SYN URGP=0</div></pre></td></tr></table></figure></p>
+<h1 id="表NAT"><a href="#表NAT" class="headerlink" title="表NAT"></a>表NAT</h1><p>NAT，包括SNAT，DNAT，SNAT我没用的非常常见，一般走路由出去就需要设置，DNAT的场景一般是外网访问内外时需要。<br>例如，我在本机开放一个端口30000，让其重定向到bridge的docker ip 172.17.0.2 端口 5201可以：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">iptables -t nat -A PREROUTING ! -i docker0 -p tcp --dport 30000 -j DNAT --to-destination 172.17.0.2:5201</div></pre></td></tr></table></figure></p>
+<p>注意：DNAT是在PREROUTING的时候生效。</p>
+<p>当然，SNAT需要指定具体的IP地址，不是很方便，MASQUERADE是SNAT的一个很好的弥补，不需要指定具体translate的IP，会自动获取出网口IP，例如，桥接本机的docker0网口，其网段是172.34.0.0/16，我们可以指定，其走非docker0网口出去的时候，记得做一下SNAT，可以显示指定出网口IP：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">iptables -t nat -A POSTROUTING -s 172.34.0.0/16 -j SNAT --to-source 200.200.96.29</div></pre></td></tr></table></figure></p>
+<p>也可以隐式使用出网口IP(这种情况注意指定-o)：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -t nat -A POSTROUTING -s 172.34.0.0/16 ! -o docker0 -j MASQUERADE</div><div class="line">do ~ # iptables -L</div><div class="line">Chain POSTROUTING (policy ACCEPT 1 packets, 60 bytes)</div><div class="line">num   pkts bytes target     prot opt in     out     source               destination         </div><div class="line">1       11   748 MASQUERADE  all  --  *      !docker0  172.34.0.0/16        0.0.0.0/0</div></pre></td></tr></table></figure></p>
+<p>注意：SNAT/MASQUERADE是在POSTROUTING的时候生效。</p>
+<p>还有一个端口REDIRECT的命令，可以将访问一个端口的REDIRECT到另外一个端口，例如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -t nat -A PREROUTING -p tcp --dport 8080 -j REDIRECT --to-ports 80</div><div class="line">do ~ # iptables -L -nv --line-number -t nat</div><div class="line">Chain PREROUTING (policy ACCEPT 87 packets, 10405 bytes)</div><div class="line">num   pkts bytes target     prot opt in     out     source               destination         </div><div class="line">2        0     0 REDIRECT   tcp  --  *      *       0.0.0.0/0            0.0.0.0/0           tcp dpt:8080 redir ports 80</div></pre></td></tr></table></figure></p>
+<p>这时候，访问本机的8080，其实会被重定向到本机的80端口。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">#iptables -t nat -A PREROUTING ! -i docker0 -p tcp --dport 2023 -j DNAT --to-destination 172.17.0.3:22</div></pre></td></tr></table></figure>
+<h1 id="表RAW"><a href="#表RAW" class="headerlink" title="表RAW"></a>表RAW</h1><p>raw表，用于跟踪最原始的数据。示例如何使用记录iptables规则访问日志。</p>
+<p>创建目录：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">node-4718301371424 ~ # rm -rf /var/log/ulogd/; mkdir -p /var/log/ulogd/</div></pre></td></tr></table></figure></p>
+<p>启动日志进程：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">node-4718301371424 ~ # /etc/init.d/ulogd start</div></pre></td></tr></table></figure></p>
+<p>注意查看变化：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">node-4718301371424 ~ # lsmod | grep log</div><div class="line">nfnetlink_log          17892  1</div><div class="line">nfnetlink              14696  4 nf_tables,nfnetlink_log,nfnetlink_queue</div><div class="line">node-4718301371424 ~ # cat /proc/net/netfilter/nf_log</div><div class="line"> 0 NONE (nfnetlink_log)</div><div class="line"> 1 NONE (nfnetlink_log)</div><div class="line"> 2 nfnetlink_log (nfnetlink_log)</div><div class="line"> 3 NONE (nfnetlink_log)</div><div class="line"> 4 NONE (nfnetlink_log)</div><div class="line"> 5 NONE (nfnetlink_log)</div><div class="line"> 6 NONE (nfnetlink_log)</div><div class="line"> 7 nfnetlink_log (nfnetlink_log)</div><div class="line"> 8 NONE (nfnetlink_log)</div><div class="line"> 9 NONE (nfnetlink_log)</div><div class="line">10 nfnetlink_log (nfnetlink_log)</div><div class="line">11 NONE (nfnetlink_log)</div><div class="line">12 NONE (nfnetlink_log)</div></pre></td></tr></table></figure></p>
+<p>也可以自行添加，例如2是IPv4：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">node-4718301371424 ~ # echo &quot;nfnetlink_log&quot; &gt; /proc/sys/net/netfilter/nf_log/2</div></pre></td></tr></table></figure></p>
+<p>我要TRACE所有到本机31633端口的tcp链接：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">node-4718301371424 ~ # iptables -t raw -A PREROUTING -p tcp --dport 31633 -j TRACE</div><div class="line">node-5792074976342 ~ # iptables -t raw -L -nv</div><div class="line">Chain PREROUTING (policy ACCEPT 63266 packets, 28M bytes)</div><div class="line"> pkts bytes target     prot opt in     out     source               destination         </div><div class="line">   24  1352 TRACE      tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:31633</div><div class="line"></div><div class="line">Chain OUTPUT (policy ACCEPT 62962 packets, 26M bytes)</div><div class="line"> pkts bytes target     prot opt in     out     source               destination</div></pre></td></tr></table></figure></p>
+<p>从其他机器访问本机(因为挂的是PREROUTING)，便会有日志：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">node-5792074976342 ~ # tail –f /var/log/ulogd/ulogd_syslogemu.log</div><div class="line">Jul 21 17:22:30 node-4718301371424 TRACE: raw:PREROUTING:policy:2  IN=eth1 OUT= MAC=fe:fc:fe:0f:dc:a3:fe:fc:fe:a7:6b:06:08:00 SRC=172.100.158.172 DST=172.100.158.174 LEN=60 TOS=00 PREC=0x00 TTL=64 ID=8241 DF PROTO=TCP SPT=46204 DPT=31633 SEQ=3349349723 ACK=0 WINDOW=29200 SYN URGP=0 MARK=0 </div><div class="line">Jul 21 17:22:30 node-4718301371424 TRACE: nat:PREROUTING:rule:1  IN=eth1 OUT= MAC=fe:fc:fe:0f:dc:a3:fe:fc:fe:a7:6b:06:08:00 SRC=172.100.158.172 DST=172.100.158.174 LEN=60 TOS=00 PREC=0x00 TTL=64 ID=8241 DF PROTO=TCP SPT=46204 DPT=31633 SEQ=3349349723 ACK=0 WINDOW=29200 SYN URGP=0 MARK=0</div></pre></td></tr></table></figure></p>
+<h1 id="自定义链"><a href="#自定义链" class="headerlink" title="自定义链"></a>自定义链</h1><p>创建自定义链的目的是为了方便管理，就像编程里面有了语句，也希望有函数，通过一个函数名，可以引用函数内的多条语句。<br>创建链：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -t filter -N MYLINK</div></pre></td></tr></table></figure></p>
+<p>向链中添加规则：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -A MYLINK ! -s 127.0.0.0/24 -p tcp -m tcp --dport 80 -j REJECT</div><div class="line">do ~ # iptables -L</div><div class="line">Chain MYLINK (0 references)</div><div class="line">target     prot opt source               destination         </div><div class="line">REJECT     tcp  -- !loopback/24          anywhere            tcp dpt:http reject-with icmp-port-unreachable</div></pre></td></tr></table></figure></p>
+<p>目前链已经创建，但是还没有被默认链引用，不会生效，我们让其在INPUT链上生效，例如，让tcp协议走MYLINK：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -t filter -A INPUT -p tcp -m tcp -j MYLINK</div><div class="line">do ~ # iptables -L</div><div class="line">Chain INPUT (policy ACCEPT)</div><div class="line">target     prot opt source               destination         </div><div class="line">MYLINK     tcp  --  anywhere             anywhere            tcp </div><div class="line"></div><div class="line">Chain MYLINK (1 references)</div><div class="line">target     prot opt source               destination         </div><div class="line">REJECT     tcp  -- !loopback/24          anywhere            tcp dpt:http reject-with icmp-port-unreachable</div></pre></td></tr></table></figure></p>
+<p>删除自定义链：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables -t filter -X MYLINK   # 不能删除，是因为INPUT链上还引用着它</div><div class="line">iptables: Too many links.</div><div class="line">do ~ # iptables -t filter -D INPUT 1  # 删除INPUT链上的引用</div><div class="line">do ~ # iptables -t filter -X MYLINK   # 再次不能删除，是因为MYLINK内部有内容，需要先清空</div><div class="line">iptables: Directory not empty.</div><div class="line">do ~ # iptables -t filter -F MYLINK   # 清空MYLINK内部内容</div><div class="line">do ~ # iptables -t filter -X MYLINK   # 再次删除成功</div></pre></td></tr></table></figure></p>
+<h1 id="规则备份和恢复"><a href="#规则备份和恢复" class="headerlink" title="规则备份和恢复"></a>规则备份和恢复</h1><p>iptables-save 用于dump当前的所有IPTABLES规则，指定-t可以单独dump某表，dump默认到stdout，可以重定向到/etc/sysconfig/iptables，以便启动时候自动使用iptables-restore(该命令默认从stdin读取规则)加载此文件。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/net/" rel="tag"># net</a>
+          
+            <a href="/tags/iptables/" rel="tag"># iptables</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/07/17/macvlan-for-docker/" rel="next" title="为Docker配置MACVLAN网络">
+                <i class="fa fa-chevron-left"></i> 为Docker配置MACVLAN网络
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/08/09/file-access-time/" rel="prev" title="文件的access time">
+                文件的access time <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#基本概念"><span class="nav-number">1.</span> <span class="nav-text">基本概念</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#重置规则"><span class="nav-number">2.</span> <span class="nav-text">重置规则</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#查看规则"><span class="nav-number">3.</span> <span class="nav-text">查看规则</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#增删改规则"><span class="nav-number">4.</span> <span class="nav-text">增删改规则</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#默认规则修改"><span class="nav-number">5.</span> <span class="nav-text">默认规则修改</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#源地址和目标地址"><span class="nav-number">6.</span> <span class="nav-text">源地址和目标地址</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#输入和输出网口"><span class="nav-number">7.</span> <span class="nav-text">输入和输出网口</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#扩展模块tcp"><span class="nav-number">8.</span> <span class="nav-text">扩展模块tcp</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#扩展模块multiport"><span class="nav-number">9.</span> <span class="nav-text">扩展模块multiport</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#扩展模块string"><span class="nav-number">10.</span> <span class="nav-text">扩展模块string</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#扩展模块connlimit"><span class="nav-number">11.</span> <span class="nav-text">扩展模块connlimit</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#扩展模块icmp"><span class="nav-number">12.</span> <span class="nav-text">扩展模块icmp</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#扩展模块state"><span class="nav-number">13.</span> <span class="nav-text">扩展模块state</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#记录日志"><span class="nav-number">14.</span> <span class="nav-text">记录日志</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#表NAT"><span class="nav-number">15.</span> <span class="nav-text">表NAT</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#表RAW"><span class="nav-number">16.</span> <span class="nav-text">表RAW</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#自定义链"><span class="nav-number">17.</span> <span class="nav-text">自定义链</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#规则备份和恢复"><span class="nav-number">18.</span> <span class="nav-text">规则备份和恢复</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

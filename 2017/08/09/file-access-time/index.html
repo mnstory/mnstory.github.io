@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="linux," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="三种文件时间文件时间有三种，分别为：  Access - the last time the file was read 读文件会造成修改 st_atime Time when file data was last accessed. Changed by  the following   functions: creat(),   mknod(),   pipe(), utime(2), and">
+<meta name="keywords" content="linux">
+<meta property="og:type" content="article">
+<meta property="og:title" content="文件的access time">
+<meta property="og:url" content="http://mnstory.net/2017/08/09/file-access-time/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="三种文件时间文件时间有三种，分别为：  Access - the last time the file was read 读文件会造成修改 st_atime Time when file data was last accessed. Changed by  the following   functions: creat(),   mknod(),   pipe(), utime(2), and">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2017-10-01T14:53:43.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="文件的access time">
+<meta name="twitter:description" content="三种文件时间文件时间有三种，分别为：  Access - the last time the file was read 读文件会造成修改 st_atime Time when file data was last accessed. Changed by  the following   functions: creat(),   mknod(),   pipe(), utime(2), and">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2017/08/09/file-access-time/"/>
+
+
+
+
+
+  <title>文件的access time | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/08/09/file-access-time/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">文件的access time</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-08-09T03:07:37+00:00">
+                2017-08-09
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="三种文件时间"><a href="#三种文件时间" class="headerlink" title="三种文件时间"></a>三种文件时间</h1><p>文件时间有三种，分别为：</p>
+<ol>
+<li><p>Access - the last time the file was read 读文件会造成修改<br> st_atime</p>
+<pre><code>Time when file data was last accessed. Changed by  the
+following   functions: creat(),   mknod(),   pipe(), utime(2), and read(2).
+</code></pre></li>
+<li><p>Modify - the last time the file was modified (content has been modified) 写文件会造成修改<br> st_mtime</p>
+<pre><code>Time when data was last modified. Changed by the  following  functions:  creat(), mknod(), pipe(), utime(), and write(2).
+</code></pre></li>
+<li><p>Change - the last time meta data of the file was changed (e.g. permissions) - 写文件或者修改属性或造成修改<br> st_ctime</p>
+<pre><code>Time when file status was last changed. time of last modification of file  status  information.Changed by the
+following   functions:   chmod(),   chown(),  creat(),
+link(2),  mknod(),  pipe(),  unlink(2),  utime(), and write().
+</code></pre></li>
+</ol>
+<a id="more"></a>
+<h1 id="criticism-of-atime"><a href="#criticism-of-atime" class="headerlink" title="criticism of atime"></a>criticism of atime</h1><p>mtime和ctime容易理解，大体来说，前者是写了文件，就会更新，后者是修改了文件属性，就会更新。<br>特别一点的是atime，虽说，应该是有read便会更新，但是想想：</p>
+<ol>
+<li>在只读文件系统上，如何更新文件属性？</li>
+<li>也许只是读一个小文件，却偏偏要伴随一次写操作(更新atime)，要知道，写操作一般都比读更耗时，这时候更新atime，是不是有点本末倒置？<br>这就是所谓的criticism of atime： <a href="https://en.wikipedia.org/wiki/Stat_%28system_call%29#Criticism_of_atime" target="_blank" rel="external">https://en.wikipedia.org/wiki/Stat_%28system_call%29#Criticism_of_atime</a> </li>
+</ol>
+<h1 id="mount属性对atime的影响"><a href="#mount属性对atime的影响" class="headerlink" title="mount属性对atime的影响"></a>mount属性对atime的影响</h1><p>鉴于criticism of atime问题，linux专门实现了如下mount属性，用于减少此问题影响。</p>
+<ol>
+<li><p>strictatime - 严格执行POSIX标准，有read就会更新atime。<br> 我的根分区之前是noatime挂载的，使用strictatime重现挂载：<br> 修改为strictatime试试：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">localhost / # mount -o remount,rw,strictatime,data=ordered /</div></pre></td></tr></table></figure>
+<p> 先用touch重置一下所有的时间：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">localhost / # touch a.txt; stat a.txt</div><div class="line">  File: &apos;a.txt&apos;</div><div class="line">  Size: 5               Blocks: 8          IO Block: 4096   regular file</div><div class="line">Device: fe02h/65026d    Inode: 13          Links: 1</div><div class="line">Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)</div><div class="line">Access: 2017-08-09 11:32:54.665000000 +0800</div><div class="line">Modify: 2017-08-09 11:32:54.665000000 +0800</div><div class="line">Change: 2017-08-09 11:32:54.665000000 +0800</div></pre></td></tr></table></figure>
+<p> 执行读操作：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">localhost / # cat a.txt</div><div class="line">abcd</div></pre></td></tr></table></figure>
+<p> 再次查看，发现atime更新了：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">localhost / # stat a.txt </div><div class="line">  File: &apos;a.txt&apos;</div><div class="line">  Size: 5               Blocks: 8          IO Block: 4096   regular file</div><div class="line">Device: fe02h/65026d    Inode: 13          Links: 1</div><div class="line">Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)</div><div class="line">Access: 2017-08-09 11:32:58.593000000 +0800</div><div class="line">Modify: 2017-08-09 11:32:54.665000000 +0800</div><div class="line">Change: 2017-08-09 11:32:54.665000000 +0800</div></pre></td></tr></table></figure>
+<p> 再次执行cat a.txt，atime会继续更新，strictatime模式，是严格执行POSIX标准的，性能也最差。</p>
+</li>
+<li><p>relatime - 只满足<code>(atime &lt;= mtime) or (atime &lt;= ctime) or (now - last atime) &gt; 24 hours</code>的时候才更新atime<br> 我用remount方式添加relatime无效，找了一个本来就是relatime方式挂载的目录验证：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">localhost run # cat /proc/mounts | grep /run</div><div class="line">none /run tmpfs rw,nosuid,nodev,relatime,mode=755 0 0</div></pre></td></tr></table></figure>
+<p> 先用touch重置一下所有的时间：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">localhost run # touch a.txt; stat a.txt</div><div class="line">  File: &apos;a.txt&apos;</div><div class="line">  Size: 0         	Blocks: 0          IO Block: 4096   regular empty file</div><div class="line">Device: 10h/16d	Inode: 26181439    Links: 1</div><div class="line">Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)</div><div class="line">Access: 2017-08-10 14:51:38.610000000 +0800</div><div class="line">Modify: 2017-08-10 14:51:38.610000000 +0800</div><div class="line">Change: 2017-08-10 14:51:38.610000000 +0800</div></pre></td></tr></table></figure>
+<p> 构造条件（当前条件已经满足，因为<code>mtime=atime=ctime</code>），我准备构造<code>mtime&gt;=atime</code>，write操作会导致mtime和ctime同时被更新，trunc方式打开文件也会导致mtime和ctime同时被更新：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">localhost run # echo a &gt;&gt; a.txt</div><div class="line">localhost run # stat a.txt</div><div class="line">  File: &apos;a.txt&apos;</div><div class="line">  Size: 2         	Blocks: 8          IO Block: 4096   regular file</div><div class="line">Device: 10h/16d	Inode: 26181439    Links: 1</div><div class="line">Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)</div><div class="line">Access: 2017-08-10 14:51:38.610000000 +0800</div><div class="line">Modify: 2017-08-10 14:51:59.250000000 +0800</div><div class="line">Change: 2017-08-10 14:51:59.250000000 +0800</div></pre></td></tr></table></figure>
+<p> 此时读取文件，<code>mtime&gt;=atime</code>条件满足，atime被更新：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">localhost run # cat a.txt</div><div class="line">a</div><div class="line">localhost run # stat a.txt</div><div class="line">  File: &apos;a.txt&apos;</div><div class="line">  Size: 2         	Blocks: 8          IO Block: 4096   regular file</div><div class="line">Device: 10h/16d	Inode: 26181439    Links: 1</div><div class="line">Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)</div><div class="line">Access: 2017-08-10 14:52:15.146000000 +0800</div><div class="line">Modify: 2017-08-10 14:51:59.250000000 +0800</div><div class="line">Change: 2017-08-10 14:51:59.250000000 +0800</div></pre></td></tr></table></figure>
+<p> 如上，此时atime大于其他时间，也不在过去24小时，任何条件都不满足，所以再次cat不会更新atime：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">localhost run # cat a.txt</div><div class="line">a</div><div class="line">localhost run # stat a.txt</div><div class="line">  File: &apos;a.txt&apos;</div><div class="line">  Size: 2         	Blocks: 8          IO Block: 4096   regular file</div><div class="line">Device: 10h/16d	Inode: 26181439    Links: 1</div><div class="line">Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)</div><div class="line">Access: 2017-08-10 14:52:15.146000000 +0800</div><div class="line">Modify: 2017-08-10 14:51:59.250000000 +0800</div><div class="line">Change: 2017-08-10 14:51:59.250000000 +0800</div><div class="line"> Birth: -</div></pre></td></tr></table></figure>
+<p> 我们再来看看，目录的atime：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">localhost run # touch abc; stat abc</div><div class="line">  File: &apos;abc&apos;</div><div class="line">  Size: 40        	Blocks: 0          IO Block: 4096   directory</div><div class="line">Device: 10h/16d	Inode: 26508860    Links: 2</div><div class="line">Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)</div><div class="line">Access: 2017-08-10 16:13:47.670000000 +0800</div><div class="line">Modify: 2017-08-10 16:13:47.670000000 +0800</div><div class="line">Change: 2017-08-10 16:13:47.670000000 +0800</div></pre></td></tr></table></figure>
+<p> ls之类的命令，会修改atime</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">localhost run # ls abc; stat abc</div><div class="line">  File: &apos;abc&apos;</div><div class="line">  Size: 40        	Blocks: 0          IO Block: 4096   directory</div><div class="line">Device: 10h/16d	Inode: 26508860    Links: 2</div><div class="line">Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)</div><div class="line">Access: 2017-08-10 16:13:51.949000000 +0800</div><div class="line">Modify: 2017-08-10 16:13:47.670000000 +0800</div><div class="line">Change: 2017-08-10 16:13:47.670000000 +0800</div></pre></td></tr></table></figure>
+</li>
+<li><p>nodiratime - 不更新目录的atime，但更新文件的atime<br> mount一个nodiratime的挂载目录：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">Localhost / # mkdir nodir; mount -o rw,nodiratime,data=ordered /cfg /nodir; mount | grep /nodir</div><div class="line">/cfg on /nodir type ext3 (rw,nodiratime,relatime,errors=continue,user_xattr,acl,barrier=1,data=ordered)</div></pre></td></tr></table></figure>
+<p> 奇怪的是，我虽然只指定了nodiratime，但是mount命令看到的却多了一个relatime，根据后面我们推测，应该是这个relatime管控文件，nodiratime只管目录。</p>
+<p> 创建目录和文件：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">Localhost /nodir # mkdir abc; stat abc</div><div class="line">  File: abc</div><div class="line">  Size: 1024      	Blocks: 2          IO Block: 1024   directory</div><div class="line">Device: 701h/1793d	Inode: 21738       Links: 2</div><div class="line">Access: (2755/drwxr-sr-x)  Uid: (    0/    root)   Gid: (   50/   staff)</div><div class="line">Access: 2017-08-09 16:21:37.000000000</div><div class="line">Modify: 2017-08-09 16:21:37.000000000</div><div class="line">Change: 2017-08-09 16:21:37.000000000</div><div class="line"></div><div class="line">Localhost /nodir # echo a &gt; abc/a.txt</div><div class="line">Localhost /nodir # stat abc/a.txt </div><div class="line">  File: abc/a.txt</div><div class="line">  Size: 2         	Blocks: 2          IO Block: 1024   regular file</div><div class="line">Device: 701h/1793d	Inode: 21739       Links: 1</div><div class="line">Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (   50/   staff)</div><div class="line">Access: 2017-08-09 16:21:48.000000000</div><div class="line">Modify: 2017-08-09 16:21:48.000000000</div><div class="line">Change: 2017-08-09 16:21:48.000000000</div></pre></td></tr></table></figure>
+<p> 往目录里面新增了文件，类似于对目录进行了write，此时mtime和ctime都会更新：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">Localhost /nodir # stat abc</div><div class="line">  File: abc</div><div class="line">  Size: 1024      	Blocks: 2          IO Block: 1024   directory</div><div class="line">Device: 701h/1793d	Inode: 21738       Links: 2</div><div class="line">Access: (2755/drwxr-sr-x)  Uid: (    0/    root)   Gid: (   50/   staff)</div><div class="line">Access: 2017-08-09 16:21:37.000000000</div><div class="line">Modify: 2017-08-09 16:21:48.000000000</div><div class="line">Change: 2017-08-09 16:21:48.000000000</div></pre></td></tr></table></figure>
+<p> 访问一下目录，发现目录的atime并没有更新，这点可对比上面针对relatime做的试验(relatime的时候，此时ls会导致目录atime更新)：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">Localhost /nodir # touch abc; sleep 1; ls abc; stat abc</div><div class="line">  File: abc</div><div class="line">  Size: 1024      	Blocks: 2          IO Block: 1024   directory</div><div class="line">Device: 701h/1793d	Inode: 21738       Links: 2</div><div class="line">Access: (2755/drwxr-sr-x)  Uid: (    0/    root)   Gid: (   50/   staff)</div><div class="line">Access: 2017-08-09 16:22:21.000000000</div><div class="line">Modify: 2017-08-09 16:22:21.000000000</div><div class="line">Change: 2017-08-09 16:22:21.000000000</div></pre></td></tr></table></figure>
+<p> 而针对文件，我们读取一次文件，会更新atime，和relatime一样，此时再次cat不会更新atime，所以，我怀疑nodirtime后面跟了一个relatime属性，这个relatime是文件的更新标志：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">Localhost /nodir # cat abc/a.txt</div><div class="line">a</div><div class="line">Localhost /nodir # stat abc/a.txt </div><div class="line">  File: abc/a.txt</div><div class="line">  Size: 2         	Blocks: 2          IO Block: 1024   regular file</div><div class="line">Device: 701h/1793d	Inode: 21739       Links: 1</div><div class="line">Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (   50/   staff)</div><div class="line">Access: 2017-08-09 16:22:37.000000000</div><div class="line">Modify: 2017-08-09 16:21:48.000000000</div><div class="line">Change: 2017-08-09 16:21:48.000000000</div></pre></td></tr></table></figure>
+<p> 为了验证这个想法，我们再找一个，不是relatime和nodiratime组合的，而是noatime和nodiratime组合的目录试验：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">Localhost /sf/cfg # mount | grep /sf/cfg</div><div class="line">/cfg2 on /sf/cfg type ext3 (rw,noatime,nodiratime,errors=continue,user_xattr,acl,barrier=1,data=ordered)</div></pre></td></tr></table></figure>
+<p> ls后abc的atime并没有更新，说明，nodiratime生效：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">Localhost /sf/cfg # mkdir abc; sleep 1; ls abc; stat abc</div><div class="line">  File: abc</div><div class="line">  Size: 1024      	Blocks: 2          IO Block: 1024   directory</div><div class="line">Device: 700h/1792d	Inode: 21738       Links: 2</div><div class="line">Access: (2755/drwxr-sr-x)  Uid: (    0/    root)   Gid: (   50/   staff)</div><div class="line">Access: 2017-08-09 16:36:33.000000000</div><div class="line">Modify: 2017-08-09 16:36:33.000000000</div><div class="line">Change: 2017-08-09 16:36:33.000000000</div></pre></td></tr></table></figure>
+<p> 读取文件，文件的atime并没有更新，说明noatime生效，和猜想吻合：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">Localhost /sf/cfg # touch a.txt; sleep 1; cat a.txt; stat a.txt</div><div class="line">  File: a.txt</div><div class="line">  Size: 2         	Blocks: 2          IO Block: 1024   regular file</div><div class="line">Device: 700h/1792d	Inode: 21739       Links: 1</div><div class="line">Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (   50/   staff)</div><div class="line">Access: 2017-08-09 16:36:47.000000000</div><div class="line">Modify: 2017-08-09 16:36:47.000000000</div><div class="line">Change: 2017-08-09 16:36:47.000000000</div></pre></td></tr></table></figure>
+</li>
+<li><p>noatime - 根本就不更新atime，如果没有主动修改(例如touch)，atime就是文件创建的时候的时间<br> 我找根分区试验，此分区就是noatime挂载的：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">localhost / # mount | grep /dev/vda2</div><div class="line">/dev/vda2 on / type ext3 (rw,noatime,data=ordered)</div></pre></td></tr></table></figure>
+<p> 目录，无更新：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">localhost / # rm -rf abc; mkdir abc; sleep 1; ls abc; stat abc</div><div class="line">  File: &apos;abc&apos;</div><div class="line">  Size: 4096      	Blocks: 8          IO Block: 4096   directory</div><div class="line">Device: fe02h/65026d	Inode: 1708785     Links: 2</div><div class="line">Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)</div><div class="line">Access: 2017-08-10 17:03:57.477000000 +0800</div><div class="line">Modify: 2017-08-10 17:03:57.477000000 +0800</div><div class="line">Change: 2017-08-10 17:03:57.477000000 +0800</div></pre></td></tr></table></figure>
+<p> 文件，无更新：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">localhost / # rm -f a.txt; touch a.txt; sleep 1; cat a.txt; stat a.txt</div><div class="line">  File: &apos;a.txt&apos;</div><div class="line">  Size: 0         	Blocks: 0          IO Block: 4096   regular empty file</div><div class="line">Device: fe02h/65026d	Inode: 13          Links: 1</div><div class="line">Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)</div><div class="line">Access: 2017-08-10 17:07:17.990000000 +0800</div><div class="line">Modify: 2017-08-10 17:07:17.990000000 +0800</div><div class="line">Change: 2017-08-10 17:07:17.990000000 +0800</div></pre></td></tr></table></figure>
+</li>
+<li><p>lazytime - 先缓存在内存中，等到一定时间或者sync操作的时候，一起刷新atime，这种方式兼容POSIX，只是有一定延迟<br>这功能在kernel 4.0才有，没有验证具体效果。</p>
+</li>
+</ol>
+<h1 id="使用GDB验证"><a href="#使用GDB验证" class="headerlink" title="使用GDB验证"></a>使用GDB验证</h1><p>使用GDB一条一条命令调用，相对而言控制粒度要细一些，我通过类似测试，发现write操作会同时更新mtime和ctime，trunc方式打开会也是。下面记录几个验证步骤：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">(gdb) call open(&quot;/var/lib/docker/image/overlay2/layerdb/sha256/b.txt&quot;, O_WRONLY|O_CREAT|O_APPEND, 0666)</div><div class="line">No symbol &quot;O_WRONLY&quot; in current context.</div></pre></td></tr></table></figure></p>
+<p>宏不能再gdb里面使用，这几宏可以在头文件中搜索：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">#define O_RDONLY        00</div><div class="line">#define O_WRONLY        01</div><div class="line">#define O_RDWR          02</div><div class="line">#define O_CREAT         0100</div><div class="line">#define O_TRUNC         01000 </div><div class="line">#define O_APPEND        02000</div></pre></td></tr></table></figure></p>
+<p>八进制的<code>O_WRONLY|O_CREAT|O_APPEND</code>，转换为十六进制为0x441<br>八进制的<code>O_WRONLY|O_CREAT|O_TRUNC</code>，转换为十六进制为0x241<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">(gdb) call open(&quot;/var/lib/docker/image/overlay2/layerdb/sha256/b.txt&quot;, 0x441, 0666)</div><div class="line">$2 = 8</div></pre></td></tr></table></figure></p>
+<p>返回的是句柄号8，往其中写入5个字符：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">(gdb) call write(8,&quot;test&quot;,5)</div><div class="line">$3 = 5</div></pre></td></tr></table></figure></p>
+<p>关闭句柄：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">(gdb) call close(8)</div><div class="line">$4 = 0</div></pre></td></tr></table></figure></p>
+<p>如果是读打开，验证读操作前，需要先为其分配内存，返回的是malloc地址：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">(gdb) call (char*)malloc(10)</div><div class="line">$11 = 0x2306c70 &quot;&quot;</div></pre></td></tr></table></figure></p>
+<p>设置读偏移，并提供一个10字节的堆地址0x2306c70用于存储数据：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">(gdb) call lseek(9,0,0)</div><div class="line">$13 = 0</div><div class="line">(gdb) call read(9, (char*)0x2306c70, 10)</div><div class="line">$14 = 4</div></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/linux/" rel="tag"># linux</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/07/17/iptables-commands-intro/" rel="next" title="IPTABLES基础命令">
+                <i class="fa fa-chevron-left"></i> IPTABLES基础命令
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#三种文件时间"><span class="nav-number">1.</span> <span class="nav-text">三种文件时间</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#criticism-of-atime"><span class="nav-number">2.</span> <span class="nav-text">criticism of atime</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#mount属性对atime的影响"><span class="nav-number">3.</span> <span class="nav-text">mount属性对atime的影响</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用GDB验证"><span class="nav-number">4.</span> <span class="nav-text">使用GDB验证</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

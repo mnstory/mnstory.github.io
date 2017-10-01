@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="net,docker,macvlan," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="MACVLAN模式MACVLAN有四种模式，分别是Bridge（默认），Private，VEPA(Virtual Ethernet Port Aggregator)，Passthru。这些类型的区别，网上比较多，不细说，我只配置默认的Bridge模式。">
+<meta name="keywords" content="net,docker,macvlan">
+<meta property="og:type" content="article">
+<meta property="og:title" content="为Docker配置MACVLAN网络">
+<meta property="og:url" content="http://mnstory.net/2017/07/17/macvlan-for-docker/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="MACVLAN模式MACVLAN有四种模式，分别是Bridge（默认），Private，VEPA(Virtual Ethernet Port Aggregator)，Passthru。这些类型的区别，网上比较多，不细说，我只配置默认的Bridge模式。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2017/07/17/macvlan-for-docker/bridge.png">
+<meta property="og:updated_time" content="2017-10-01T14:28:54.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="为Docker配置MACVLAN网络">
+<meta name="twitter:description" content="MACVLAN模式MACVLAN有四种模式，分别是Bridge（默认），Private，VEPA(Virtual Ethernet Port Aggregator)，Passthru。这些类型的区别，网上比较多，不细说，我只配置默认的Bridge模式。">
+<meta name="twitter:image" content="http://mnstory.net/2017/07/17/macvlan-for-docker/bridge.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2017/07/17/macvlan-for-docker/"/>
+
+
+
+
+
+  <title>为Docker配置MACVLAN网络 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/07/17/macvlan-for-docker/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">为Docker配置MACVLAN网络</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-07-17T02:07:37+00:00">
+                2017-07-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="MACVLAN模式"><a href="#MACVLAN模式" class="headerlink" title="MACVLAN模式"></a>MACVLAN模式</h1><p>MACVLAN有四种模式，分别是Bridge（默认），Private，VEPA(Virtual Ethernet Port Aggregator)，Passthru。<br>这些类型的区别，网上比较多，不细说，我只配置默认的Bridge模式。<br><a id="more"></a><br><img src="/2017/07/17/macvlan-for-docker/bridge.png" alt="bridge"></p>
+<h1 id="配置docker网络"><a href="#配置docker网络" class="headerlink" title="配置docker网络"></a>配置docker网络</h1><p>我们在eth0口上配置macvlan。<br>先看看eth0的基本信息，上面之前有一个IP 11.10.4.1：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">node-885896414408 ~ # ip addr show eth0</div><div class="line">2: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc mq state UP group default </div><div class="line">    link/ether fe:fc:fe:2a:6f:05 brd ff:ff:ff:ff:ff:ff</div><div class="line">    inet 11.10.4.1/16 brd 11.10.255.255 scope global eth0</div><div class="line">       valid_lft forever preferred_lft forever</div><div class="line">    inet6 fe80::fcfc:feff:fe2a:6f05/64 scope link </div><div class="line">       valid_lft forever preferred_lft forever</div></pre></td></tr></table></figure></p>
+<p>为了不和这个IP冲突，我们需要在创建macvlan的时候，排除此IP，使用docker network命令创建：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">node-885896414408 ~ # docker network create -d macvlan --subnet=11.10.4.0/16 --gateway=11.10.4.254 --aux-address=&quot;exclude_host=11.10.4.1&quot; -o parent=eth0 macvlan0</div><div class="line">d72dd733ce3a7a26b93d7e472e2ef036f26191f9577ab673978689b0bd3f5205</div></pre></td></tr></table></figure></p>
+<p>查看：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">node-885896414408 ~ # docker network ls</div><div class="line">NETWORK ID          NAME                DRIVER               SCOPE  </div><div class="line">d72dd733ce3a        macvlan0            macvlan             local</div></pre></td></tr></table></figure></p>
+<p>好了，现在已经有了macvlan0网络，属于macvlan类型，我们启动docker的时候，指定其使用macvlan0即可：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">node-885896414408 ~ # docker run -it --network=macvlan0 mytest /bin/bash -l</div><div class="line">[mytest@ ~]#ifconfig </div><div class="line">eth0      Link encap:Ethernet  HWaddr 02:42:0b:0a:00:01  </div><div class="line">          inet addr:11.10.0.1  Bcast:0.0.0.0  Mask:255.255.0.0</div><div class="line">          inet6 addr: fe80::42:bff:fe0a:1/64 Scope:Link</div><div class="line">          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1</div><div class="line">          RX packets:0 errors:0 dropped:0 overruns:0 frame:0</div><div class="line">          TX packets:6 errors:0 dropped:0 overruns:0 carrier:0</div><div class="line">          collisions:0 txqueuelen:0 </div><div class="line">          RX bytes:0 (0.0 B)  TX bytes:508 (508.0 B)</div></pre></td></tr></table></figure></p>
+<p>鉴于macvlan的特性，从容器内部是ping不通宿主机的，但是，可以ping通外部网络：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">[mytest@ ~]#ping 11.10.4.1  #不能PING通主机</div><div class="line">PING 11.10.4.1 (11.10.4.1) 56(84) bytes of data.</div><div class="line">From 11.10.0.1 icmp_seq=1 Destination Host Unreachable</div><div class="line">From 11.10.0.1 icmp_seq=2 Destination Host Unreachable</div><div class="line"></div><div class="line">[mytest@ ~]#ping 11.10.4.2 #但能PING通其他机</div><div class="line">PING 11.10.4.2 (11.10.4.2) 56(84) bytes of data.</div><div class="line">64 bytes from 11.10.4.2: icmp_req=1 ttl=64 time=0.207 ms</div><div class="line">64 bytes from 11.10.4.2: icmp_req=2 ttl=64 time=0.756 ms</div></pre></td></tr></table></figure></p>
+<p>容器和宿主机通信<br>为了能和宿主机通信，我们需要在宿主机上再创建一个macvlan网络：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">node-885896414408 ~ # ip link add link eth0 macvlan0-host type macvlan mode bridge</div><div class="line">node-885896414408 ~ # ip link set dev macvlan0-host up </div><div class="line">node-885896414408 ~ # ip addr add 11.10.4.254/16 dev macvlan0-host</div></pre></td></tr></table></figure></p>
+<p>查看一下配置后的虚拟macvlan网口：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">node-885896414408 ~ # ifconfig macvlan0-host</div><div class="line">macvlan0-host: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</div><div class="line">        inet 11.10.4.254  netmask 255.255.0.0  broadcast 0.0.0.0</div><div class="line">        inet6 fe80::c026:88ff:fe53:cae  prefixlen 64  scopeid 0x20&lt;link&gt;</div><div class="line">        ether c2:26:88:53:0c:ae  txqueuelen 1000  (Ethernet)</div><div class="line">        RX packets 62  bytes 3472 (3.3 KiB)</div><div class="line">        RX errors 0  dropped 0  overruns 0  frame 0</div><div class="line">        TX packets 8  bytes 648 (648.0 B)</div><div class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</div></pre></td></tr></table></figure></p>
+<p>此时docker内部就能PING通宿主机IP 11.10.4.254了，如果还是不通，可以加一条路由：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ip route add 11.10.0.2 dev macvlan0-host</div></pre></td></tr></table></figure></p>
+<p>不过，我看已经有默认路由：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">11.10.0.0/16 dev macvlan0-host  proto kernel  scope link  src 11.10.4.254</div></pre></td></tr></table></figure></p>
+<p>流程很简单，之所以记录，是因为网上多转载的文章，多只说了如何配置docker网络部分，后面和宿主机通信部分，都是一笔带过，很少有实际的操作命令贴出。</p>
+<h1 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h1><ol>
+<li>Macvlan and Ipvlan Network Drivers <a href="http://www.rendoumi.com/zui-xin-ban-ben-dockerwang-luo-bu-fen-suo-yong-de-macvlanhe-ipvlan/" target="_blank" rel="external">http://www.rendoumi.com/zui-xin-ban-ben-dockerwang-luo-bu-fen-suo-yong-de-macvlanhe-ipvlan/</a></li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/net/" rel="tag"># net</a>
+          
+            <a href="/tags/docker/" rel="tag"># docker</a>
+          
+            <a href="/tags/macvlan/" rel="tag"># macvlan</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/05/06/gcov-usage/" rel="next" title="GCOV代码覆盖方法">
+                <i class="fa fa-chevron-left"></i> GCOV代码覆盖方法
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/07/17/iptables-commands-intro/" rel="prev" title="IPTABLES基础命令">
+                IPTABLES基础命令 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#MACVLAN模式"><span class="nav-number">1.</span> <span class="nav-text">MACVLAN模式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#配置docker网络"><span class="nav-number">2.</span> <span class="nav-text">配置docker网络</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考文档"><span class="nav-number">3.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

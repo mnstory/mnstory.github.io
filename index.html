@@ -242,7 +242,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017-07-hello/">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/08/09/file-access-time/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="mnstory.net">
@@ -261,7 +261,7 @@
         
           <h2 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2017-07-hello/" itemprop="url">2017/07/hello</a></h2>
+                <a class="post-title-link" href="/2017/08/09/file-access-time/" itemprop="url">文件的access time</a></h2>
         
 
         <div class="post-meta">
@@ -273,8 +273,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-01T13:12:53+08:00">
-                2017-10-01
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-08-09T11:07:37+08:00">
+                2017-08-09
               </time>
             
 
@@ -312,135 +312,24 @@
 
       
         
-          
-            
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/07/iptables-commands-intro/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="mnstory.net">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="码农故事">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h2 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2017/07/iptables-commands-intro/" itemprop="url">IPTABLES基础命令</a></h2>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-01T10:07:37+08:00">
-                2017-10-01
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <p>本文主要参考 <a href="http://www.iptables.info" target="_blank" rel="external">http://www.iptables.info</a> 和 <a href="http://www.zsythink.net/archives/tag/iptables/，不是详细的原理介绍，权当个人记录的操作笔记。" target="_blank" rel="external">http://www.zsythink.net/archives/tag/iptables/，不是详细的原理介绍，权当个人记录的操作笔记。</a></p>
-<h1 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h1><p>借个图看一下，这个图很熟悉了，正是netfilter框架的hook point：<br><img src="/2017/07/iptables-commands-intro/netfilter.png" alt="net filter"></p>
-<p>iptables是基于netfilter做的，有几个概念：</p>
+          <h1 id="三种文件时间"><a href="#三种文件时间" class="headerlink" title="三种文件时间"></a>三种文件时间</h1><p>文件时间有三种，分别为：</p>
 <ol>
-<li>表一共有filter, nat, mangle, raw四个，用-t参数指定：<br>filter表，用于做包过滤，可以在此表中执行DROP,LOG,ACCEPT,REJECT动作。如果没有指定-t，即默认为此表。<br>nat表，主要用于做NAT规则转换，一条流上的包，只有首包才会<em>匹配</em>此表中的NAT规则，后继包不需要匹配此表，会跟着自动转换。<br>mangle表，主要用于修改包内容或者包头，比如修改TTL，TOS，MSS等，或者给包大一个MASK(并非打在包数据上，而是mbuf上)以供后续规则使用。<br>raw表，是2.6以后新加的，他负责在其他表生效前生效，raw的意思其实就是没有经过任何iptables规则染指过的输入数据和输出数据。最开始输入，其位于PREROUTING前，没有被污染的输出，当然是OUTPUT前。</li>
-<li>chain<br>链，如上图，PREROUTING, INPUT, FORWARD, OUTPUT, POSTROUTING就是默认链，也就是规则生效的HOOK POINT，而用户也可以自定义链，自定义并不是超越这几个链创建了新的HOOK POINT，而是做了一个规则的汇聚。</li>
-<li>targets和jumps：<br>-j参数指定的是targets或者jumps，默认内置了很多targets，例如：<br>ACCEPT, CLASSIFY, CLUSTERIP, CONNMARK, CONNSECMARK, DNAT, DROP, DSCP, ECN, LOG options, MARK, MASQUERADE, MIRROR, NETMAP, NFQUEUE, NOTRACK, QUEUE, REDIRECT, REJECT, RETURN, SAME, SECMARK, SNAT, TCPMSS, TOS, TTL, ULOG<br>jumps是指自定义链的名称，创建自定义链的目的是为了方便管理，就像编程里面有了语句，也希望有函数，通过一个函数名，可以引用函数内的多条语句，通过-j转到自定义链。</li></ol>
+<li><p>Access - the last time the file was read 读文件会造成修改<br> st_atime</p>
+<pre><code>Time when file data was last accessed. Changed by  the
+following   functions: creat(),   mknod(),   pipe(), utime(2), and read(2).
+</code></pre></li>
+<li><p>Modify - the last time the file was modified (content has been modified) 写文件会造成修改<br> st_mtime</p>
+<pre><code>Time when data was last modified. Changed by the  following  functions:  creat(), mknod(), pipe(), utime(), and write(2).
+</code></pre></li>
+<li><p>Change - the last time meta data of the file was changed (e.g. permissions) - 写文件或者修改属性或造成修改<br> st_ctime</p>
+<pre><code>Time when file status was last changed. time of last modification of file  status  information.Changed by the
+following   functions:   chmod(),   chown(),  creat(),
+link(2),  mknod(),  pipe(),  unlink(2),  utime(), and write().
+</code></pre></li>
+</ol>
           <!--noindex-->
           <div class="post-button text-center">
-            <a class="btn" href="/2017/07/iptables-commands-intro/#more" rel="contents">
+            <a class="btn" href="/2017/08/09/file-access-time/#more" rel="contents">
               阅读全文 &raquo;
             </a>
           </div>
@@ -491,7 +380,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://mnstory.net/hello-world/">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/07/17/iptables-commands-intro/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="mnstory.net">
@@ -510,7 +399,7 @@
         
           <h2 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/hello-world/" itemprop="url">Hello World</a></h2>
+                <a class="post-title-link" href="/2017/07/17/iptables-commands-intro/" itemprop="url">IPTABLES基础命令</a></h2>
         
 
         <div class="post-meta">
@@ -522,8 +411,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-09-25T16:35:08+08:00">
-                2017-09-25
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-07-17T11:07:37+08:00">
+                2017-07-17
               </time>
             
 
@@ -561,18 +450,265 @@
 
       
         
-          
-            <p>Welcome to <a href="https://hexo.io/" target="_blank" rel="external">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="external">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="external">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="external">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo new <span class="string">"My New Post"</span></div></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="external">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo server</div></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="external">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo generate</div></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="external">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo deploy</div></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="external">Deployment</a></p>
+          <p>本文主要参考 <a href="http://www.iptables.info" target="_blank" rel="external">http://www.iptables.info</a> 和 <a href="http://www.zsythink.net/archives/tag/iptables/" target="_blank" rel="external">http://www.zsythink.net/archives/tag/iptables/</a> 不是详细的原理介绍，权当个人记录的操作笔记。</p>
+<h1 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h1><p>借个图看一下，这个图很熟悉了，正是netfilter框架的hook point：<br></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/07/17/iptables-commands-intro/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/07/17/macvlan-for-docker/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/07/17/macvlan-for-docker/" itemprop="url">为Docker配置MACVLAN网络</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-07-17T10:07:37+08:00">
+                2017-07-17
+              </time>
+            
+
+            
+
+            
+          </span>
 
           
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <h1 id="MACVLAN模式"><a href="#MACVLAN模式" class="headerlink" title="MACVLAN模式"></a>MACVLAN模式</h1><p>MACVLAN有四种模式，分别是Bridge（默认），Private，VEPA(Virtual Ethernet Port Aggregator)，Passthru。<br>这些类型的区别，网上比较多，不细说，我只配置默认的Bridge模式。<br></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/07/17/macvlan-for-docker/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/05/06/gcov-usage/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/05/06/gcov-usage/" itemprop="url">GCOV代码覆盖方法</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-05-06T11:07:37+08:00">
+                2017-05-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <h1 id="编写Makefile-编译环境"><a href="#编写Makefile-编译环境" class="headerlink" title="编写Makefile(编译环境)"></a>编写Makefile(编译环境)</h1><p>Makefile里面，加入编译项：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-g -fprofile-arcs -ftest-coverage</div></pre></td></tr></table></figure></p>
+<p>链接项：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-lgcov</div></pre></td></tr></table></figure></p>
+<p>考虑到后续代码覆盖可能需要调试，建议加入<code>-O0</code>和<code>-g</code>选项，但是不建议定义DEBUG，因为assert会导致程序abort。<br></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/05/06/gcov-usage/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
@@ -651,7 +787,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-count">4</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -664,7 +800,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-count">7</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -866,10 +1002,6 @@
 
 
 
-
-  
-
-    
 
   
 
