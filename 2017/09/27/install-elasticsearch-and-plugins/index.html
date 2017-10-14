@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="ElasticSearch,安装," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="ElasticSearch，强大的数据搜索应用，可以当成数据库来使用，接下来演示如何安装和安装它的插件。 安装Elasticsearch 安装Java Java安装就不多说了，记得安装完后设置JAVA_HOME环境变量，我使用的1.8版本。 下载 从 https://www.elastic.co/downloads/elasticsearch 下载最新版本，解压，假设elasticsearch解压">
+<meta name="keywords" content="ElasticSearch,安装">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ElasticSearch及其插件安装">
+<meta property="og:url" content="http://mnstory.net/2017/09/27/install-elasticsearch-and-plugins/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="ElasticSearch，强大的数据搜索应用，可以当成数据库来使用，接下来演示如何安装和安装它的插件。 安装Elasticsearch 安装Java Java安装就不多说了，记得安装完后设置JAVA_HOME环境变量，我使用的1.8版本。 下载 从 https://www.elastic.co/downloads/elasticsearch 下载最新版本，解压，假设elasticsearch解压">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2017/09/27/install-elasticsearch-and-plugins/install-ok.png">
+<meta property="og:image" content="http://mnstory.net/2017/09/27/install-elasticsearch-and-plugins/elasticsearch-head-ui.png">
+<meta property="og:image" content="http://mnstory.net/2017/09/27/install-elasticsearch-and-plugins/cerebro.png">
+<meta property="og:image" content="http://mnstory.net/2017/09/27/install-elasticsearch-and-plugins/bigdesk.png">
+<meta property="og:image" content="http://mnstory.net/2017/09/27/install-elasticsearch-and-plugins/kibana-error.png">
+<meta property="og:image" content="http://mnstory.net/2017/09/27/install-elasticsearch-and-plugins/kibana.png">
+<meta property="og:updated_time" content="2017-10-14T10:56:57.214Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ElasticSearch及其插件安装">
+<meta name="twitter:description" content="ElasticSearch，强大的数据搜索应用，可以当成数据库来使用，接下来演示如何安装和安装它的插件。 安装Elasticsearch 安装Java Java安装就不多说了，记得安装完后设置JAVA_HOME环境变量，我使用的1.8版本。 下载 从 https://www.elastic.co/downloads/elasticsearch 下载最新版本，解压，假设elasticsearch解压">
+<meta name="twitter:image" content="http://mnstory.net/2017/09/27/install-elasticsearch-and-plugins/install-ok.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2017/09/27/install-elasticsearch-and-plugins/"/>
+
+
+
+
+
+  <title>ElasticSearch及其插件安装 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/09/27/install-elasticsearch-and-plugins/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">ElasticSearch及其插件安装</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-09-27T21:08:37+08:00">
+                2017-09-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>ElasticSearch，强大的数据搜索应用，可以当成数据库来使用，接下来演示如何安装和安装它的插件。</p>
+<h1 id="安装Elasticsearch"><a href="#安装Elasticsearch" class="headerlink" title="安装Elasticsearch"></a>安装Elasticsearch</h1><ol>
+<li>安装Java<br> Java安装就不多说了，记得安装完后设置JAVA_HOME环境变量，我使用的1.8版本。</li>
+<li>下载<br> 从 <a href="https://www.elastic.co/downloads/elasticsearch" target="_blank" rel="external">https://www.elastic.co/downloads/elasticsearch</a> 下载最新版本，解压，假设elasticsearch解压后的根目录为$ES_HOME。</li>
+<li><p>修改配置<br> 配置文件在 $ES_HOME/config/elasticsearch.yml，设置基本的集群名称，节点名称，和网络监听地址：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">cluster.name: myes</div><div class="line">node.name: n1</div><div class="line">network.host: 0.0.0.0</div></pre></td></tr></table></figure>
+</li>
+<li><p>运行<br> 进入$ES_HOME/bin目录，执行elasticsearch即可。</p>
+<a id="more"></a></li>
+<li>验证<br> 打开：<a href="http://localhost:9200/" target="_blank" rel="external">http://localhost:9200/</a><br> <img src="/2017/09/27/install-elasticsearch-and-plugins/install-ok.png" alt="install-ok"></li>
+</ol>
+<p>我使用的是5.x版本，以前的插件安装方法，现在很多用不上了，先看看能在线安装的插件：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line">ESHOME # bin/elasticsearch-plugin install -h</div><div class="line">Install a plugin</div><div class="line"></div><div class="line">The following official plugins may be installed by name:</div><div class="line">  analysis-icu</div><div class="line">  analysis-kuromoji</div><div class="line">  analysis-phonetic</div><div class="line">  analysis-smartcn</div><div class="line">  analysis-stempel</div><div class="line">  analysis-ukrainian</div><div class="line">  discovery-azure-classic</div><div class="line">  discovery-ec2</div><div class="line">  discovery-file</div><div class="line">  discovery-gce</div><div class="line">  ingest-attachment</div><div class="line">  ingest-geoip</div><div class="line">  ingest-user-agent</div><div class="line">  lang-javascript</div><div class="line">  lang-python</div><div class="line">  mapper-attachments</div><div class="line">  mapper-murmur3</div><div class="line">  mapper-size</div><div class="line">  repository-azure</div><div class="line">  repository-gcs</div><div class="line">  repository-hdfs</div><div class="line">  repository-s3</div><div class="line">  store-smb</div><div class="line">  x-pack</div></pre></td></tr></table></figure></p>
+<p>Elasticsearch运行的服务器上，需要重新修改一下配置，对所有插件都是这样，以便支持跨域和跨主机访问：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">ESHOME # vi config/elasticsearch.yml</div><div class="line">http.cors.enabled: true       # 开启跨域访问</div><div class="line">http.cors.allow-origin: "*"   # 允许任意来源的跨域访问</div><div class="line">network.host: 0.0.0.0         # 配置BIND地址，默认是127.0.0.1，不能跨主机访问</div></pre></td></tr></table></figure></p>
+<p>不然会出现类似错误：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">No &apos;Access-Control-Allow-Origin&apos; header is present on the requested resource. Origin &apos;http://do:8000&apos; is therefore not allowed access.</div></pre></td></tr></table></figure></p>
+<h1 id="安装elasticsearch-head-docker版本"><a href="#安装elasticsearch-head-docker版本" class="headerlink" title="安装elasticsearch-head docker版本"></a>安装elasticsearch-head docker版本</h1><p>此插件用于浏览当前有哪些indices，支持语句执行，并不是很易用，参考文档：<a href="https://github.com/mobz/elasticsearch-head" target="_blank" rel="external">https://github.com/mobz/elasticsearch-head</a><br>我将elasticsearch-head安装到另外一台机器，使用docker一条命令解决：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">do ~ # docker run -p 9100:9100 mobz/elasticsearch-head:5</div><div class="line">Unable to find image 'mobz/elasticsearch-head:5' locally</div><div class="line">5: Pulling from mobz/elasticsearch-head</div><div class="line">32734c6d04f6: Pull complete </div><div class="line">...</div><div class="line">61c321193443: Pull complete </div><div class="line">Digest: sha256:19cf8b27a5e71a79af27c29ff20ffa18f27306e2489dcfd88b9ec5708f2bffea</div><div class="line">Status: Downloaded newer image for mobz/elasticsearch-head:5</div><div class="line">Running "connect:server" (connect) task</div><div class="line">Waiting forever...</div><div class="line">Started connect web server on http://localhost:9100</div></pre></td></tr></table></figure></p>
+<p>从浏览器打开Elasticsearch-head监听的9100端口，连接服务器地址，即可：<br><img src="/2017/09/27/install-elasticsearch-and-plugins/elasticsearch-head-ui.png" alt="elasticsearch-head-ui"></p>
+<h1 id="安装elasticsearch-head-windows版本"><a href="#安装elasticsearch-head-windows版本" class="headerlink" title="安装elasticsearch-head windows版本"></a>安装elasticsearch-head windows版本</h1><p>相比docker安装，安装在windows就麻烦多了，先安装依赖。</p>
+<ol>
+<li><p>安装NodeJS<br> head插件是NodeJS源码，从 <a href="https://nodejs.org/en/" target="_blank" rel="external">https://nodejs.org/en/</a> 下载并安装。安装后记得设置NODE_HOME到环境变量。</p>
+<p> 我的环境，需要设置代理才能使用nodejs的npm来安装软件：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">npm config set proxy http://do:3128</div><div class="line">npm config set https-proxy http://do:3128</div></pre></td></tr></table></figure>
+</li>
+<li><p>安装grunt<br> grunt是Javascript的构建工具，有点像maven之于Java，因为head插件是NodeJS源码，所以需要这东西。</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">&gt; npm install -g grunt-cli</div><div class="line">C:\Users\w7\AppData\Roaming\npm\grunt -&gt; C:\Users\w7\AppData\Roaming\npm\node_modules\grunt-cli\bin\grunt</div><div class="line">+ grunt-cli@1.2.0</div><div class="line">added 16 packages in 60.156s</div><div class="line"></div><div class="line">&gt; grunt -version</div><div class="line">grunt-cli v1.2.0</div></pre></td></tr></table></figure>
+</li>
+<li><p>安装head</p>
+<ol>
+<li><p>下载<br>从 <a href="https://github.com/mobz/elasticsearch-head" target="_blank" rel="external">https://github.com/mobz/elasticsearch-head</a> 下载源码，解压。</p>
+</li>
+<li><p>修改源码<br>如果想跨主机访问，需要修改：</p>
+<blockquote>
+<p>修改 Gruntfile.js，添加hostname: ‘*’：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">connect: &#123;</div><div class="line">   server: &#123;</div><div class="line">       options: &#123;</div><div class="line">           port: 9100,</div><div class="line">           hostname: &apos;*&apos;,</div><div class="line">           base: &apos;.&apos;,</div><div class="line">           keepalive: true</div><div class="line">       &#125;</div><div class="line">   &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>修改_site/app.js</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">this.base_uri = this.config.base_uri || this.prefs.get(&quot;app-base_uri&quot;) || &quot;http://localhost:9200&quot;;</div></pre></td></tr></table></figure>
+<p>把localhost修改成你es服务器地址，例如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">this.base_uri = this.config.base_uri || this.prefs.get(&quot;app-base_uri&quot;) || &quot;http://esserver:9200&quot;;</div></pre></td></tr></table></figure>
+</blockquote>
+</li>
+<li><p>修改ElasticSearch<br>ElasticSearch配置文件，添加head需要的选项：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">http.cors.enabled: true</div><div class="line">http.cors.allow-origin: &quot;*&quot;</div></pre></td></tr></table></figure>
+<p>启动ElasticSearch。</p>
+</li>
+<li><p>安装elasticsearch-head<br>进入 elasticsearch-head 源码目录，执行安装。<br>第一次执行报错：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">&gt; npm install</div><div class="line">npm WARN elasticsearch-head@0.0.0 license should be a valid SPDX license express</div><div class="line">ion</div><div class="line"></div><div class="line">npm ERR! code ECONNRESET</div><div class="line">npm ERR! errno ECONNRESET</div><div class="line">npm ERR! network request to https://registry.npm.taobao.org/phantomjs-prebuilt/d</div><div class="line">ownload/phantomjs-prebuilt-2.1.15.tgz failed, reason: read ECONNRESET</div><div class="line">npm ERR! network This is a problem related to network connectivity.</div></pre></td></tr></table></figure>
+<p>看样子是我之前设置过taobao作为registry，有问题，删除掉，用官方版本，还是有问题，网上说还是网络不好，又换行淘宝源：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">&gt; npm config set registry https://registry.npm.taobao.org</div><div class="line">&gt; npm config list</div><div class="line">registry = &quot;https://registry.npm.taobao.org/&quot;</div></pre></td></tr></table></figure>
+<p>还是不行，后来发现是网络不好，单独打开 <a href="https://github.com/Medium/phantomjs/releases/download/v2.1.1/phantom" target="_blank" rel="external">https://github.com/Medium/phantomjs/releases/download/v2.1.1/phantom</a><br>js-2.1.1-windows.zip 也是几byte/s，于是找了个csdn上的版本，解压，将其bin目录放到PATH环境变量下，安装成功：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">&gt; npm install</div><div class="line">  - phantomjs-prebuilt@2.1.15 install D:\Work\CodeRead\DB\es\elasticsearch-head-master\node_modules\phantomjs-prebuilt</div><div class="line">  - node install.js</div><div class="line"></div><div class="line">Considering PhantomJS found at D:\Software\NodeJS\phantomjs-2.1.1\bin\phantomjs.EXE</div><div class="line">Found PhantomJS at D:\Software\NodeJS\phantomjs-2.1.1\bin\phantomjs.EXE ...verifying</div><div class="line">Writing location.js file PhantomJS is already installed on PATH at D:\Software\NodeJS\phantomjs-2.1.1\bin\phantomjs.EXE</div><div class="line">npm notice created a lockfile as package-lock.json. You should commit this file.</div><div class="line"></div><div class="line">npm WARN elasticsearch-head@0.0.0 license should be a valid SPDX license expression</div><div class="line">npm WARN optional SKIPPING OPTIONAL DEPENDENCY: fsevents@1.1.2 (node_modules\fsevents):</div><div class="line">npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for fsevents@</div><div class="line">1.1.2: wanted &#123;&quot;os&quot;:&quot;darwin&quot;,&quot;arch&quot;:&quot;any&quot;&#125; (current: &#123;&quot;os&quot;:&quot;win32&quot;,&quot;arch&quot;:&quot;x64&quot;&#125;)</div><div class="line"></div><div class="line">added 190 packages in 28.8s</div></pre></td></tr></table></figure>
+<p>终于可以执行：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">&gt; grunt server</div><div class="line">Running &quot;connect:server&quot; (connect) task</div><div class="line">Waiting forever...</div><div class="line">Started connect web server on http://localhost:9100</div></pre></td></tr></table></figure>
+</li>
+</ol>
+</li>
+</ol>
+<h1 id="安装cerebro"><a href="#安装cerebro" class="headerlink" title="安装cerebro"></a>安装cerebro</h1><p>cerebro提供的功能和head差不多，但是UI设计要好一些，直接到这里下载二进制： <a href="https://github.com/lmenezes/cerebro/releases" target="_blank" rel="external">https://github.com/lmenezes/cerebro/releases</a></p>
+<p>要求JAVA 8，我的CentOS之前安装的是JAVA 7：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">~/cerebro-0.6.7 # java -version</div><div class="line">java version &quot;1.7.0_151&quot;</div><div class="line">OpenJDK Runtime Environment (rhel-2.6.11.0.el6_9-x86_64 u151-b00)</div><div class="line">OpenJDK 64-Bit Server VM (build 24.151-b00, mixed mode)</div></pre></td></tr></table></figure></p>
+<p>先卸载掉JAVA 7：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">~/cerebro-0.6.7 # rpm -e --nodeps `rpm -qa | grep java`</div><div class="line">~/cerebro-0.6.7 # java -version</div><div class="line">-bash: /usr/bin/java: No such file or directory</div></pre></td></tr></table></figure></p>
+<p>然后直接去官网下载JDK 8(也可以只下载JRE)最新版本： <a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html" target="_blank" rel="external">http://www.oracle.com/technetwork/java/javase/downloads/index.html</a><br>下载的rpm包，安装：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">~/cerebro-0.6.7 # rpm -ivh jdk-8u144-linux-x64.rpm </div><div class="line">~/cerebro-0.6.7 # java -version</div><div class="line">java version &quot;1.8.0_144&quot;</div><div class="line">Java(TM) SE Runtime Environment (build 1.8.0_144-b01)</div><div class="line">Java HotSpot(TM) 64-Bit Server VM (build 25.144-b01, mixed mode)</div></pre></td></tr></table></figure></p>
+<p>运行：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">~/cerebro-0.6.7 # bin/cerebro</div><div class="line">[info] play.api.Play - Application started (Prod)</div><div class="line">[info] p.c.s.NettyServer - Listening for HTTP on /0:0:0:0:0:0:0:0:9000</div></pre></td></tr></table></figure></p>
+<p>前端访问9000端口，连接到ES地址即可，效果如图：<br><img src="/2017/09/27/install-elasticsearch-and-plugins/cerebro.png" alt="cerebro"></p>
+<h1 id="安装bigdesk"><a href="#安装bigdesk" class="headerlink" title="安装bigdesk"></a>安装bigdesk</h1><p>bigdesk和前面两个的作用不太一样，主要用来将_cluster/stats，_cluster/health， _cluster/state/nodes,routing_table,routing_nodes几个API的几个可视化展示出来，包括CPU/内存/Indices/Thread Pools/OS &amp; JVM &amp; Process &amp; Transport，这个版本支持5.x系列，下载：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git clone https://github.com/hlstudio/bigdesk</div></pre></td></tr></table></figure></p>
+<p>将_site目录移动到web服务器下或者直接用Python创建一个简单web服务器都可以运行，但是不能用https:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">python -m SimpleHTTPServer</div></pre></td></tr></table></figure></p>
+<p>根据控制台输出，可以看出默认启动在8000端口，如果你的防火墙阻止了8000端口，还需要放开防火墙，例如我的CentOS，我直接删除了拒绝规则：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">do ~ # iptables --line-number -L -nv </div><div class="line">Chain INPUT (policy ACCEPT 0 packets, 0 bytes)</div><div class="line">12   46598 4092K REJECT     all  --  *      *       0.0.0.0/0            0.0.0.0/0           reject-with icmp-host-prohibited </div><div class="line"></div><div class="line">do ~ # iptables -D INPUT 12</div></pre></td></tr></table></figure></p>
+<p>网页打开后，指定你要连接到的服务器地址，马上就会出数据：<br><img src="/2017/09/27/install-elasticsearch-and-plugins/bigdesk.png" alt="bigdesk"></p>
+<h1 id="安装kibana"><a href="#安装kibana" class="headerlink" title="安装kibana"></a>安装kibana</h1><p>kibana的主要用于数据可视化，将数据化成图标展示给用户，同样，也使用docker运行：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">docker run -v /root/esvolumn/public/kibana.104.yml:/usr/share/kibana/config/kibana.yml -p 5601:5601 kibana:5.3</div></pre></td></tr></table></figure></p>
+<p>上面，我将配置文件/usr/share/kibana/config/kibana.yml用外部的覆盖了，可以参考 <a href="https://www.elastic.co/guide/en/kibana/5.6/settings.html" target="_blank" rel="external">https://www.elastic.co/guide/en/kibana/5.6/settings.html</a> 修改 kibana.yml，例如设置要bind的地址为0.0.0.0，连接的URL为你想连接的远程服务器：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">server.host: &quot;0.0.0.0&quot;</div><div class="line">elasticsearch.url: &quot;http://200.200.88.104:9200&quot;</div><div class="line">elasticsearch.requestTimeout: 300000</div></pre></td></tr></table></figure></p>
+<p>安装好后出现错误：<br><img src="/2017/09/27/install-elasticsearch-and-plugins/kibana-error.png" alt="kibana-error"><br>原因是ES服务器端上次创建过.kibana index，将其删除：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> curl http://127.0.0.1:9200/_cat/indices/.kibana?v</div><div class="line">health status index   uuid                   pri rep docs.count docs.deleted store.size pri.store.size</div><div class="line">red    open   .kibana 9qewgRIcSpSisOyCjI5Yfg   1   1</div></pre></td></tr></table></figure></p>
+<p>我删除超时了，但是的确成功了：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> curl -XDELETE http://127.0.0.1:9200/.kibana</div><div class="line">&#123;"acknowledged":false&#125;</div><div class="line"></div><div class="line"><span class="meta">#</span> curl http://127.0.0.1:9200/_cat/indices/.kibana?v</div><div class="line">health status index   uuid                   pri rep docs.count docs.deleted store.size pri.store.size</div><div class="line">red    open   .kibana 9qewgRIcSpSisOyCjI5Yfg   1   1                                                  </div><div class="line"></div><div class="line"><span class="meta">#</span> curl -XDELETE http://127.0.0.1:9200/.kibana</div><div class="line">&#123;"error":&#123;"root_cause":[&#123;"type":"index_not_found_exception","reason":"no such index","index_uuid":"9qewgRIcSpSisOyCjI5Yfg","index":".kibana"&#125;],"type":"index_not_found_exception","reason":"no such index","index_uuid":"9qewgRIcSpSisOyCjI5Yfg","index":".kibana"&#125;,"status":404&#125;</div></pre></td></tr></table></figure></p>
+<p>重新访问，刚才显示Elasticsearch is still initializing the kibana index的地方，变成了如下错误：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">plugin:elasticsearch@5.3.2	 [search_phase_execution_exception] all shards failed</div></pre></td></tr></table></figure></p>
+<p>过几分钟,此错误消失，可以使用了：<br><img src="/2017/09/27/install-elasticsearch-and-plugins/kibana.png" alt="kibana"></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/ElasticSearch/" rel="tag"># ElasticSearch</a>
+          
+            <a href="/tags/安装/" rel="tag"># 安装</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/08/09/file-access-time/" rel="next" title="文件的access time">
+                <i class="fa fa-chevron-left"></i> 文件的access time
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/10/14/free-ssl-cert-in-website-for-https/" rel="prev" title="博客网站开通免费https支持(ssl证书)">
+                博客网站开通免费https支持(ssl证书) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">20</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#安装Elasticsearch"><span class="nav-number">1.</span> <span class="nav-text">安装Elasticsearch</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#安装elasticsearch-head-docker版本"><span class="nav-number">2.</span> <span class="nav-text">安装elasticsearch-head docker版本</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#安装elasticsearch-head-windows版本"><span class="nav-number">3.</span> <span class="nav-text">安装elasticsearch-head windows版本</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#安装cerebro"><span class="nav-number">4.</span> <span class="nav-text">安装cerebro</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#安装bigdesk"><span class="nav-number">5.</span> <span class="nav-text">安装bigdesk</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#安装kibana"><span class="nav-number">6.</span> <span class="nav-text">安装kibana</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

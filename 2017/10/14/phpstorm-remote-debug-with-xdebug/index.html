@@ -81,7 +81,7 @@
 <meta property="og:image" content="http://mnstory.net/2017/10/14/phpstorm-remote-debug-with-xdebug/server-config.png">
 <meta property="og:image" content="http://mnstory.net/2017/10/14/phpstorm-remote-debug-with-xdebug/debug-configure.png">
 <meta property="og:image" content="http://mnstory.net/2017/10/14/phpstorm-remote-debug-with-xdebug/debuging.png">
-<meta property="og:updated_time" content="2017-10-14T09:43:54.000Z">
+<meta property="og:updated_time" content="2017-10-14T10:12:16.058Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="使用XDebug加PHPStorm远程调试PHP">
 <meta name="twitter:description" content="PHPStorm是一款非常强大的PHP IDE，一般来说，我们的PHP程序是运行在服务器端(服务器端一般是Linux)，编辑在本地(一般是Windows)，这样的开发模式，最麻烦的，就是写好代码，可能要编译，要上传，要重启，要调试。好在，这些，PHPStorm都考虑到了。自动上传，建议使用PHPStorm的Deployment功能，只要映射好路径，一次配置，终身受益。现在，我们单说说，如何远程调试">
@@ -366,11 +366,11 @@ inst=$build/php-5.6.15/environment/build
 <p>  上面的配置是什么意思，请参考这个地方：<a href="http://www.xingfeilong.cn/article/2013-08-28/86.shtml" target="_blank" rel="external">http://www.xingfeilong.cn/article/2013-08-28/86.shtml</a></p>
 <blockquote>
 <p>如果</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">&gt; zend_extension=xdebug.so</div><div class="line">&gt;</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">zend_extension=xdebug.so</div></pre></td></tr></table></figure>
 <p>写成了</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">&gt; extension=xdebug.so</div><div class="line">&gt;</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">extension=xdebug.so</div></pre></td></tr></table></figure>
 <p>会报错：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">&gt; 16:18	Cannot accept external Xdebug connection: Cannot evaluate expression &apos;isset($_SERVER[&apos;PHP_IDE_CONFIG&apos;])&apos;</div><div class="line">&gt;</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">16:18	Cannot accept external Xdebug connection: Cannot evaluate expression &apos;isset($_SERVER[&apos;PHP_IDE_CONFIG&apos;])&apos;</div></pre></td></tr></table></figure>
 </blockquote>
 <p>重启Apache，再用phpinfo()查看，就能搜索到xdebug模块相关的信息了。</p>
 </li>
@@ -524,7 +524,7 @@ inst=$build/php-5.6.15/environment/build
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-count">9</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -537,7 +537,7 @@ inst=$build/php-5.6.15/environment/build
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">18</span>
+                <span class="site-state-item-count">20</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
