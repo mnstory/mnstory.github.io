@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="PHPStorm,PHP,XDebug,Debug," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="PHPStorm是一款非常强大的PHP IDE，一般来说，我们的PHP程序是运行在服务器端(服务器端一般是Linux)，编辑在本地(一般是Windows)，这样的开发模式，最麻烦的，就是写好代码，可能要编译，要上传，要重启，要调试。好在，这些，PHPStorm都考虑到了。自动上传，建议使用PHPStorm的Deployment功能，只要映射好路径，一次配置，终身受益。现在，我们单说说，如何远程调试">
+<meta name="keywords" content="PHPStorm,PHP,XDebug,Debug">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用XDebug加PHPStorm远程调试PHP">
+<meta property="og:url" content="http://mnstory.net/2017/10/14/phpstorm-remote-debug-with-xdebug/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="PHPStorm是一款非常强大的PHP IDE，一般来说，我们的PHP程序是运行在服务器端(服务器端一般是Linux)，编辑在本地(一般是Windows)，这样的开发模式，最麻烦的，就是写好代码，可能要编译，要上传，要重启，要调试。好在，这些，PHPStorm都考虑到了。自动上传，建议使用PHPStorm的Deployment功能，只要映射好路径，一次配置，终身受益。现在，我们单说说，如何远程调试">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2017/10/14/phpstorm-remote-debug-with-xdebug/ssh-reverse-proxy.png">
+<meta property="og:image" content="http://mnstory.net/2017/10/14/phpstorm-remote-debug-with-xdebug/server-config.png">
+<meta property="og:image" content="http://mnstory.net/2017/10/14/phpstorm-remote-debug-with-xdebug/debug-configure.png">
+<meta property="og:image" content="http://mnstory.net/2017/10/14/phpstorm-remote-debug-with-xdebug/debuging.png">
+<meta property="og:updated_time" content="2017-10-14T09:43:54.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="使用XDebug加PHPStorm远程调试PHP">
+<meta name="twitter:description" content="PHPStorm是一款非常强大的PHP IDE，一般来说，我们的PHP程序是运行在服务器端(服务器端一般是Linux)，编辑在本地(一般是Windows)，这样的开发模式，最麻烦的，就是写好代码，可能要编译，要上传，要重启，要调试。好在，这些，PHPStorm都考虑到了。自动上传，建议使用PHPStorm的Deployment功能，只要映射好路径，一次配置，终身受益。现在，我们单说说，如何远程调试">
+<meta name="twitter:image" content="http://mnstory.net/2017/10/14/phpstorm-remote-debug-with-xdebug/ssh-reverse-proxy.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2017/10/14/phpstorm-remote-debug-with-xdebug/"/>
+
+
+
+
+
+  <title>使用XDebug加PHPStorm远程调试PHP | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/10/14/phpstorm-remote-debug-with-xdebug/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">使用XDebug加PHPStorm远程调试PHP</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-14T13:07:40+00:00">
+                2017-10-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>PHPStorm是一款非常强大的PHP IDE，一般来说，我们的PHP程序是运行在服务器端(服务器端一般是Linux)，编辑在本地(一般是Windows)，这样的开发模式，最麻烦的，就是写好代码，可能要编译，要上传，要重启，要调试。<br>好在，这些，PHPStorm都考虑到了。自动上传，建议使用PHPStorm的Deployment功能，只要映射好路径，一次配置，终身受益。<br>现在，我们单说说，如何远程调试。</p>
+<h1 id="安装xdebug"><a href="#安装xdebug" class="headerlink" title="安装xdebug"></a>安装xdebug</h1><p>这是必要步骤，不安装xdebug也可以安装Zend的调试extention，之前我写过一篇使用zend studio的介绍，参考 <a href="http://mnstory.net/2013/10/zendserver-zendstudio-install-usage/">http://mnstory.net/2013/10/zendserver-zendstudio-install-usage/</a> 。xdebug的安装比较麻烦，如果发行版不自带，就要从源码安装，源码安装，又依赖于php的devel包，我们的php是自己编译的，编译php前，又要使用到apache的apxs，所以还得编译apache。<br>假设 所有的编译，都在$build目录进行。<br><a id="more"></a><br><!-- 
+build=~/php
+inst=$build/php-5.6.15/environment/build
+--></p>
+<ol>
+<li><p>编译apache<br> 进入Apache源码目录：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">cd $build/httpd-2.2.31</div></pre></td></tr></table></figure>
+<p> 执行configure，编译后输出到哪个目录，可以指定一下，我统一到$inst：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">./configure --prefix=$inst/apache --enable-so --enable-module=shared --enable-mods-shared='rewrite headers expires ssl'</div></pre></td></tr></table></figure>
+<p> 执行编译：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">make -j8 &amp;&amp; make install</div></pre></td></tr></table></figure>
+</li>
+<li><p>编译php<br> 进入 php源码目录：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">cd $build/php5</div></pre></td></tr></table></figure>
+<p> 执行configure，同样指定输出目录，with apxs2是用来支持apache的，有这个会生成libphp5.so。</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">./configure --prefix=$inst/php5  --with-apxs2=$inst/apache/bin/apxs</div></pre></td></tr></table></figure>
+<p> 执行编译：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">make -j8 &amp;&amp; make install</div></pre></td></tr></table></figure>
+<blockquote>
+<p>有的人，将 &amp;&amp; 写成 &amp;，这是不正确的。</p>
+</blockquote>
+</li>
+<li><p>编译xdebug</p>
+<ul>
+<li>下载<br>  编译xdebug前，要先下载xdebug源码，一般的方法是，将phpinfo()输出的网页，copy到 <a href="https://xdebug.org/wizard.php，其会给出对应版本的xdebug下载链接。" target="_blank" rel="external">https://xdebug.org/wizard.php，其会给出对应版本的xdebug下载链接。</a></li>
+<li><p>编译<br>  进入xdebug源码目录执行：</p>
+  <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">[compiler xdebug]# $inst/php5/bin/phpize</div><div class="line">Configuring for:</div><div class="line">PHP Api Version:         20131106</div><div class="line">Zend Module Api No:      20131226</div><div class="line">Zend Extension Api No:   220131226</div><div class="line">    </div><div class="line">[compiler xdebug]# ./configure --with-php-config=$inst/php5/bin/php-config</div><div class="line">[compiler xdebug]# make &amp;&amp; make install</div><div class="line">[compiler xdebug]# ls </div><div class="line"><span class="meta">$</span>inst/php5/lib/php/extensions/no-debug-non-zts-20131226/xdebug.so</div></pre></td></tr></table></figure>
+</li>
+<li><p>安装</p>
+  <!-- 
+  phproot=/home/fantom/party/apache/php5
+  -->
+<p>  找到运行环境的php安装根目录，假设为$phproot，将xdebug.so放到目标机的 $phproot/lib/php/extensions 目录。把下面的信息添加到 $phproot/lib/php.ini</p>
+  <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">zend_extension = $phproot/lib/php/extensions/xdebug.so # 这个$phproot记得替换成你的路径</div><div class="line">[xdebug]</div><div class="line">xdebug.idekey = "PHPSTORM" #因为DBGp调试代理是可以做调试分发的，所以，定义一个IDEKEY，目的是让调试器知道，是不是发给自己的请求</div><div class="line">xdebug.remote_enable = 1   # 设置为1的时候，会先参数链接到remote_host和remote_port指定的调试器端口，如果连接不上，就继续执行，类似设置了0</div><div class="line"><span class="meta">#</span>xdebug.remote_mode = "req" # 有两个值，"req"(默认)表示一旦脚本开始执行，Xdebug就将尝试连接到调试客户端；"jit"当错误发生时，才尝试连接到调试客户端</div><div class="line"><span class="meta">#</span>xdebug.remote_handler = "dbgp" # 也就是调试走哪种协议，有老的PHP3协议，也有GDB协议，DBGP是当前的默认协议，也是当前主流支持的协议</div><div class="line">xdebug.remote_connect_back = 0 # 如果为1，xdebug会通过$_SERVER[‘REMOTE_ADDR’]变量，向发起HTTP请求的客户端发起链接，和remote_host功能类似，但是优先级比remote_host高，所以，设置了这个选项就会忽略remote_host，由于我的运行时服务器不能主动链接IDE所在PC，所以不能开启自动回连模式(内网访问外网的网页，也不能开启)</div><div class="line"><span class="meta">#</span>xdebug.remote_host = "localhost" #默认当然是本机了</div><div class="line">xdebug.remote_port = 9909      # 默认端口是9000，由于担心服务器端口冲突，我修改为9909，建议你没有端口冲突时不修改</div><div class="line"><span class="meta">#</span>xdebug.remote_autostart = 0   # 这个为1，会忽略COOKIE或者POST/GET中带的XDEBUG_SESSION参数，不管有没有，都会启动调试，所以，还是设置为0比较好，默认0</div></pre></td></tr></table></figure>
+  <!--
+  zend_extension = /home/fantom/party/apache/php5/lib/php/extensions/xdebug.so
+  [xdebug]
+  xdebug.idekey = "PHPSTORM"
+  xdebug.remote_enable = 1
+  xdebug.remote_connect_back = 0 
+  xdebug.remote_port = 9909
+  -->
+<p>  上面的配置是什么意思，请参考这个地方：<a href="http://www.xingfeilong.cn/article/2013-08-28/86.shtml" target="_blank" rel="external">http://www.xingfeilong.cn/article/2013-08-28/86.shtml</a></p>
+<blockquote>
+<p>如果</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">&gt; zend_extension=xdebug.so</div><div class="line">&gt;</div></pre></td></tr></table></figure>
+<p>写成了</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">&gt; extension=xdebug.so</div><div class="line">&gt;</div></pre></td></tr></table></figure>
+<p>会报错：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">&gt; 16:18	Cannot accept external Xdebug connection: Cannot evaluate expression &apos;isset($_SERVER[&apos;PHP_IDE_CONFIG&apos;])&apos;</div><div class="line">&gt;</div></pre></td></tr></table></figure>
+</blockquote>
+<p>重启Apache，再用phpinfo()查看，就能搜索到xdebug模块相关的信息了。</p>
+</li>
+</ul>
+</li>
+</ol>
+<h1 id="配置代理"><a href="#配置代理" class="headerlink" title="配置代理"></a>配置代理</h1><p>一般用户不需要这一步，我是由于内网远程调试外网服务器代码，所以需要反向代理。上面说了，我的运行时服务器不能主动链接IDE所在PC（类似于本地调试公网服务器上的代码），所以，需要做反向代理，因为是的windows上连接服务器使用的是xshell，于是直接利用xshell配置隧道：<br><img src="/2017/10/14/phpstorm-remote-debug-with-xdebug/ssh-reverse-proxy.png" alt="reverse proxy"></p>
+<p>上图的配置代表，运行时服务器连接本机的9909，会转到IDE所在的PC 9000端口（当然，你的XSHELL得先从PC上连接到运行时服务器）。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">[server ~]# netstat -nap | grep 9909</div><div class="line">tcp        0      0 127.0.0.1:9909          0.0.0.0:*               LISTEN      18152/sshd: root@pt </div><div class="line">tcp        0      0 127.0.0.1:9909          127.0.0.1:50152         ESTABLISHED 18152/sshd: root@pt </div><div class="line">tcp        0      0 127.0.0.1:52150         127.0.0.1:9909          ESTABLISHED 17029/httpd</div></pre></td></tr></table></figure>
+<h1 id="IDE配置"><a href="#IDE配置" class="headerlink" title="IDE配置"></a>IDE配置</h1><ol>
+<li><p>先从服务器上获取源码<br> 虽然我们可能只修改一小部分源码，但是为了调试清晰，可以把相关源码全部下载下来，但是，往往相关源码不在同一个目录，下载下来后，可以在外层创建一个目录，让所有源码包含在工程内，方便对工程内不同路径做映射。</p>
+ <!--
+ tar -zcvf ~/code.tar.gz /home/fantom/share/php/framework /home/fantom/www /home/fantom/apps/secvisual/appserver
+ -->
+<p> 解压到PC上的任意目录，再用PHPStrom从这个目录创建一个工程。</p>
+</li>
+<li><p>配置调试服务器和映射关系<br> 打开File菜单 -&gt; Settings -&gt; 左树 Languages &amp; Frameworks / PHP / Servers -&gt; 新建一个Server,输入服务器的IP和端口，最关键的是，将本地工程文件夹和服务器上的文件夹对应起来，方便调试的时候找到源码：<br> <img src="/2017/10/14/phpstorm-remote-debug-with-xdebug/server-config.png" alt="server-config"></p>
+</li>
+<li><p>配置DEBUG<br> 打开Run菜单 -&gt; Edit Configurations -&gt; 选择模板PHP Remote Debug，创建一个新的配置，Servers就选择刚才配置的，Ide Key设置为php.ini里面xdebug.idekey设置的。<br> <img src="/2017/10/14/phpstorm-remote-debug-with-xdebug/debug-configure.png" alt="debug-configure"></p>
+</li>
+<li><p>安装浏览器插件xdebug helper<br> 在浏览器端，安装xdebug helper插件，由于chrome应用商店被墙，此插件可以自行搜索，安装好后，再插件的选项配置中，IDE key配置为PhpStorm，然后选择Debug模式，再打开PHP页面时，通过chrome F12可以看到，cookie里面会带有：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">Cookie:XDEBUG_SESSION=PHPSTORM</div></pre></td></tr></table></figure>
+<blockquote>
+<p>此插件的唯一目的就是在请求里加入 XDEBUG_SESSION=PHPSTORM，若你没有安装，可以试试手动在URL参数里加入，当然，也可以在之前配置php.ini的时候，设置 xdebug.remote_autostart = 1</p>
+</blockquote>
+</li>
+<li><p>调试<br> 打开监听，下断点，这个时候，再次访问浏览器，如果所有配置都正确，PHPStorm会在你的断点处暂停下来。<br> <img src="/2017/10/14/phpstorm-remote-debug-with-xdebug/debuging.png" alt="debuging"></p>
+</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/PHPStorm/" rel="tag"># PHPStorm</a>
+          
+            <a href="/tags/PHP/" rel="tag"># PHP</a>
+          
+            <a href="/tags/XDebug/" rel="tag"># XDebug</a>
+          
+            <a href="/tags/Debug/" rel="tag"># Debug</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/10/14/free-ssl-cert-in-website-for-https/" rel="next" title="博客网站开通免费https支持(ssl证书)">
+                <i class="fa fa-chevron-left"></i> 博客网站开通免费https支持(ssl证书)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/10/14/profile-php-with-xdebug/" rel="prev" title="使用XDebug Profile PHP性能">
+                使用XDebug Profile PHP性能 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">18</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#安装xdebug"><span class="nav-number">1.</span> <span class="nav-text">安装xdebug</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#配置代理"><span class="nav-number">2.</span> <span class="nav-text">配置代理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#IDE配置"><span class="nav-number">3.</span> <span class="nav-text">IDE配置</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

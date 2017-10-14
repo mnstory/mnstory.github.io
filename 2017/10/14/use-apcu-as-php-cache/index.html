@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="PHP,APC,Cache," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="PHP加速器，有很多，目前的现状，可参考 https://en.wikipedia.org/wiki/List_of_PHP_accelerators 。 APC先说APC，全称Alternative PHP Cache，参考 http://pecl.php.net/package/APC ，这是APCu的前生，更新到2012年3.1.13版本，就没有再更新了，为什么没有更新了，一说它有一些BUG">
+<meta name="keywords" content="PHP,APC,Cache">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHP使用APCu做用户缓存">
+<meta property="og:url" content="http://mnstory.net/2017/10/14/use-apcu-as-php-cache/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="PHP加速器，有很多，目前的现状，可参考 https://en.wikipedia.org/wiki/List_of_PHP_accelerators 。 APC先说APC，全称Alternative PHP Cache，参考 http://pecl.php.net/package/APC ，这是APCu的前生，更新到2012年3.1.13版本，就没有再更新了，为什么没有更新了，一说它有一些BUG">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2017/10/14/use-apcu-as-php-cache/view-host-stats.png">
+<meta property="og:image" content="http://mnstory.net/2017/10/14/use-apcu-as-php-cache/user-cache-entries.png">
+<meta property="og:updated_time" content="2017-10-14T10:05:41.572Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="PHP使用APCu做用户缓存">
+<meta name="twitter:description" content="PHP加速器，有很多，目前的现状，可参考 https://en.wikipedia.org/wiki/List_of_PHP_accelerators 。 APC先说APC，全称Alternative PHP Cache，参考 http://pecl.php.net/package/APC ，这是APCu的前生，更新到2012年3.1.13版本，就没有再更新了，为什么没有更新了，一说它有一些BUG">
+<meta name="twitter:image" content="http://mnstory.net/2017/10/14/use-apcu-as-php-cache/view-host-stats.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2017/10/14/use-apcu-as-php-cache/"/>
+
+
+
+
+
+  <title>PHP使用APCu做用户缓存 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/10/14/use-apcu-as-php-cache/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">PHP使用APCu做用户缓存</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-14T13:08:37+00:00">
+                2017-10-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>PHP加速器，有很多，目前的现状，可参考 <a href="https://en.wikipedia.org/wiki/List_of_PHP_accelerators" target="_blank" rel="external">https://en.wikipedia.org/wiki/List_of_PHP_accelerators</a> 。</p>
+<h1 id="APC"><a href="#APC" class="headerlink" title="APC"></a>APC</h1><p>先说APC，全称Alternative PHP Cache，参考 <a href="http://pecl.php.net/package/APC" target="_blank" rel="external">http://pecl.php.net/package/APC</a> ，这是APCu的前生，更新到2012年3.1.13版本，就没有再更新了，为什么没有更新了，一说它有一些BUG，比如进程意外结束不能解锁等，但是所有软件都是有BUG的，根本的原因应该是受到Zend OpCache的冲击，科班出身的Zend OpCache已经做得很好了，这外来的孩子变没得玩了。</p>
+<p>APC提供的功能，主要有二，一是 OpCode Cache， 一是 user cache。<br><a id="more"></a></p>
+<ol>
+<li>OpCode Cache<br>OpCode就是缓存PHP源文件分析后编译成可供解释器执行的中间码，类似于JAVA的Bytecodes，类似于CPU执行的汇编指令，此功能推荐用Zend OpCache ( <a href="https://github.com/zendtech/ZendOptimizerPlus" target="_blank" rel="external">https://github.com/zendtech/ZendOptimizerPlus</a> )替代。</li>
+<li>user cache<br>用户可以通过APC接口设置一些缓存项，这功能非常有用，比如，载入一个资源文件，每个PHP进程都要打开文件，读文件，如果我将这个资源设置到Cache里，从Cache读取，自然是比原有的方式快的。<br>很遗憾，Zend OpCache没有提供user cache操作接口，所以，APC的这个优秀功能以阉割了OpCode Cache的方式被保留了下来，叫做APCu(APC User Cache)。<br>对于user cache，APCu使用的是共享内存，本机使用，速度非常快，缺点是不能跨主机，如果你想要跨主机的方案，可以考虑Memcache或redis，但是走网络，速度相较APCu慢。</li>
+</ol>
+<h1 id="APCu-安装"><a href="#APCu-安装" class="headerlink" title="APCu 安装"></a>APCu 安装</h1><p>安装的关键是APCu版本要和自己的PHP版本匹配，我的PHP版本是5.6.15，通过APCu官网 <a href="http://pecl.php.net/package/APCu" target="_blank" rel="external">http://pecl.php.net/package/APCu</a> 看不出应该下载哪个版本，我是点开为windows预编译的描述 <a href="https://pecl.php.net/package/APCu/4.0.11/windows" target="_blank" rel="external">https://pecl.php.net/package/APCu/4.0.11/windows</a> 后才发现，4.0.11适合PHP 5.6，而5.x版本应该是为PHP 7.x准备的。于是下载 <a href="https://pecl.php.net/get/apcu-4.0.11.tgz" target="_blank" rel="external">https://pecl.php.net/get/apcu-4.0.11.tgz</a> ，解压，进入解压后的目录。<br>编译安装和之前安装xdebug类似，参考 <a href="https://mnstory.net/2017/10/14/phpstorm-remote-debug-with-xdebug">https://mnstory.net/2017/10/14/phpstorm-remote-debug-with-xdebug</a> ，首先执行phpize：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">[compiler apcu-4.0.11]# $inst/php5/bin/phpize</div><div class="line">Configuring for:</div><div class="line">PHP Api Version:         20131106</div><div class="line">Zend Module Api No:      20131226</div><div class="line">Zend Extension Api No:   220131226</div></pre></td></tr></table></figure></p>
+<p>然后执行configure：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[compiler apcu-4.0.11]# ./configure --with-php-config=$inst/php5/bin/php-config</div></pre></td></tr></table></figure></p>
+<p>再执行make install：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">[compiler apcu-4.0.11]# make &amp;&amp; make install</div><div class="line">...</div><div class="line">Installing shared extensions:     $inst/php5/lib/php/extensions/no-debug-non-zts-20131226/</div></pre></td></tr></table></figure></p>
+<p>从上述Installing shared extensions目录中取出编译好的apcu.so，复制到目标主机的$phproot/lib/php/extensions目录，修改php.ini，添加：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">[apc]</div><div class="line">extension      = apcu.so</div><div class="line">apc.enabled    = on</div><div class="line">apc.shm_size   = 256M</div><div class="line">apc.enable_cli = on</div></pre></td></tr></table></figure></p>
+<p>重启Apache后，可以通过phpinfo()查看是否加载了APCu模块。</p>
+<h1 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h1><p>我有多种Cache切换的需求，所以，先封装了一个CacheDriver抽象类，然后在 APCuCacheDriver 里面实现get和put方法。<br><figure class="highlight php"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div></pre></td><td class="code"><pre><div class="line"><span class="meta">&lt;?php</span></div><div class="line"><span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">CacheDriver</span> </span>&#123;</div><div class="line">    <span class="keyword">protected</span> $prefix;</div><div class="line"></div><div class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span><span class="params">($prefix)</span> </span>&#123;</div><div class="line">        <span class="keyword">$this</span>-&gt;prefix = $prefix;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">abstract</span> <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">get</span><span class="params">($id, $paramKey)</span></span>;</div><div class="line"></div><div class="line">    <span class="comment"># set ttl at put stage, has one benefit: cacher system can delete timeout entry automatically</span></div><div class="line">    <span class="keyword">abstract</span> <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">put</span><span class="params">($id, $paramKey, $data, $ttl)</span></span>;</div><div class="line"></div><div class="line">    <span class="comment">//abstract public function delete($id);</span></div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">APCuCacheDriver</span> <span class="keyword">extends</span> <span class="title">CacheDriver</span> </span>&#123;</div><div class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span><span class="params">($prefix = <span class="string">"your-prefix-or-table-name"</span>)</span> </span>&#123;</div><div class="line">        <span class="keyword">parent</span>::__construct($prefix);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">get</span><span class="params">($id, $paramKey)</span> </span>&#123;</div><div class="line">        $success = <span class="keyword">false</span>;</div><div class="line">        $stored = apc_fetch($id, $success);</div><div class="line"></div><div class="line">        <span class="keyword">if</span> ($success === <span class="keyword">false</span> || count($stored) !== <span class="number">4</span>) &#123;</div><div class="line">            ldebug(<span class="string">"cache $id "</span>.($success === <span class="keyword">false</span> ? <span class="string">"not found"</span>:<span class="string">"found, but result "</span>.print_r($stored, <span class="keyword">true</span>).<span class="string">" is not right"</span>));</div><div class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">list</span>($updateTime, $ttl, $cacheParamKey, $data) = $stored;</div><div class="line">        $now = time();</div><div class="line">        <span class="keyword">if</span> ($now &lt; $updateTime || (($now - $updateTime) &gt; $ttl)) &#123;</div><div class="line">            ldebug(<span class="string">"cache $id found, but timeout "</span>.($now - $updateTime).<span class="string">" out of ttl $ttl"</span>);</div><div class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">if</span> ($paramKey &amp;&amp; $cacheParamKey != $paramKey) &#123;</div><div class="line">            ldebug(<span class="string">"cache $id found, but paramKey not equal, r=$paramKey, c=$cacheParamKey"</span>);</div><div class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">return</span> unserialize($data);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">put</span><span class="params">($id, $paramKey, $data, $ttl)</span> </span>&#123;</div><div class="line">        <span class="keyword">if</span> (<span class="keyword">null</span> == $data) &#123;</div><div class="line">            lerror(<span class="string">"put $id to cache, found invalid param, null data"</span>);</div><div class="line">            <span class="keyword">return</span> <span class="keyword">false</span>;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">return</span> apcu_store (</div><div class="line">            $id,</div><div class="line">            <span class="keyword">array</span>(time(), $ttl, $paramKey, serialize($data)),</div><div class="line">            $ttl</div><div class="line">        );</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Cacher</span> </span>&#123;</div><div class="line">    <span class="keyword">private</span> $driver;</div><div class="line"></div><div class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">$this</span>-&gt;driver = <span class="keyword">new</span> APCuCacheDriver();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">call</span><span class="params">($callable, $params, $cacheParams = array<span class="params">()</span>)</span> </span>&#123;</div><div class="line">        <span class="comment">// no need cache</span></div><div class="line">        <span class="keyword">if</span> (<span class="keyword">empty</span>($cacheParams) || !array_key_exists(<span class="string">'id'</span>, $cacheParams)) &#123;</div><div class="line">            <span class="keyword">return</span> call_user_func_array($callable, $params);</div><div class="line">        &#125;</div><div class="line">        $startTime = time();</div><div class="line">        $paramKey = array_key_exists(<span class="string">'paramKey'</span>, $cacheParams) ? $cacheParams[<span class="string">'paramKey'</span>] : json_encode($params);</div><div class="line">        $ttl = array_key_exists(<span class="string">'ttl'</span>, $cacheParams) ? $cacheParams[<span class="string">'ttl'</span>] : <span class="number">180</span>;</div><div class="line"></div><div class="line">        $data = <span class="keyword">$this</span>-&gt;driver-&gt;get($cacheParams[<span class="string">'id'</span>], $paramKey);</div><div class="line">        <span class="keyword">if</span> (<span class="keyword">null</span> != $data) &#123;</div><div class="line">            ldebug(<span class="string">"Hit "</span>.$cacheParams[<span class="string">'id'</span>].<span class="string">": cost "</span> .(time() - $startTime). <span class="string">" seconds. data="</span>.print_r($data, <span class="keyword">true</span>));</div><div class="line">            <span class="keyword">return</span> $data;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        $data = call_user_func_array($callable, $params);</div><div class="line">        <span class="keyword">if</span> (<span class="keyword">null</span> != $data) &#123;</div><div class="line">            <span class="keyword">$this</span>-&gt;driver-&gt;put($cacheParams[<span class="string">'id'</span>], $paramKey, $data, $ttl);</div><div class="line">        &#125;</div><div class="line">        linfo(<span class="string">"NOT Hit "</span>.$cacheParams[<span class="string">'id'</span>].<span class="string">": cost "</span> .(time() - $startTime). <span class="string">" seconds. data="</span>.print_r($data, <span class="keyword">true</span>));</div><div class="line">        <span class="keyword">return</span> $data;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>上面的paramKey参数是我自己的需求，类似于同样的ID下，可能会有不同的请求参数，这样Cache Entry即便命中，也只能作废，一般情况不需要这么考虑。剩下要做的，就是调用Cacher API：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">// an example, when use elasticsearch, call it like this!</div><div class="line">function query($params = array(), $cacheParams = array())</div><div class="line">&#123;</div><div class="line">    static $es = null;</div><div class="line">    if (null == $es) &#123;</div><div class="line">        $es = ClientBuilder::create()-&gt;build();</div><div class="line">    &#125;</div><div class="line">    $cacher = new Cacher();</div><div class="line">    return $cacher-&gt;call(array($es, &apos;search&apos;), array($params), $cacheParams);</div><div class="line">&#125;</div><div class="line"></div><div class="line">query($queryParams, array(&apos;id&apos;=&gt;&apos;your-cache-id&apos;));</div></pre></td></tr></table></figure></p>
+<h1 id="Cache效果报表"><a href="#Cache效果报表" class="headerlink" title="Cache效果报表"></a>Cache效果报表</h1><p>将 <a href="https://raw.githubusercontent.com/krakjoe/apcu/master/apc.php" target="_blank" rel="external">https://raw.githubusercontent.com/krakjoe/apcu/master/apc.php</a> 文件下载到 Apache 的 Document Root下，编辑下文件，如果是自己临时使用，可以关闭认证：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">defaults(&apos;USE_AUTHENTICATION&apos;,0);</div></pre></td></tr></table></figure></p>
+<p>然后浏览器打开，即可看到APCu缓存相关信息：<br><img src="/2017/10/14/use-apcu-as-php-cache/view-host-stats.png" alt="view-host-stats"></p>
+<p>查看用户缓存项：<br><img src="/2017/10/14/use-apcu-as-php-cache/user-cache-entries.png" alt="user-cache-entries"></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/PHP/" rel="tag"># PHP</a>
+          
+            <a href="/tags/APC/" rel="tag"># APC</a>
+          
+            <a href="/tags/Cache/" rel="tag"># Cache</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/10/14/profile-php-with-xdebug/" rel="next" title="使用XDebug Profile PHP性能">
+                <i class="fa fa-chevron-left"></i> 使用XDebug Profile PHP性能
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">18</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#APC"><span class="nav-number">1.</span> <span class="nav-text">APC</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#APCu-安装"><span class="nav-number">2.</span> <span class="nav-text">APCu 安装</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用"><span class="nav-number">3.</span> <span class="nav-text">使用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Cache效果报表"><span class="nav-number">4.</span> <span class="nav-text">Cache效果报表</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

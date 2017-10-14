@@ -53,7 +53,7 @@
 <link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="net,docker,macvlan," />
+  <meta name="keywords" content="PHP,XDebug,Profile," />
 
 
 
@@ -69,20 +69,21 @@
 
 
 
-<meta name="description" content="MACVLAN模式MACVLAN有四种模式，分别是Bridge（默认），Private，VEPA(Virtual Ethernet Port Aggregator)，Passthru。这些类型的区别，网上比较多，不细说，我只配置默认的Bridge模式。">
-<meta name="keywords" content="net,docker,macvlan">
+<meta name="description" content="接上一篇《使用XDebug加PHPStorm远程调试PHP》https://mnstory.net/2017/10/14/phpstorm-remote-debug-with-xdebug ，既然我们已经按照好了XDebug，那再试试其Profile功能。">
+<meta name="keywords" content="PHP,XDebug,Profile">
 <meta property="og:type" content="article">
-<meta property="og:title" content="为Docker配置MACVLAN网络">
-<meta property="og:url" content="http://mnstory.net/2017/07/17/macvlan-for-docker/index.html">
+<meta property="og:title" content="使用XDebug Profile PHP性能">
+<meta property="og:url" content="http://mnstory.net/2017/10/14/profile-php-with-xdebug/index.html">
 <meta property="og:site_name" content="码农故事">
-<meta property="og:description" content="MACVLAN模式MACVLAN有四种模式，分别是Bridge（默认），Private，VEPA(Virtual Ethernet Port Aggregator)，Passthru。这些类型的区别，网上比较多，不细说，我只配置默认的Bridge模式。">
+<meta property="og:description" content="接上一篇《使用XDebug加PHPStorm远程调试PHP》https://mnstory.net/2017/10/14/phpstorm-remote-debug-with-xdebug ，既然我们已经按照好了XDebug，那再试试其Profile功能。">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http://mnstory.net/2017/07/17/macvlan-for-docker/bridge.png">
-<meta property="og:updated_time" content="2017-10-01T14:28:54.000Z">
+<meta property="og:image" content="http://mnstory.net/2017/10/14/profile-php-with-xdebug/webgrind-search.png">
+<meta property="og:image" content="http://mnstory.net/2017/10/14/profile-php-with-xdebug/webgrind-search-call.png">
+<meta property="og:updated_time" content="2017-10-14T09:59:42.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="为Docker配置MACVLAN网络">
-<meta name="twitter:description" content="MACVLAN模式MACVLAN有四种模式，分别是Bridge（默认），Private，VEPA(Virtual Ethernet Port Aggregator)，Passthru。这些类型的区别，网上比较多，不细说，我只配置默认的Bridge模式。">
-<meta name="twitter:image" content="http://mnstory.net/2017/07/17/macvlan-for-docker/bridge.png">
+<meta name="twitter:title" content="使用XDebug Profile PHP性能">
+<meta name="twitter:description" content="接上一篇《使用XDebug加PHPStorm远程调试PHP》https://mnstory.net/2017/10/14/phpstorm-remote-debug-with-xdebug ，既然我们已经按照好了XDebug，那再试试其Profile功能。">
+<meta name="twitter:image" content="http://mnstory.net/2017/10/14/profile-php-with-xdebug/webgrind-search.png">
 
 
 
@@ -112,13 +113,13 @@
 
 
 
-  <link rel="canonical" href="http://mnstory.net/2017/07/17/macvlan-for-docker/"/>
+  <link rel="canonical" href="http://mnstory.net/2017/10/14/profile-php-with-xdebug/"/>
 
 
 
 
 
-  <title>为Docker配置MACVLAN网络 | 码农故事</title>
+  <title>使用XDebug Profile PHP性能 | 码农故事</title>
   
 
 
@@ -245,7 +246,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/07/17/macvlan-for-docker/">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/10/14/profile-php-with-xdebug/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="mnstory.net">
@@ -262,7 +263,7 @@
 
         
         
-          <h2 class="post-title" itemprop="name headline">为Docker配置MACVLAN网络</h2>
+          <h2 class="post-title" itemprop="name headline">使用XDebug Profile PHP性能</h2>
         
 
         <div class="post-meta">
@@ -274,8 +275,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-07-17T10:07:37+08:00">
-                2017-07-17
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-14T13:07:45+00:00">
+                2017-10-14
               </time>
             
 
@@ -317,20 +318,26 @@
       
 
       
-        <h1 id="MACVLAN模式"><a href="#MACVLAN模式" class="headerlink" title="MACVLAN模式"></a>MACVLAN模式</h1><p>MACVLAN有四种模式，分别是Bridge（默认），Private，VEPA(Virtual Ethernet Port Aggregator)，Passthru。<br>这些类型的区别，网上比较多，不细说，我只配置默认的Bridge模式。<br><a id="more"></a><br><img src="/2017/07/17/macvlan-for-docker/bridge.png" alt="bridge"></p>
-<h1 id="配置docker网络"><a href="#配置docker网络" class="headerlink" title="配置docker网络"></a>配置docker网络</h1><p>我们在eth0口上配置macvlan。<br>先看看eth0的基本信息，上面之前有一个IP 11.10.4.1：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">node-885896414408 ~ # ip addr show eth0</div><div class="line">2: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc mq state UP group default </div><div class="line">    link/ether fe:fc:fe:2a:6f:05 brd ff:ff:ff:ff:ff:ff</div><div class="line">    inet 11.10.4.1/16 brd 11.10.255.255 scope global eth0</div><div class="line">       valid_lft forever preferred_lft forever</div><div class="line">    inet6 fe80::fcfc:feff:fe2a:6f05/64 scope link </div><div class="line">       valid_lft forever preferred_lft forever</div></pre></td></tr></table></figure></p>
-<p>为了不和这个IP冲突，我们需要在创建macvlan的时候，排除此IP，使用docker network命令创建：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">node-885896414408 ~ # docker network create -d macvlan --subnet=11.10.4.0/16 --gateway=11.10.4.254 --aux-address=&quot;exclude_host=11.10.4.1&quot; -o parent=eth0 macvlan0</div><div class="line">d72dd733ce3a7a26b93d7e472e2ef036f26191f9577ab673978689b0bd3f5205</div></pre></td></tr></table></figure></p>
-<p>查看：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">node-885896414408 ~ # docker network ls</div><div class="line">NETWORK ID          NAME                DRIVER               SCOPE  </div><div class="line">d72dd733ce3a        macvlan0            macvlan             local</div></pre></td></tr></table></figure></p>
-<p>好了，现在已经有了macvlan0网络，属于macvlan类型，我们启动docker的时候，指定其使用macvlan0即可：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">node-885896414408 ~ # docker run -it --network=macvlan0 mytest /bin/bash -l</div><div class="line">[mytest@ ~]#ifconfig </div><div class="line">eth0      Link encap:Ethernet  HWaddr 02:42:0b:0a:00:01  </div><div class="line">          inet addr:11.10.0.1  Bcast:0.0.0.0  Mask:255.255.0.0</div><div class="line">          inet6 addr: fe80::42:bff:fe0a:1/64 Scope:Link</div><div class="line">          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1</div><div class="line">          RX packets:0 errors:0 dropped:0 overruns:0 frame:0</div><div class="line">          TX packets:6 errors:0 dropped:0 overruns:0 carrier:0</div><div class="line">          collisions:0 txqueuelen:0 </div><div class="line">          RX bytes:0 (0.0 B)  TX bytes:508 (508.0 B)</div></pre></td></tr></table></figure></p>
-<p>鉴于macvlan的特性，从容器内部是ping不通宿主机的，但是，可以ping通外部网络：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">[mytest@ ~]#ping 11.10.4.1  #不能PING通主机</div><div class="line">PING 11.10.4.1 (11.10.4.1) 56(84) bytes of data.</div><div class="line">From 11.10.0.1 icmp_seq=1 Destination Host Unreachable</div><div class="line">From 11.10.0.1 icmp_seq=2 Destination Host Unreachable</div><div class="line"></div><div class="line">[mytest@ ~]#ping 11.10.4.2 #但能PING通其他机</div><div class="line">PING 11.10.4.2 (11.10.4.2) 56(84) bytes of data.</div><div class="line">64 bytes from 11.10.4.2: icmp_req=1 ttl=64 time=0.207 ms</div><div class="line">64 bytes from 11.10.4.2: icmp_req=2 ttl=64 time=0.756 ms</div></pre></td></tr></table></figure></p>
-<p>容器和宿主机通信<br>为了能和宿主机通信，我们需要在宿主机上再创建一个macvlan网络：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">node-885896414408 ~ # ip link add link eth0 macvlan0-host type macvlan mode bridge</div><div class="line">node-885896414408 ~ # ip link set dev macvlan0-host up </div><div class="line">node-885896414408 ~ # ip addr add 11.10.4.254/16 dev macvlan0-host</div></pre></td></tr></table></figure></p>
-<p>查看一下配置后的虚拟macvlan网口：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">node-885896414408 ~ # ifconfig macvlan0-host</div><div class="line">macvlan0-host: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</div><div class="line">        inet 11.10.4.254  netmask 255.255.0.0  broadcast 0.0.0.0</div><div class="line">        inet6 fe80::c026:88ff:fe53:cae  prefixlen 64  scopeid 0x20&lt;link&gt;</div><div class="line">        ether c2:26:88:53:0c:ae  txqueuelen 1000  (Ethernet)</div><div class="line">        RX packets 62  bytes 3472 (3.3 KiB)</div><div class="line">        RX errors 0  dropped 0  overruns 0  frame 0</div><div class="line">        TX packets 8  bytes 648 (648.0 B)</div><div class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</div></pre></td></tr></table></figure></p>
-<p>此时docker内部就能PING通宿主机IP 11.10.4.254了，如果还是不通，可以加一条路由：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ip route add 11.10.0.2 dev macvlan0-host</div></pre></td></tr></table></figure></p>
-<p>不过，我看已经有默认路由：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">11.10.0.0/16 dev macvlan0-host  proto kernel  scope link  src 11.10.4.254</div></pre></td></tr></table></figure></p>
-<p>流程很简单，之所以记录，是因为网上多转载的文章，多只说了如何配置docker网络部分，后面和宿主机通信部分，都是一笔带过，很少有实际的操作命令贴出。</p>
-<h1 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h1><ol>
-<li>Macvlan and Ipvlan Network Drivers <a href="http://www.rendoumi.com/zui-xin-ban-ben-dockerwang-luo-bu-fen-suo-yong-de-macvlanhe-ipvlan/" target="_blank" rel="external">http://www.rendoumi.com/zui-xin-ban-ben-dockerwang-luo-bu-fen-suo-yong-de-macvlanhe-ipvlan/</a></li>
+        <p>接上一篇《使用XDebug加PHPStorm远程调试PHP》<a href="https://mnstory.net/2017/10/14/phpstorm-remote-debug-with-xdebug">https://mnstory.net/2017/10/14/phpstorm-remote-debug-with-xdebug</a> ，既然我们已经按照好了XDebug，那再试试其Profile功能。<br><a id="more"></a></p>
+<h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><p>php.ini文件，同样需要配置：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">zend_extension = $phproot/lib/php/extensions/xdebug.so</div><div class="line">[xdebug]</div><div class="line">xdebug.auto_trace = 1              # 这个必须开启</div><div class="line">xdebug.profiler_enable = 0         # 这个为1的话，类似于 remote_autostart 为 1， 会自动启动Profile，而一般情况下，我们都希望能控制具体对那一次请求做Profile，所以，这个字段建议设置为0</div><div class="line">xdebug.profiler_enable_trigger = 1 # 和profiler_enable的区别在于，这个需要XDEBUG_PROFILE变量来控制是否profiler</div><div class="line">xdebug.profiler_output_dir = &quot;/tmp/profiler&quot; #配置输出目录，默认是/tmp</div></pre></td></tr></table></figure></p>
+<p>和调试的配置合并后，即为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">zend_extension = $phproot/lib/php/extensions/xdebug.so</div><div class="line">[xdebug]</div><div class="line">xdebug.idekey = &quot;PHPSTORM&quot;</div><div class="line">xdebug.remote_enable = 1</div><div class="line">xdebug.remote_connect_back = 0 </div><div class="line">xdebug.remote_port = 9909</div><div class="line">xdebug.auto_trace = 1</div><div class="line">xdebug.profiler_enable=0</div><div class="line">xdebug.profiler_enable_trigger = 1</div><div class="line">xdebug.profiler_output_dir = &quot;/tmp/profiler&quot;</div></pre></td></tr></table></figure></p>
+<p>注意，profiler_output_dir一定是apache进程可读写的，查看一下apache进程的user和group，设置一下，例如我的user和group都是daemon：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">mkdir /tmp/profiler</div><div class="line">chown daemon:daemon /tmp/profiler</div></pre></td></tr></table></figure></p>
+<p>同样，配置完成后，请重启apache。</p>
+<h1 id="安装工具"><a href="#安装工具" class="headerlink" title="安装工具"></a>安装工具</h1><p>查看Profile结果，可以使用QCacheGrind Windows版本，直接打开生成的profiler_output_dir目录下的任何一个文件即可，下载地址： <a href="https://sourceforge.net/projects/qcachegrindwin/?source=typ_redirect" target="_blank" rel="external">https://sourceforge.net/projects/qcachegrindwin/?source=typ_redirect</a></p>
+<p>当然，WEB版本更方便一些，但是功能弱一点，主要是不需要将服务器上profiler_output_dir目录的文件同步到PC机，可在 <a href="https://github.com/jokkedk/webgrind/wiki/Installation" target="_blank" rel="external">https://github.com/jokkedk/webgrind/wiki/Installation</a> 下载，解压到服务器上Apache的Document Root目录，用URL访问即可。但是网页版的要生成调用关系需要自己安装dot工具，对于我这个不能上网的服务器，比较麻烦一点，再次使用反向代理，这次，演示一下使用autossh做反向链接，安装dot：</p>
+<ol>
+<li><p>从可上网的机器，例如192.168.139.29，建一条链接和外网服务器的链接：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">autossh -M 4001 -NR 3128:192.168.139.29:3128 root@外网服务器</div></pre></td></tr></table></figure>
+<p> 这样，在外网服务器上，连接127.0.0.1:3128相当于连接到可上网机器192.168.139.29的3128端口，接下来只需在可上网机器192.168.139.29上搭建一个监听3128的http proxy即可，推荐使用3proxy这个软件。</p>
+</li>
+<li><p>做好这个后，可在外网服务器用yum安装graphviz：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">export http_proxy=&quot;http://127.0.0.1:3128&quot;</div><div class="line">export https_proxy=&quot;http://127.0.0.1:3128&quot;</div><div class="line">yum install graphviz</div></pre></td></tr></table></figure>
+<p> 若是一个个将rpm包下载放到服务器，那是一个很花时间的活，我看了一下，我的服务器上下载graphviz的依赖多达46个。</p>
+</li>
 </ol>
+<h1 id="Profile效果"><a href="#Profile效果" class="headerlink" title="Profile效果"></a>Profile效果</h1><p>第一张耗时函数排序图：<br><img src="/2017/10/14/profile-php-with-xdebug/webgrind-search.png" alt="webgrind-search"></p>
+<p>第二张是函数耗时调用关系图：<br><img src="/2017/10/14/profile-php-with-xdebug/webgrind-search-call.png" alt="webgrind-search-call"></p>
+<p>随意感受下。</p>
 
       
     </div>
@@ -348,11 +355,11 @@
       
         <div class="post-tags">
           
-            <a href="/tags/net/" rel="tag"># net</a>
+            <a href="/tags/PHP/" rel="tag"># PHP</a>
           
-            <a href="/tags/docker/" rel="tag"># docker</a>
+            <a href="/tags/XDebug/" rel="tag"># XDebug</a>
           
-            <a href="/tags/macvlan/" rel="tag"># macvlan</a>
+            <a href="/tags/Profile/" rel="tag"># Profile</a>
           
         </div>
       
@@ -365,8 +372,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2017/05/06/gcov-usage/" rel="next" title="GCOV代码覆盖方法">
-                <i class="fa fa-chevron-left"></i> GCOV代码覆盖方法
+              <a href="/2017/10/14/phpstorm-remote-debug-with-xdebug/" rel="next" title="使用XDebug加PHPStorm远程调试PHP">
+                <i class="fa fa-chevron-left"></i> 使用XDebug加PHPStorm远程调试PHP
               </a>
             
           </div>
@@ -375,8 +382,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2017/07/17/iptables-commands-intro/" rel="prev" title="IPTABLES基础命令">
-                IPTABLES基础命令 <i class="fa fa-chevron-right"></i>
+              <a href="/2017/10/14/use-apcu-as-php-cache/" rel="prev" title="PHP使用APCu做用户缓存">
+                PHP使用APCu做用户缓存 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -501,7 +508,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#MACVLAN模式"><span class="nav-number">1.</span> <span class="nav-text">MACVLAN模式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#配置docker网络"><span class="nav-number">2.</span> <span class="nav-text">配置docker网络</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考文档"><span class="nav-number">3.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#配置"><span class="nav-number">1.</span> <span class="nav-text">配置</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#安装工具"><span class="nav-number">2.</span> <span class="nav-text">安装工具</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Profile效果"><span class="nav-number">3.</span> <span class="nav-text">Profile效果</span></a></li></ol></div>
             
 
           </div>
