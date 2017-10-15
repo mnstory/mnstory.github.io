@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Docker,环境搭建,CentOS," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="我在阿里云上托管的一台服务器，CentOS版本比较老，要安装docker，版本太低CentOS 6.5不行，所以先升级到CentOS 6.9，过程比较曲折，反正最后是升级成功了:12[ayserver ~]# cat /etc/issueCentOS release 6.9 (Final) 关键是内核版本，现在是2.6.32，已经符合安装docker的条件：12[ayserver ~]# unam">
+<meta name="keywords" content="Docker,环境搭建,CentOS">
+<meta property="og:type" content="article">
+<meta property="og:title" content="阿里云上CentOS 6.x安装Docker">
+<meta property="og:url" content="http://mnstory.net/2017/08/01/install-docker-for-centos-on-aliyun/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="我在阿里云上托管的一台服务器，CentOS版本比较老，要安装docker，版本太低CentOS 6.5不行，所以先升级到CentOS 6.9，过程比较曲折，反正最后是升级成功了:12[ayserver ~]# cat /etc/issueCentOS release 6.9 (Final) 关键是内核版本，现在是2.6.32，已经符合安装docker的条件：12[ayserver ~]# unam">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2017-10-15T13:07:54.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="阿里云上CentOS 6.x安装Docker">
+<meta name="twitter:description" content="我在阿里云上托管的一台服务器，CentOS版本比较老，要安装docker，版本太低CentOS 6.5不行，所以先升级到CentOS 6.9，过程比较曲折，反正最后是升级成功了:12[ayserver ~]# cat /etc/issueCentOS release 6.9 (Final) 关键是内核版本，现在是2.6.32，已经符合安装docker的条件：12[ayserver ~]# unam">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2017/08/01/install-docker-for-centos-on-aliyun/"/>
+
+
+
+
+
+  <title>阿里云上CentOS 6.x安装Docker | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/08/01/install-docker-for-centos-on-aliyun/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">阿里云上CentOS 6.x安装Docker</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-08-01T22:08:37+08:00">
+                2017-08-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>我在阿里云上托管的一台服务器，CentOS版本比较老，要安装docker，版本太低CentOS 6.5不行，所以先升级到CentOS 6.9，过程比较曲折，反正最后是升级成功了:<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">[ayserver ~]# cat /etc/issue</div><div class="line">CentOS release 6.9 (Final)</div></pre></td></tr></table></figure></p>
+<p>关键是内核版本，现在是2.6.32，已经符合安装docker的条件：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">[ayserver ~]# uname -a</div><div class="line">Linux ayserver 2.6.32-696.6.3.el6.x86_64</div></pre></td></tr></table></figure></p>
+<a id="more"></a>
+<p>导入fedora的源，导入失败，提示已经有6.8版本的了：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">[ayserver ~]# rpm -ivfh https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm</div><div class="line">Retrieving https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm</div><div class="line">Preparing...                ########################################### [100%]</div><div class="line">	package epel-release-6-8.noarch is already installed</div></pre></td></tr></table></figure></p>
+<p>准备先删除epel源，提示有依赖：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">[ayserver ~]# rpm -ef epel-release  </div><div class="line">error: Failed dependencies:</div><div class="line">	epel-release = 6 is needed by (installed) ius-release-1.0-14.ius.centos6.noarch</div><div class="line">	epel-release &gt;= 6 is needed by (installed) remi-release-6.6-1.el6.remi.noarch</div></pre></td></tr></table></figure></p>
+<p>于是将依赖先删除，再删除epel，成功：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">[ayserver ~]# rpm -ef ius-release</div><div class="line">warning:    erase unlink of /etc/yum.repos.d/ius.repo failed: No such file or directory</div><div class="line">warning:    erase unlink of /etc/yum.repos.d/ius-testing.repo failed: No such file or directory</div><div class="line">warning:    erase unlink of /etc/yum.repos.d/ius-dev.repo failed: No such file or directory</div><div class="line">warning:    erase unlink of /etc/yum.repos.d/ius-archive.repo failed: No such file or directory</div><div class="line">[ayserver ~]# rpm -ef remi-release</div><div class="line">warning:    erase unlink of /etc/yum.repos.d/remi.repo failed: No such file or directory</div><div class="line">warning:    erase unlink of /etc/yum.repos.d/remi-safe.repo failed: No such file or directory</div><div class="line">warning:    erase unlink of /etc/yum.repos.d/remi-php70.repo failed: No such file or directory</div><div class="line">[ayserver ~]# rpm -ef epel-release  </div><div class="line">warning:    erase unlink of /etc/yum.repos.d/epel.repo failed: No such file or directory</div><div class="line">warning:    erase unlink of /etc/yum.repos.d/epel-testing.repo failed: No such file or directory</div></pre></td></tr></table></figure></p>
+<p>再次导入fedora最新源，成功：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">[ayserver ~]# rpm -ivfh https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm</div><div class="line">Retrieving https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm</div><div class="line">Preparing...                ########################################### [100%]</div><div class="line">   1:epel-release           ########################################### [100%]</div><div class="line">[ayserver ~]# yum makecache</div></pre></td></tr></table></figure></p>
+<p>有docker-ce也有docker-io，发现docker-ce依赖比较新，装不上，于是安装docker-io，没研究这两个有什么区别。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[ayserver ~]# yum info docker-io</div></pre></td></tr></table></figure></p>
+<p>安装好后，启动失败：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">[ayserver ~]# docker -d </div><div class="line">WARN[0000] You are running linux kernel version 2.6.32-696.6.3.el6.x86_64, which might be unstable running docker. Please upgrade your kernel to 3.10.0. </div><div class="line">INFO[0000] Listening for HTTP on unix (/var/run/docker.sock) </div><div class="line">INFO[0000] [graphdriver] using prior storage driver "devicemapper" </div><div class="line">WARN[0000] Running modprobe bridge nf_nat failed with message: , error: exit status 1 </div><div class="line">FATA[0000] Error starting daemon: Error initializing network controller: Error creating default "bridge" network: can't find an address range for interface "docker0"</div></pre></td></tr></table></figure></p>
+<p>这又是什么问题？看看路由表：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">[ayserver ~]# route -n</div><div class="line">Kernel IP routing table</div><div class="line">Destination     Gateway         Genmask         Flags Metric Ref    Use Iface</div><div class="line">172.16.0.0      10.144.175.247  255.240.0.0     UG    0      0        0 eth0</div></pre></td></tr></table></figure></p>
+<p>docker默认使用的172.16网段，居然已经存在路由表里面，那是阿里自己预留的网段，于是咱们需要重新给docker设置一个网段，编辑/etc/sysconfig/docker，修改other_args，添加一个新网段，例如：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">other_args=-bip=192.168.100.1/24</div></pre></td></tr></table></figure></p>
+<p>启动成功：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line">[ayserver ~]# /etc/init.d/docker start</div><div class="line">Starting docker:                                          [  OK  ]</div><div class="line">[ayserver ~]# docker info</div><div class="line">Containers: 0</div><div class="line">Images: 0</div><div class="line">Storage Driver: devicemapper</div><div class="line"> Pool Name: docker-202:1-1139788-pool</div><div class="line"> Pool Blocksize: 65.54 kB</div><div class="line"> Backing Filesystem: extfs</div><div class="line"> Data file: /dev/loop0</div><div class="line"> Metadata file: /dev/loop1</div><div class="line"> Metadata Space Used: 729.1 kB</div><div class="line"> Metadata Space Total: 2.147 GB</div><div class="line"> Metadata Space Available: 2.147 GB</div><div class="line"> Udev Sync Supported: true</div><div class="line"> Deferred Removal Enabled: false</div><div class="line"> Data loop file: /var/lib/docker/devicemapper/devicemapper/data</div><div class="line"> Metadata loop file: /var/lib/docker/devicemapper/devicemapper/metadata</div><div class="line"> Library Version: 1.02.117-RHEL6 (2016-12-13)</div><div class="line">Execution Driver: native-0.2</div><div class="line">Logging Driver: json-file</div><div class="line">Kernel Version: 2.6.32-696.6.3.el6.x86_64</div></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Docker/" rel="tag"># Docker</a>
+          
+            <a href="/tags/环境搭建/" rel="tag"># 环境搭建</a>
+          
+            <a href="/tags/CentOS/" rel="tag"># CentOS</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/07/17/iptables-commands-intro/" rel="next" title="IPTABLES基础命令">
+                <i class="fa fa-chevron-left"></i> IPTABLES基础命令
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/08/09/file-access-time/" rel="prev" title="文件的access time">
+                文件的access time <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview sidebar-panel sidebar-panel-active">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">24</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">39</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

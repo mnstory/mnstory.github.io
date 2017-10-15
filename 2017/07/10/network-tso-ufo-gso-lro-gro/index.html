@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Linux,Network," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="本文原创部分占比不多，图片多是盗用，不知道最开始是谁画的，我是从http://geek.csdn.net/news/detail/67260取的。此文主要是做一个自己的梳理。 TSO/UFOTCP的每个数据包大小不能超过MSS值，在发送端超过的，需按照MSS进行分段(segment)。分段这事情，老是让CPU来做，那是很耗精力的事，做网卡的乐意分享此任务，将其offload到网卡，当网卡支持TCP">
+<meta name="keywords" content="Linux,Network">
+<meta property="og:type" content="article">
+<meta property="og:title" content="网络基础之TSO,UFO,GSO,LRO,GRO">
+<meta property="og:url" content="http://mnstory.net/2017/07/10/network-tso-ufo-gso-lro-gro/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="本文原创部分占比不多，图片多是盗用，不知道最开始是谁画的，我是从http://geek.csdn.net/news/detail/67260取的。此文主要是做一个自己的梳理。 TSO/UFOTCP的每个数据包大小不能超过MSS值，在发送端超过的，需按照MSS进行分段(segment)。分段这事情，老是让CPU来做，那是很耗精力的事，做网卡的乐意分享此任务，将其offload到网卡，当网卡支持TCP">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2017/07/10/network-tso-ufo-gso-lro-gro/1.tso-notso.png">
+<meta property="og:image" content="http://mnstory.net/2017/07/10/network-tso-ufo-gso-lro-gro/2.gso-udp.jpg">
+<meta property="og:image" content="http://mnstory.net/2017/07/10/network-tso-ufo-gso-lro-gro/3.gso-tcp.jpg">
+<meta property="og:image" content="http://mnstory.net/2017/07/10/network-tso-ufo-gso-lro-gro/4.lro.jpg">
+<meta property="og:image" content="http://mnstory.net/2017/07/10/network-tso-ufo-gso-lro-gro/5.gro-tcp.jpg">
+<meta property="og:updated_time" content="2017-10-15T09:24:58.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="网络基础之TSO,UFO,GSO,LRO,GRO">
+<meta name="twitter:description" content="本文原创部分占比不多，图片多是盗用，不知道最开始是谁画的，我是从http://geek.csdn.net/news/detail/67260取的。此文主要是做一个自己的梳理。 TSO/UFOTCP的每个数据包大小不能超过MSS值，在发送端超过的，需按照MSS进行分段(segment)。分段这事情，老是让CPU来做，那是很耗精力的事，做网卡的乐意分享此任务，将其offload到网卡，当网卡支持TCP">
+<meta name="twitter:image" content="http://mnstory.net/2017/07/10/network-tso-ufo-gso-lro-gro/1.tso-notso.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2017/07/10/network-tso-ufo-gso-lro-gro/"/>
+
+
+
+
+
+  <title>网络基础之TSO,UFO,GSO,LRO,GRO | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/07/10/network-tso-ufo-gso-lro-gro/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">网络基础之TSO,UFO,GSO,LRO,GRO</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-07-10T23:00:00+08:00">
+                2017-07-10
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文原创部分占比不多，图片多是盗用，不知道最开始是谁画的，我是从<a href="http://geek.csdn.net/news/detail/67260" target="_blank">http://geek.csdn.net/news/detail/67260</a>取的。此文主要是做一个自己的梳理。</p>
+<h1 id="TSO-UFO"><a href="#TSO-UFO" class="headerlink" title="TSO/UFO"></a>TSO/UFO</h1><p>TCP的每个数据包大小不能超过MSS值，在发送端超过的，需按照MSS进行分段(segment)。<br>分段这事情，老是让CPU来做，那是很耗精力的事，做网卡的乐意分享此任务，将其offload到网卡，当网卡支持TCP分段这功能的时候，我们就说它支持TSO(TCP segmentation offload)。<br><a id="more"></a><br>如果网卡不支持TSO功能，TCP数据会在内核协议栈的TCP层按照MSS分成若干段(segmentation)，然后经IP层，经链路层，经设备驱动层，再达网卡。有了TSO功能，在TCP大数据块不超过64K的情况下，可以一个大包走到网卡。对比一下，两者的差异：<br><img src="/2017/07/10/network-tso-ufo-gso-lro-gro/1.tso-notso.png" alt="1.tso-notso"><br>图：有tso vs 没有tso<br>有TSO，内核协议栈上少了很多数据包的划分、小包传输、处理、checksum、上下文切换等，从而减轻了CPU的任务。</p>
+<p>IP分片后，只有第一个分片包带有上层协议的头部(例如，UDP头部、ICMP头部)其余分片只有IP头。当IP分片到达最终目的地后，根据IP头部中的信息，在网络层进行重组，而不会在路径上重组。<br>TCP分段，会在每个分段上都附上TCP的协议头，到达端点后，根据TCP头部信息在传输层进行重组。如果一个TCP分段需要多个IP分片来承接，那么当其中一个IP分片丢失，这个TCP分段将重传(意味着多个IP分片重传)，IP层本身是不可靠的，不具备重传机制，需要TCP层来进行，所以，应该尽量避免一个TCP分段需要多个IP分片来承接，默认MSS根据MTU来计算的，也正是这个原因。<br>UDP协议本身不具备类似TCP的分段功能，所以，大的UDP数据报文，需要由IP层来进行分片传送，和TSO类似，网卡将UDP报文的IP分片功能offload到网卡来做，那就叫UFO(udp-fragmentation-offload)技术。</p>
+<p>查看一下，网卡是否支持TSO/UFO：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> ethtool -k eth0</div><div class="line">tcp-segmentation-offload: on</div><div class="line">tx-tcp-segmentation: on</div><div class="line">tx-tcp-ecn-segmentation: off [fixed]</div><div class="line">tx-tcp6-segmentation: on</div><div class="line">udp-fragmentation-offload: off [fixed]</div></pre></td></tr></table></figure></p>
+<h1 id="GSO"><a href="#GSO" class="headerlink" title="GSO"></a>GSO</h1><p>就TSO功能而言，它的主要优点有二：</p>
+<ol>
+<li>TCP/IP协议栈上传送一次大块数据，而非多次小块数据，节约CPU。</li>
+<li>让网卡来分段功能，节约CPU，这点需要硬件支持。</li>
+</ol>
+<p>如果硬件不支持，我们就做不了TSO，但是，我们可以做GSO(Generic Segmentation Offload)，GSO将TSO功能泛化，让数据跨过IP层，链路层，在数据离开协议栈，进入网卡驱动前进行分段，不论是TCP还是UDP，都是分段(每个包都附加TCP/UDP头部)，这样，当一个段丢失，不需要发送整个TCP/UDP报文。其次，路径上的CPU消耗也会减少，所以可以说GSO是对UFO的一种改良(UFO是IP分片，只有头包带有UDP头，丢掉一片要整段重传)<br><img src="/2017/07/10/network-tso-ufo-gso-lro-gro/2.gso-udp.jpg" alt="2.gso-udp"><br>图：对于 UDP，在物理网卡不支持 UFO 时，使用和不使用 GSO 的情形</p>
+<p><img src="/2017/07/10/network-tso-ufo-gso-lro-gro/3.gso-tcp.jpg" alt="3.gso-tcp"><br>图：对 TCP，在网卡不支持 TSO 时，使用和不使用 GSO 的情形</p>
+<p>查看一下，GSO是否开启：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> ethtool -k eth0</div><div class="line">generic-segmentation-offload: on</div></pre></td></tr></table></figure></p>
+<h1 id="LRO"><a href="#LRO" class="headerlink" title="LRO"></a>LRO</h1><p>发包的过程说完，接收TCP包的时候，如果网卡能将多个TCP分段合并成一个超级SKB，然后递交到上层网络，以减少CPU消耗，这个就叫网卡支持LRO(large receive offload)。<br><img src="/2017/07/10/network-tso-ufo-gso-lro-gro/4.lro.jpg" alt="4.lro"><br>图：物理网卡支持 LRO vs不支持LRO</p>
+<p>查看一下，网卡是否支持LRO：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> ethtool -k eth0</div><div class="line">large-receive-offload: off [fixed]</div></pre></td></tr></table></figure></p>
+<h1 id="GRO"><a href="#GRO" class="headerlink" title="GRO"></a>GRO</h1><p>LRO本身实现上有一些问题，比如多个包的状态信息不一致，合并后会导致状态被破坏，并且也依赖于网卡。于是有了更通用的版本GRO(generic-receive-offload)，他将合并操作放到了设备启动层，保留了每个数据包的一些熵信息(五元组)供后面解析使用。<br><img src="/2017/07/10/network-tso-ufo-gso-lro-gro/5.gro-tcp.jpg" alt="5.gro-tcp"><br>图：在不支持 LRO 的情况下，对 TCP 使用和不使用 GRO 的情形<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">----------------------------------------------------------------------------------------------------------------------------------------------</div><div class="line">Offload     传输段还是接收端   针对的协议      Offloading 的位置                     ethtool 命令输出中的项目         备注</div><div class="line">----------------------------------------------------------------------------------------------------------------------------------------------</div><div class="line">TSO         传输段             TCP             NIC                                   tcp-segmentation-offload         需要网卡支持，多数都支持</div><div class="line">UFO         传输段             UDP             NIC                                   udp-fragmentation-offload        需要网卡支持，多数不支持</div><div class="line">GSO         传输段             TCP/UDP         NIC或者离开IP协议栈进入网卡驱动前     generic-segmentation-offload     内核特征，主要是延迟分段</div><div class="line">LRO         接收段             TCP             NIC                                   large-receive-offload            需要硬件支持，多数都支持</div><div class="line">GRO         接收段             TCP/UDP         NIC或者离开网卡驱动进入IP协议栈前     generic-receive-offload          内核特征，主要是提前合并</div><div class="line">----------------------------------------------------------------------------------------------------------------------------------------------</div></pre></td></tr></table></figure></p>
+<p>查看一下，GRO是否开启：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> ethtool -k eth0</div><div class="line">generic-receive-offload: on</div></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Linux/" rel="tag"># Linux</a>
+          
+            <a href="/tags/Network/" rel="tag"># Network</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/07/05/network-ethernet-mtu-mss/" rel="next" title="网络基础之以太网帧,MTU,MSS">
+                <i class="fa fa-chevron-left"></i> 网络基础之以太网帧,MTU,MSS
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/07/17/macvlan-for-docker/" rel="prev" title="为Docker配置MACVLAN网络">
+                为Docker配置MACVLAN网络 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">24</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">39</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#TSO-UFO"><span class="nav-number">1.</span> <span class="nav-text">TSO/UFO</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#GSO"><span class="nav-number">2.</span> <span class="nav-text">GSO</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#LRO"><span class="nav-number">3.</span> <span class="nav-text">LRO</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#GRO"><span class="nav-number">4.</span> <span class="nav-text">GRO</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

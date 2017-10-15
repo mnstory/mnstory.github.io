@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="MySQL,HA," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="因为aCloud原有实现就是基于半同步机制的，所以我们讲了《MySQL Semi-Synchronous Replication》，明白了半同步机制，我们再来看看目前在复制机制下的高可用实现。 为了实现HA（High Availability，高可用），引入了VIP（Virtual IP，虚拟IP）。 VIP在master/slave的复制模型下，master对外提供写服务，slave可以不提供任">
+<meta name="keywords" content="MySQL,HA">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HA in MySQL Replication">
+<meta property="og:url" content="http://mnstory.net/2016/12/14/ha-in-mysql-replication/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="因为aCloud原有实现就是基于半同步机制的，所以我们讲了《MySQL Semi-Synchronous Replication》，明白了半同步机制，我们再来看看目前在复制机制下的高可用实现。 为了实现HA（High Availability，高可用），引入了VIP（Virtual IP，虚拟IP）。 VIP在master/slave的复制模型下，master对外提供写服务，slave可以不提供任">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2016/12/14/ha-in-mysql-replication/01.png">
+<meta property="og:image" content="http://mnstory.net/2016/12/14/ha-in-mysql-replication/02.png">
+<meta property="og:image" content="http://mnstory.net/2016/12/14/ha-in-mysql-replication/03.png">
+<meta property="og:image" content="http://mnstory.net/2016/12/14/ha-in-mysql-replication/04.png">
+<meta property="og:image" content="http://mnstory.net/2016/12/14/ha-in-mysql-replication/05.png">
+<meta property="og:image" content="http://mnstory.net/2016/12/14/ha-in-mysql-replication/06.png">
+<meta property="og:image" content="http://mnstory.net/2016/12/14/ha-in-mysql-replication/07.png">
+<meta property="og:image" content="http://mnstory.net/2016/12/14/ha-in-mysql-replication/08.one-switch.png">
+<meta property="og:image" content="http://mnstory.net/2016/12/14/ha-in-mysql-replication/09.cluster-table.png">
+<meta property="og:image" content="http://mnstory.net/2016/12/14/ha-in-mysql-replication/10.two-switch.png">
+<meta property="og:updated_time" content="2017-10-15T14:43:34.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="HA in MySQL Replication">
+<meta name="twitter:description" content="因为aCloud原有实现就是基于半同步机制的，所以我们讲了《MySQL Semi-Synchronous Replication》，明白了半同步机制，我们再来看看目前在复制机制下的高可用实现。 为了实现HA（High Availability，高可用），引入了VIP（Virtual IP，虚拟IP）。 VIP在master/slave的复制模型下，master对外提供写服务，slave可以不提供任">
+<meta name="twitter:image" content="http://mnstory.net/2016/12/14/ha-in-mysql-replication/01.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2016/12/14/ha-in-mysql-replication/"/>
+
+
+
+
+
+  <title>HA in MySQL Replication | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/12/14/ha-in-mysql-replication/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">HA in MySQL Replication</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-12-14T15:00:00+00:00">
+                2016-12-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>因为aCloud原有实现就是基于半同步机制的，所以我们讲了<a href="http://mnstory.net/2016/12/14/mysql-semi-synchronous-replication/">《MySQL Semi-Synchronous Replication》</a>，明白了半同步机制，我们再来看看目前在复制机制下的高可用实现。</p>
+<p>为了实现HA（High Availability，高可用），引入了VIP（Virtual IP，虚拟IP）。</p>
+<h1 id="VIP"><a href="#VIP" class="headerlink" title="VIP"></a>VIP</h1><p>在master/slave的复制模型下，master对外提供写服务，slave可以不提供任何服务，只是做备份。</p>
+<p>也有人将slave利用起来，提供读服务，就叫做读写分离，读写分离可以减轻单台服务器的压力。</p>
+<p>不管怎么说，半同步机制是单master多slave的模式，这种模式下，只能在master上提供写服务，如果master挂了，如何保证业务连续性？</p>
+<p>VIP原理类似DNS，在DNS中我们每次链接到一个域名，每次解析域名得到可提供服务的IP。VIP的话，我们每次在能提供服务的主机上，配置一个固有IP，如果这台主机出问题了，例如宕机了，就在其他能提供服务的节点，例如从节点配置该IP，这样用户每次链接同一个IP，也能实现高可用。<a id="more"></a></p>
+<h1 id="HA场景"><a href="#HA场景" class="headerlink" title="HA场景"></a>HA场景</h1><p>高可用并不代表无中断，它可能是短暂中断，例如，master宕机时，VIP要换节点，这个时候用户的事务就会提交失败，但是一般来说如果事务写得没有问题，这里不会存在啥问题，因为失败会返回到用户界面，相当于用户需要重试。</p>
+<ol><br><li>正常情况<br>我们理想的情况，应该是这样的：<br><img src="/2016/12/14/ha-in-mysql-replication/01.png" alt="topo"><br><br>但是，也可能发生一些意外。<br></li><br><li>master/slave之间网络不通<br><b>影响：</b>这是最容易解决的意外，不通就不通也行，唯一带来的问题就是slave节点同步不到最新的master节点数据。<br><b>解决方法：</b>如果出现这类问题，超出一定时间，给个告警到用户，让其检测节点之间硬件连接或者软件配置（例如防火墙）是比较好的解决方法。<br><img src="/2016/12/14/ha-in-mysql-replication/02.png" alt="topo"><br></li><br><li>slave宕掉了<br><b>影响：</b>slave宕掉了，会导致不能同步最新的master数据，增加了整个高可用的风险，例如master再宕掉，整个集群就没法提供服务了。<br><b>解决方法：</b>重新启动slave上的MySQL或者重新启动节点即可，当然，如果节点没办法恢复了，这时候，需要用其他节点来替代该节点，提供slave功能，如果找不到可用节点，应该及时通知用户。如果slave还提供了读服务，那还要考虑将读服务转移到master。<br><img src="/2016/12/14/ha-in-mysql-replication/03.png" alt="topo"><br></li><br><br><li>master宕掉了<br>半同步模型下，可能存在slave和master之间有延迟，导致数据丢失，如果数据非常重要，建议设置sync_binlog和useinnodb_flush_log_at_trx_commit为1，这样设置了，也不一定能保证数据不丢，master端最多影响一条日志，slave端不一定，看IO同步线程是否能赶得上日志记录速度。<br><br><b>影响：</b> 短暂的切换过程不能提供服务，并且可能出现数据丢失。<br><b>解决方法：</b>在第三方监控的帮助下(例如keepalive),slave可以顺利接替master提供服务，VIP shift到原slave节点(节点2)，原slave(节点2)变成master，当原master(节点1)再次启动的时候，最好是以slave身份启动。<br><img src="/2016/12/14/ha-in-mysql-replication/04.png" alt="topo"><br></li><br><li>脑裂<br>这里出现了集群脑裂，我们不认为是用户参与并分裂的集群，而是一个临时状态，两者的差异在于：<ol><br><li>如果是用户参与并分裂的集群，我们可以很明确，两个集群之间可以互不干涉，各自配置自己的VIP和master/slave。</li><br><li>如果是临时状态，我们的目的是尽可能保证数据不出问题的情况下部分功能可用，后面故障排除后，需要重新合并。在用户参与之前或自动恢复之前，都是出于临时状态。</li><br></ol><br>我们设想一个极端的情况，管理面的脑裂和数据库脑裂，是可交错叠加的。<br>如图5、图6，为管理面的脑裂，数据库层面并没有脑裂。<br>而图7为管理面和数据库层面都脑裂的情况。<br><br>如果要保证脑裂后的两个集群可用，那数据库必须提供服务，但是考虑都后续还要对集群进行合并，所以要保证数据无冲突，那么数据库不能和集群一样分裂为两套。相对于保服务还是保数据一致性，一般倾向于保数据一致性。<br><br><b>影响：</b>如果集群2能访问VIP，可能出现集群2和集群1写入数据冲突的情况，导致数据一致性收到影响。如果主从之间也不能访问，那么会降低高可用的抵抗能力。<br><b>解决方法：</b>利用防火墙规则，阻止集群外的访问，保一致性丢服务可用性。<br><img src="/2016/12/14/ha-in-mysql-replication/05.png" alt="topo"><br><img src="/2016/12/14/ha-in-mysql-replication/06.png" alt="topo"><br><img src="/2016/12/14/ha-in-mysql-replication/07.png" alt="topo"><br></li><br></ol>
+
+<h1 id="物理布局"><a href="#物理布局" class="headerlink" title="物理布局"></a>物理布局</h1><p>抛开物理布局说高可用，虽然场景考虑的比较全，但是还是比较理想化，而现实中布局非常复杂，我们选择当前最常用的两种场景来说一下，故障可能发生的位置。</p>
+<h2 id="管理口和数据口同交换"><a href="#管理口和数据口同交换" class="headerlink" title="管理口和数据口同交换"></a>管理口和数据口同交换</h2><p><img src="/2016/12/14/ha-in-mysql-replication/08.one-switch.png" alt="one-switch"></p>
+<ol><br><li>在集群正常的时候，数据库的Master和Slave选择和数据库服务的启停，都由主控统一管理。</li><br><li>如果人工介入，假定所有问题都能解决。</li><br><li>在集群不正常的时候，参考下表处理：</li><br><img src="/2016/12/14/ha-in-mysql-replication/09.cluster-table.png" alt="cluster-table"><br></ol>
+
+<h2 id="管理口和数据口不同交换"><a href="#管理口和数据口不同交换" class="headerlink" title="管理口和数据口不同交换"></a>管理口和数据口不同交换</h2><p><img src="/2016/12/14/ha-in-mysql-replication/10.two-switch.png" alt="two-switch"></p>
+<ol><br><li>如果数据通道正常，管理通道不正常，不需要检测。</li><br><li>如果两者皆不正常，按照管理口与数据口同交换方式处理。</li><br><li>如果管理口的交换机正常，而数据库的交换机或线路不正常：<br><ul><br><li>管理面评估出到底哪些节点之间数据通道正常的，如果满足大于等于两个节点的数据通道正常（选择节点的时候优先选择原来的主从，如果原来的主从都不正常，数据需要从管理网络传到其他节点）。</li><br><li>如果上面方法行不通，再让VIP走管理通道，然后等待人工修复。</li><br></ul><br></li><br></ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+          
+            <a href="/tags/HA/" rel="tag"># HA</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/12/14/mysql-semi-synchronous-replication/" rel="next" title="MySQL Semi-Synchronous Replication">
+                <i class="fa fa-chevron-left"></i> MySQL Semi-Synchronous Replication
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/04/16/design-is-self-imposed/" rel="prev" title="设计是自找的">
+                设计是自找的 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">24</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">39</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#VIP"><span class="nav-number">1.</span> <span class="nav-text">VIP</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#HA场景"><span class="nav-number">2.</span> <span class="nav-text">HA场景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#物理布局"><span class="nav-number">3.</span> <span class="nav-text">物理布局</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#管理口和数据口同交换"><span class="nav-number">3.1.</span> <span class="nav-text">管理口和数据口同交换</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#管理口和数据口不同交换"><span class="nav-number">3.2.</span> <span class="nav-text">管理口和数据口不同交换</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

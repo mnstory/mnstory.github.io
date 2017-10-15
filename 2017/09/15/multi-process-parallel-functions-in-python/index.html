@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Python,API,并行," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="Python因为解释器本身实现的比较挫（是的，就是代码写得挫），有一个GLI(Global Interpreter Lock)锁，导致多线程基本上是一个人装出来的几个分身，所以如果要并行，推荐使用多进程，有multiprocessing库，封装的还算简洁，但是毫无疑问，多进程通信成本会比多线程高一些。但是，有什么办法？用Python你还在乎性能？ 别人在不在乎，我是不知道，反正最近我们有个模块是非">
+<meta name="keywords" content="Python,API,并行">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Python多进程并行函数对比">
+<meta property="og:url" content="http://mnstory.net/2017/09/15/multi-process-parallel-functions-in-python/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="Python因为解释器本身实现的比较挫（是的，就是代码写得挫），有一个GLI(Global Interpreter Lock)锁，导致多线程基本上是一个人装出来的几个分身，所以如果要并行，推荐使用多进程，有multiprocessing库，封装的还算简洁，但是毫无疑问，多进程通信成本会比多线程高一些。但是，有什么办法？用Python你还在乎性能？ 别人在不在乎，我是不知道，反正最近我们有个模块是非">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2017-10-15T04:31:09.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Python多进程并行函数对比">
+<meta name="twitter:description" content="Python因为解释器本身实现的比较挫（是的，就是代码写得挫），有一个GLI(Global Interpreter Lock)锁，导致多线程基本上是一个人装出来的几个分身，所以如果要并行，推荐使用多进程，有multiprocessing库，封装的还算简洁，但是毫无疑问，多进程通信成本会比多线程高一些。但是，有什么办法？用Python你还在乎性能？ 别人在不在乎，我是不知道，反正最近我们有个模块是非">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2017/09/15/multi-process-parallel-functions-in-python/"/>
+
+
+
+
+
+  <title>Python多进程并行函数对比 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/09/15/multi-process-parallel-functions-in-python/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">Python多进程并行函数对比</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-09-15T21:08:37+08:00">
+                2017-09-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Python因为解释器本身实现的比较挫（是的，就是代码写得挫），有一个GLI(Global Interpreter Lock)锁，导致多线程基本上是一个人装出来的几个分身，所以如果要并行，推荐使用多进程，有multiprocessing库，封装的还算简洁，但是毫无疑问，多进程通信成本会比多线程高一些。但是，有什么办法？用Python你还在乎性能？</p>
+<p>别人在不在乎，我是不知道，反正最近我们有个模块是非常在乎，用Python是因为历史原因和现实原因，有本事换成Go，你得问问那一大堆支撑库答应不答应。</p>
+<p>Python多进程并行，可调用map和apply，两个函数都有对应的ansy版本，ansy版本返回的是Result对象，此对象可用于后面等待结果。</p>
+<p>并行功能比较适合那些执行之间不存在时间依赖(可能后传人的会先执行)或者结果依赖(后面的执行依赖前面的输出状态)的模块。</p>
+<p>异步功能比较适合后续代码的执行不需要依赖当前步骤执行结果的模块，比如插入一条数据到数据库，插入过程比较耗时，可以异步执行，我的主进程可以继续执行处理构造下一条数据的工作。<br><a id="more"></a></p>
+<h1 id="基本用法"><a href="#基本用法" class="headerlink" title="基本用法"></a>基本用法</h1><p>我们使用进程池来演示一下四个函数的基本用法:<br><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> time</div><div class="line"><span class="keyword">import</span> multiprocessing</div><div class="line"><span class="keyword">import</span> fantoms.elasticsearch.log <span class="keyword">as</span> logmodule</div><div class="line"><span class="keyword">import</span> logging <span class="keyword">as</span> l</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">work</span><span class="params">(idx)</span>:</span></div><div class="line">    l.info(<span class="string">"start work %d"</span> % idx)</div><div class="line">    time.sleep(idx)</div><div class="line">    l.info(<span class="string">"  end work %d"</span> % idx)</div><div class="line">    <span class="keyword">return</span> idx</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></div><div class="line">    logmodule.initLog(<span class="string">"test"</span>)</div><div class="line">    pool = multiprocessing.Pool(<span class="number">2</span>)</div><div class="line"></div><div class="line">    <span class="comment"># 1. apply</span></div><div class="line">    l.info(<span class="string">"[APPLY] start"</span>)</div><div class="line">    ts = time.time()</div><div class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> xrange(<span class="number">6</span>):</div><div class="line">        res = pool.apply(work, (i,))</div><div class="line">        l.info(<span class="string">"[APPLY] %d = %s"</span> % (i, str(res)))</div><div class="line">    te = time.time()</div><div class="line">    l.info(<span class="string">"[APPLY] end. cost(%ds)"</span> % (te - ts))</div><div class="line"></div><div class="line">    <span class="comment"># 2. apply_ansy</span></div><div class="line">    l.info(<span class="string">"[APPLY-ANSYC] start"</span>)</div><div class="line">    results = []</div><div class="line">    ts = time.time()</div><div class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> xrange(<span class="number">6</span>):</div><div class="line">        results.append(pool.apply_async(work, (i,)))</div><div class="line">    te = time.time()</div><div class="line">    l.info(<span class="string">"[APPLY-ANSYC] call over, start wait result. cost(%ds)"</span> % (te - ts))</div><div class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> xrange(len(results)):</div><div class="line">        results[i] = results[i].get()</div><div class="line">    te = time.time()</div><div class="line">    l.info(<span class="string">"[APPLY-ANSYC] end. cost(%ds) result %s"</span> % ((te - ts), str(results)))</div><div class="line"></div><div class="line">    <span class="comment"># 3. map</span></div><div class="line">    l.info(<span class="string">"[MAP] start"</span>)</div><div class="line">    ts = time.time()</div><div class="line">    results = pool.map(work, xrange(<span class="number">6</span>))</div><div class="line">    te = time.time()</div><div class="line">    l.info(<span class="string">"[MAP] end. cost(%ds). result %s"</span> % ((te - ts), str(results)))</div><div class="line"></div><div class="line">    <span class="comment"># 4. map-ansyc</span></div><div class="line">    l.info(<span class="string">"[MAP-ANSYC] start"</span>)</div><div class="line">    ts = time.time()</div><div class="line">    results = pool.map_async(work, xrange(<span class="number">6</span>))</div><div class="line">    te = time.time()</div><div class="line">    l.info(<span class="string">"[MAP-ANSYC] call over, start wait result. cost(%ds)"</span> % (te - ts))</div><div class="line">    results = results.get()</div><div class="line">    te = time.time()</div><div class="line">    l.info(<span class="string">"[MAP-ANSYC] end. cost(%ds). result %s"</span> % ((te - ts), str(results)))</div><div class="line"></div><div class="line">main()</div></pre></td></tr></table></figure></p>
+<p>输出日志附在下面，从日志可以看出：</p>
+<ol>
+<li>apply完全是阻塞模式一个一个调用，利用不上多进程的优势，所以耗时是串联耗时，为15s。</li>
+<li>map也是阻塞，但是，内部是并行的，所以能利用上多进程优势，但是同时主进程会被阻塞住，并行耗时9s，和apply_async/map_async运行时长一致。</li>
+<li>apply_async，map_async是非阻塞的，主进程可以立刻退出，直接到后面使用res.get()等待结果，在最后一条apply_async/map_async到第一条res.get()之间，主进程完全可以估摸着时间做其他事情。这两种方法是实现异步的最佳方法，但是map_async只接受一个参数(当然你可以用tuple将参数包裹，但得修改被调用的函数原型)。</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div></pre></td><td class="code"><pre><div class="line">2017-09-26 01:13:43.795 14467/MainThread I     test.py:18   [APPLY] start</div><div class="line">2017-09-26 01:13:43.795 14481/MainThread I     test.py:7    start work 0</div><div class="line">2017-09-26 01:13:43.795 14481/MainThread I     test.py:9      end work 0</div><div class="line">2017-09-26 01:13:43.795 14467/MainThread I     test.py:22   [APPLY] 0 = 0</div><div class="line">2017-09-26 01:13:43.796 14482/MainThread I     test.py:7    start work 1</div><div class="line">2017-09-26 01:13:44.797 14482/MainThread I     test.py:9      end work 1</div><div class="line">2017-09-26 01:13:44.797 14467/MainThread I     test.py:22   [APPLY] 1 = 1</div><div class="line">2017-09-26 01:13:44.797 14481/MainThread I     test.py:7    start work 2</div><div class="line">2017-09-26 01:13:46.798 14481/MainThread I     test.py:9      end work 2</div><div class="line">2017-09-26 01:13:46.798 14467/MainThread I     test.py:22   [APPLY] 2 = 2</div><div class="line">2017-09-26 01:13:46.798 14482/MainThread I     test.py:7    start work 3</div><div class="line">2017-09-26 01:13:49.802 14482/MainThread I     test.py:9      end work 3</div><div class="line">2017-09-26 01:13:49.802 14467/MainThread I     test.py:22   [APPLY] 3 = 3</div><div class="line">2017-09-26 01:13:49.802 14481/MainThread I     test.py:7    start work 4</div><div class="line">2017-09-26 01:13:53.805 14481/MainThread I     test.py:9      end work 4</div><div class="line">2017-09-26 01:13:53.805 14467/MainThread I     test.py:22   [APPLY] 4 = 4</div><div class="line">2017-09-26 01:13:53.806 14482/MainThread I     test.py:7    start work 5</div><div class="line">2017-09-26 01:13:58.811 14482/MainThread I     test.py:9      end work 5</div><div class="line">2017-09-26 01:13:58.811 14467/MainThread I     test.py:22   [APPLY] 5 = 5</div><div class="line">2017-09-26 01:13:58.811 14467/MainThread I     test.py:24   [APPLY] end. cost(15s)</div><div class="line"></div><div class="line">2017-09-26 01:13:58.811 14467/MainThread I     test.py:27   [APPLY-ANSYC] start</div><div class="line">2017-09-26 01:13:58.811 14481/MainThread I     test.py:7    start work 0</div><div class="line">2017-09-26 01:13:58.811 14482/MainThread I     test.py:7    start work 1</div><div class="line">2017-09-26 01:13:58.811 14481/MainThread I     test.py:9      end work 0</div><div class="line">2017-09-26 01:13:58.811 14467/MainThread I     test.py:33   [APPLY-ANSYC] call over, start wait result. cost(0s)</div><div class="line">2017-09-26 01:13:58.812 14481/MainThread I     test.py:7    start work 2</div><div class="line">2017-09-26 01:13:59.812 14482/MainThread I     test.py:9      end work 1</div><div class="line">2017-09-26 01:13:59.812 14482/MainThread I     test.py:7    start work 3</div><div class="line">2017-09-26 01:14:00.814 14481/MainThread I     test.py:9      end work 2</div><div class="line">2017-09-26 01:14:00.814 14481/MainThread I     test.py:7    start work 4</div><div class="line">2017-09-26 01:14:02.816 14482/MainThread I     test.py:9      end work 3</div><div class="line">2017-09-26 01:14:02.816 14482/MainThread I     test.py:7    start work 5</div><div class="line">2017-09-26 01:14:04.818 14481/MainThread I     test.py:9      end work 4</div><div class="line">2017-09-26 01:14:07.820 14482/MainThread I     test.py:9      end work 5</div><div class="line">2017-09-26 01:14:07.821 14467/MainThread I     test.py:37   [APPLY-ANSYC] end. cost(9s) result [0, 1, 2, 3, 4, 5]</div><div class="line"></div><div class="line">2017-09-26 01:14:07.821 14467/MainThread I     test.py:40   [MAP] start</div><div class="line">2017-09-26 01:14:07.821 14482/MainThread I     test.py:7    start work 1</div><div class="line">2017-09-26 01:14:07.821 14481/MainThread I     test.py:7    start work 0</div><div class="line">2017-09-26 01:14:07.821 14481/MainThread I     test.py:9      end work 0</div><div class="line">2017-09-26 01:14:07.821 14481/MainThread I     test.py:7    start work 2</div><div class="line">2017-09-26 01:14:08.822 14482/MainThread I     test.py:9      end work 1</div><div class="line">2017-09-26 01:14:08.822 14482/MainThread I     test.py:7    start work 3</div><div class="line">2017-09-26 01:14:09.823 14481/MainThread I     test.py:9      end work 2</div><div class="line">2017-09-26 01:14:09.823 14481/MainThread I     test.py:7    start work 4</div><div class="line">2017-09-26 01:14:11.826 14482/MainThread I     test.py:9      end work 3</div><div class="line">2017-09-26 01:14:11.826 14482/MainThread I     test.py:7    start work 5</div><div class="line">2017-09-26 01:14:13.827 14481/MainThread I     test.py:9      end work 4</div><div class="line">2017-09-26 01:14:16.831 14482/MainThread I     test.py:9      end work 5</div><div class="line">2017-09-26 01:14:16.831 14467/MainThread I     test.py:44   [MAP] end. cost(9s). result [0, 1, 2, 3, 4, 5]</div><div class="line"></div><div class="line">2017-09-26 01:14:16.831 14467/MainThread I     test.py:47   [MAP-ANSYC] start</div><div class="line">2017-09-26 01:14:16.831 14467/MainThread I     test.py:51   [MAP-ANSYC] call over, start wait result. cost(0s)</div><div class="line">2017-09-26 01:14:16.831 14481/MainThread I     test.py:7    start work 0</div><div class="line">2017-09-26 01:14:16.832 14482/MainThread I     test.py:7    start work 1</div><div class="line">2017-09-26 01:14:16.832 14481/MainThread I     test.py:9      end work 0</div><div class="line">2017-09-26 01:14:16.832 14481/MainThread I     test.py:7    start work 2</div><div class="line">2017-09-26 01:14:17.832 14482/MainThread I     test.py:9      end work 1</div><div class="line">2017-09-26 01:14:17.833 14482/MainThread I     test.py:7    start work 3</div><div class="line">2017-09-26 01:14:18.833 14481/MainThread I     test.py:9      end work 2</div><div class="line">2017-09-26 01:14:18.833 14481/MainThread I     test.py:7    start work 4</div><div class="line">2017-09-26 01:14:20.834 14482/MainThread I     test.py:9      end work 3</div><div class="line">2017-09-26 01:14:20.835 14482/MainThread I     test.py:7    start work 5</div><div class="line">2017-09-26 01:14:22.836 14481/MainThread I     test.py:9      end work 4</div><div class="line">2017-09-26 01:14:25.840 14482/MainThread I     test.py:9      end work 5</div><div class="line">2017-09-26 01:14:25.840 14467/MainThread I     test.py:54   [MAP-ANSYC] end. cost(9s). result [0, 1, 2, 3, 4, 5]</div></pre></td></tr></table></figure>
+<h1 id="结果回调处理"><a href="#结果回调处理" class="headerlink" title="结果回调处理"></a>结果回调处理</h1><p>在异步调用的时候，可以传入回调函数，不需要自己调用res.get()，当然，传入回调后，你还是可以调用res.get()，两者并不冲突。传入的回调函数，会在result ready后自动调用。<br>apply_ansy因为是一个一个函数调用的，所以回调的时候，也是一个一个的结果传入回调函数，而map_async是打包的结果（所以，如果处理结果比较耗时，建议使用apply_ansy，这样结果会分先后传入，让你提前处理，如果不耗时，可以使用map_async，一次统一处理相对逻辑更简洁）。示例代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> time</div><div class="line"><span class="keyword">import</span> multiprocessing</div><div class="line"><span class="keyword">import</span> fantoms.elasticsearch.log <span class="keyword">as</span> logmodule</div><div class="line"><span class="keyword">import</span> logging <span class="keyword">as</span> l</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">work</span><span class="params">(idx)</span>:</span></div><div class="line">    l.info(<span class="string">"start work %d"</span> % idx)</div><div class="line">    time.sleep(idx)</div><div class="line">    l.info(<span class="string">"  end work %d"</span> % idx)</div><div class="line">    <span class="keyword">return</span> (idx, idx*<span class="number">10</span>)</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">inc</span><span class="params">(res)</span>:</span></div><div class="line">    l.info(<span class="string">"res is %s"</span> % str(res))</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></div><div class="line">    logmodule.initLog(<span class="string">"test"</span>)</div><div class="line">    pool = multiprocessing.Pool(<span class="number">2</span>)</div><div class="line"></div><div class="line">    <span class="comment"># 2. apply_ansy</span></div><div class="line">    l.info(<span class="string">"[APPLY-ANSYC] start"</span>)</div><div class="line">    results = []</div><div class="line">    ts = time.time()</div><div class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> xrange(<span class="number">6</span>):</div><div class="line">        results.append(pool.apply_async(work, (i,), callback=inc))</div><div class="line">    te = time.time()</div><div class="line">    l.info(<span class="string">"[APPLY-ANSYC] call over, start wait result. cost(%ds)"</span> % (te - ts))</div><div class="line">    <span class="comment">#for i in xrange(len(results)):</span></div><div class="line">    <span class="comment">#    results[i] = results[i].get()</span></div><div class="line">    <span class="comment">#te = time.time()</span></div><div class="line">    <span class="comment">#l.info("[APPLY-ANSYC] end. cost(%ds) result %s" % ((te - ts), str(results)))</span></div><div class="line"></div><div class="line">    <span class="comment"># 4. map-ansyc</span></div><div class="line">    l.info(<span class="string">"[MAP-ANSYC] start"</span>)</div><div class="line">    ts = time.time()</div><div class="line">    results = pool.map_async(work, xrange(<span class="number">6</span>), callback=inc)</div><div class="line">    te = time.time()</div><div class="line">    l.info(<span class="string">"[MAP-ANSYC] call over, start wait result. cost(%ds)"</span> % (te - ts))</div><div class="line">    <span class="comment">#results = results.get()</span></div><div class="line">    <span class="comment">#te = time.time()</span></div><div class="line">    <span class="comment">#l.info("[MAP-ANSYC] end. cost(%ds). result %s" % ((te - ts), str(results)))</span></div><div class="line">    time.sleep(<span class="number">20</span>)</div><div class="line"></div><div class="line">main()</div></pre></td></tr></table></figure>
+<p>输出日志附在下面，从日志可以看出：</p>
+<ol>
+<li>主进程的主线程4348/MainThread不到1秒就将所有参数apply给了线程池，然后就调用sleep等待。</li>
+<li>等待线程池调用完成一个(apply_async)或所有(map_async)队列后，在主进程里新启动一个线程Thread-3去执行result callback。</li>
+<li>如果被调用函数work内部出现异常，result callback和res.get()方式表现会有差异：<ul>
+<li>对于apply_async，result callback方式是忽略掉出问题的那一次调用，而其他没抛异常的work执行结束后，会正常调用result callback。</li>
+<li>对于map_async，只要有一个work执行抛出异常，会导致整个result callback不被调用。</li>
+<li>不论是apply_async还是map_async，如果用res.get()方式，work内部抛出的异常会传导到此。</li>
+</ul>
+</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div></pre></td><td class="code"><pre><div class="line">2017-09-26 01:34:19.905 4348/MainThread I     test.py:20   [APPLY-ANSYC] start</div><div class="line">2017-09-26 01:34:19.905 4348/MainThread I     test.py:26   [APPLY-ANSYC] call over, start wait result. cost(0s)</div><div class="line">2017-09-26 01:34:19.906 4348/MainThread I     test.py:33   [MAP-ANSYC] start</div><div class="line">2017-09-26 01:34:19.905 4355/MainThread I     test.py:7    start work 0</div><div class="line">2017-09-26 01:34:19.906 4356/MainThread I     test.py:7    start work 1</div><div class="line">2017-09-26 01:34:19.906 4355/MainThread I     test.py:9      end work 0</div><div class="line">2017-09-26 01:34:19.906 4348/MainThread I     test.py:37   [MAP-ANSYC] call over, start wait result. cost(0s)</div><div class="line">2017-09-26 01:34:19.906 4355/MainThread I     test.py:7    start work 2</div><div class="line">2017-09-26 01:34:19.906 4348/Thread-3 I     test.py:13   res is (0, 0)</div><div class="line">2017-09-26 01:34:20.906 4356/MainThread I     test.py:9      end work 1</div><div class="line">2017-09-26 01:34:20.906 4356/MainThread I     test.py:7    start work 3</div><div class="line">2017-09-26 01:34:20.907 4348/Thread-3 I     test.py:13   res is (1, 10)</div><div class="line">2017-09-26 01:34:21.908 4355/MainThread I     test.py:9      end work 2</div><div class="line">2017-09-26 01:34:21.908 4355/MainThread I     test.py:7    start work 4</div><div class="line">2017-09-26 01:34:21.908 4348/Thread-3 I     test.py:13   res is (2, 20)</div><div class="line">2017-09-26 01:34:23.909 4356/MainThread I     test.py:9      end work 3</div><div class="line">2017-09-26 01:34:23.910 4356/MainThread I     test.py:7    start work 5</div><div class="line">2017-09-26 01:34:23.910 4348/Thread-3 I     test.py:13   res is (3, 30)</div><div class="line">2017-09-26 01:34:25.912 4355/MainThread I     test.py:9      end work 4</div><div class="line">2017-09-26 01:34:25.912 4355/MainThread I     test.py:7    start work 0</div><div class="line">2017-09-26 01:34:25.912 4355/MainThread I     test.py:9      end work 0</div><div class="line">2017-09-26 01:34:25.912 4348/Thread-3 I     test.py:13   res is (4, 40)</div><div class="line">2017-09-26 01:34:25.912 4355/MainThread I     test.py:7    start work 1</div><div class="line">2017-09-26 01:34:26.913 4355/MainThread I     test.py:9      end work 1</div><div class="line">2017-09-26 01:34:26.914 4355/MainThread I     test.py:7    start work 2</div><div class="line">2017-09-26 01:34:28.915 4356/MainThread I     test.py:9      end work 5</div><div class="line">2017-09-26 01:34:28.915 4355/MainThread I     test.py:9      end work 2</div><div class="line">2017-09-26 01:34:28.915 4356/MainThread I     test.py:7    start work 3</div><div class="line">2017-09-26 01:34:28.915 4355/MainThread I     test.py:7    start work 4</div><div class="line">2017-09-26 01:34:28.915 4348/Thread-3 I     test.py:13   res is (5, 50)</div><div class="line">2017-09-26 01:34:31.918 4356/MainThread I     test.py:9      end work 3</div><div class="line">2017-09-26 01:34:31.918 4356/MainThread I     test.py:7    start work 5</div><div class="line">2017-09-26 01:34:32.917 4355/MainThread I     test.py:9      end work 4</div><div class="line">2017-09-26 01:34:36.923 4356/MainThread I     test.py:9      end work 5</div><div class="line">2017-09-26 01:34:36.924 4348/Thread-3 I     test.py:13   res is [(0, 0), (1, 10), (2, 20), (3, 30), (4, 40), (5, 50)]</div></pre></td></tr></table></figure>
+<p>pool必须主动销毁，将对象设置为None(函数内的对象也需要设置为None)<br>或者调用del都可以触发对象销毁，我发现如果在退出的时候，自动销毁，会在_exit_function-&gt;join-&gt;wait的地方卡主：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div></pre></td><td class="code"><pre><div class="line">root     28781  0.0  0.5 841576 173556 ?       Sl   Oct08   0:33  |   \_ python /home/fantom/apps/ngfw/bin/translate/rawlog/access.py</div><div class="line">root     29168  0.0  0.0      0     0 ?        Z    Oct08   0:00  |   |   \_ [python] &lt;defunct&gt;</div><div class="line">root     29169  0.0  0.0      0     0 ?        Z    Oct08   0:00  |   |   \_ [python] &lt;defunct&gt;</div><div class="line">root     29171  0.0  0.0      0     0 ?        Z    Oct08   0:00  |   |   \_ [python] &lt;defunct&gt;</div><div class="line"></div><div class="line">~/ # strace -p 28781</div><div class="line">Process 28781 attached</div><div class="line">select(0, NULL, NULL, NULL, &#123;0, 10571&#125;) = 0 (Timeout)</div><div class="line">select(0, NULL, NULL, NULL, &#123;0, 50000&#125;) = 0 (Timeout)</div><div class="line">select(0, NULL, NULL, NULL, &#123;0, 50000&#125;) = 0 (Timeout)</div><div class="line">select(0, NULL, NULL, NULL, &#123;0, 50000&#125;) = 0 (Timeout)</div><div class="line">select(0, NULL, NULL, NULL, &#123;0, 50000&#125;) = 0 (Timeout)</div><div class="line">select(0, NULL, NULL, NULL, &#123;0, 50000&#125;) = 0 (Timeout)</div><div class="line"></div><div class="line">~/ # rtinject 28781 bt</div><div class="line"><span class="meta">#</span><span class="bash">0  0x00007f21efb698f3 <span class="keyword">in</span> select () from /lib64/libc.so.6</span></div><div class="line"><span class="meta">#</span><span class="bash">1  0x00007f21ef87807b <span class="keyword">in</span> floatsleep (secs=&lt;optimized out&gt;)</span></div><div class="line">    at /usr/src/debug/Python-2.7.5/Modules/timemodule.c:948</div><div class="line"><span class="meta">#</span><span class="bash">2  time_sleep (self=&lt;optimized out&gt;, args=&lt;optimized out&gt;)</span></div><div class="line">    at /usr/src/debug/Python-2.7.5/Modules/timemodule.c:206</div><div class="line"><span class="meta">#</span><span class="bash">3  0x00007f21f0842b94 <span class="keyword">in</span> call_function (oparg=&lt;optimized out&gt;, </span></div><div class="line">    pp_stack=0x7fffd45f2e40) at /usr/src/debug/Python-2.7.5/Python/ceval.c:4098</div><div class="line"><span class="meta">#</span><span class="bash">4  PyEval_EvalFrameEx (f=f@entry=</span></div><div class="line">    Frame 0x40f2990, for file /usr/lib64/python2.7/threading.py, line 361, in wait (self=&lt;_Condition(_Verbose__verbose=False, _Condition__lock=&lt;thread.lock at remote 0x3f1f550&gt;, acquire=&lt;built-in method acquire of thread.lock object at remote 0x3f1f550&gt;, _Condition__waiters=[&lt;thread.lock at remote 0x7f21c8c6c9f0&gt;], release=&lt;built-in method release of thread.lock object at remote 0x3f1f550&gt;) at remote 0x422b710&gt;, timeout=&lt;float at remote 0x42ac358&gt;, balancing=True, waiter=&lt;thread.lock at remote 0x7f21c8c6c9f0&gt;, saved_state=None, endtime=&lt;float at remote 0x42ac3a0&gt;, delay=&lt;float at remote 0x206a028&gt;, gotit=False, remaining=&lt;float at remote 0x42ac3d0&gt;), throwflag=throwflag@entry=0)</div><div class="line">    at /usr/src/debug/Python-2.7.5/Python/ceval.c:2740</div><div class="line">...</div><div class="line"><span class="meta">#</span><span class="bash">8  PyEval_EvalFrameEx (</span></div><div class="line">    f=f@entry=Frame 0x6ee4950, for file /usr/lib64/python2.7/threading.py, line 961, in join (self=&lt;Thread(_Thread__ident=139783532226304, _Thread__block=&lt;_Condition(_Verbose__verbose=False, _Condition__lock=&lt;thread.lock at remote 0x3f1f550&gt;, acquire=&lt;built-in method acquire of thread.lock object at remote 0x3f1f550&gt;, _Condition__waiters=[&lt;thread.lock at remote 0x7f21c8c6c9f0&gt;], release=&lt;built-in method release of thread.lock object at remote 0x3f1f550&gt;) at remote 0x422b710&gt;, _Thread__name='Thread-2', _Thread__daemonic=True, _state=2, _Thread__started=&lt;_Event(_Verbose__verbose=False, _Event__flag=True, _Event__cond=&lt;_Condition(_Verbose__verbose=False, _Condition__lock=&lt;thread.lock at remote 0x3f1f530&gt;, acquire=&lt;built-in method acquire of thread.lock object at remote 0x3f1f530&gt;, _Condition__waiters=[], release=&lt;built-in method release of thread.lock object at remote 0x3f1f530&gt;) at remote 0x422b650&gt;) at remote 0x422b5d0&gt;, _Thread__stderr=&lt;file at remote 0x7f21f0d171e0&gt;, _Thread__target=&lt;function at remote 0x420b8c0&gt;, _Thread...(truncated), throwflag=throwflag@entry=0)</div><div class="line">...</div><div class="line"><span class="meta">#</span><span class="bash">31 PyEval_EvalFrameEx (</span></div><div class="line">    f=f@entry=Frame 0x6ef1b50, for file /usr/lib64/python2.7/multiprocessing/util.py, line 299, in _exit_function (info=&lt;function at remote 0x3fdade8&gt;, debug=&lt;function at remote 0x3fdad70&gt;, _run_finalizers=&lt;function at remote 0x3fe1230&gt;, active_children=&lt;function at remote 0x3fda0c8&gt;, current_process=&lt;function at remote 0x3fda050&gt;), throwflag=throwflag@entry=0)</div><div class="line">...</div><div class="line"><span class="meta">#</span><span class="bash">36 PyEval_EvalFrameEx (</span></div><div class="line">    f=f@entry=Frame 0x21148b0, for file /usr/lib64/python2.7/atexit.py, line 24, in _run_exitfuncs (exc_info=None, func=&lt;function at remote 0x3fe1578&gt;, targs=(), kargs=&#123;&#125;), throwflag=throwflag@entry=0)</div><div class="line">    at /usr/src/debug/Python-2.7.5/Python/ceval.c:2779</div></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Python/" rel="tag"># Python</a>
+          
+            <a href="/tags/API/" rel="tag"># API</a>
+          
+            <a href="/tags/并行/" rel="tag"># 并行</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/09/14/profile-python-with-pycharm/" rel="next" title="使用PyCharm Profile Python性能">
+                <i class="fa fa-chevron-left"></i> 使用PyCharm Profile Python性能
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/09/21/elasticsearch-python-client-readtimeout/" rel="prev" title="ElasticSearch Python Client ReadTimeout">
+                ElasticSearch Python Client ReadTimeout <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">24</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">39</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#基本用法"><span class="nav-number">1.</span> <span class="nav-text">基本用法</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#结果回调处理"><span class="nav-number">2.</span> <span class="nav-text">结果回调处理</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

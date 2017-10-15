@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="MySQL,HA," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="半同步复制(Semi-Synchronous Replication)是相对于同步复制和异步复制而言的折中方案，当两台MySQL数据库需要同步数据，基本的复制思路如图：master对外提供写服务，并开启binary log功能，然后slave节点启动一个IO线程来从master的binary log同步并将其写入本节点的relay log中，slave再启动一个SQL线程，从relay log中读">
+<meta name="keywords" content="MySQL,HA">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL Semi-Synchronous Replication">
+<meta property="og:url" content="http://mnstory.net/2016/12/14/mysql-semi-synchronous-replication/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="半同步复制(Semi-Synchronous Replication)是相对于同步复制和异步复制而言的折中方案，当两台MySQL数据库需要同步数据，基本的复制思路如图：master对外提供写服务，并开启binary log功能，然后slave节点启动一个IO线程来从master的binary log同步并将其写入本节点的relay log中，slave再启动一个SQL线程，从relay log中读">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2016/12/14/mysql-semi-synchronous-replication/01.semi-sync.png">
+<meta property="og:image" content="http://mnstory.net/2016/12/14/mysql-semi-synchronous-replication/02.write-log.png">
+<meta property="og:updated_time" content="2017-10-15T14:44:23.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MySQL Semi-Synchronous Replication">
+<meta name="twitter:description" content="半同步复制(Semi-Synchronous Replication)是相对于同步复制和异步复制而言的折中方案，当两台MySQL数据库需要同步数据，基本的复制思路如图：master对外提供写服务，并开启binary log功能，然后slave节点启动一个IO线程来从master的binary log同步并将其写入本节点的relay log中，slave再启动一个SQL线程，从relay log中读">
+<meta name="twitter:image" content="http://mnstory.net/2016/12/14/mysql-semi-synchronous-replication/01.semi-sync.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2016/12/14/mysql-semi-synchronous-replication/"/>
+
+
+
+
+
+  <title>MySQL Semi-Synchronous Replication | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/12/14/mysql-semi-synchronous-replication/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">MySQL Semi-Synchronous Replication</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-12-14T14:00:00+00:00">
+                2016-12-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>半同步复制(Semi-Synchronous Replication)是相对于同步复制和异步复制而言的折中方案，当两台MySQL数据库需要同步数据，基本的复制思路如图：<br><img src="/2016/12/14/mysql-semi-synchronous-replication/01.semi-sync.png" alt="semi-sync"><br>master对外提供写服务，并开启binary log功能，然后slave节点启动一个IO线程来从master的binary log同步并将其写入本节点的relay log中，slave再启动一个SQL线程，从relay log中读取日志记录并插入本节点的数据库。</p>
+<p>一切原理都是那么简单。<br><a id="more"></a></p>
+<h1 id="binary-log"><a href="#binary-log" class="headerlink" title="binary log"></a>binary log</h1><h2 id="三种记录模式"><a href="#三种记录模式" class="headerlink" title="三种记录模式"></a>三种记录模式</h2><ol>
+<li><p>SQL模式<br>我们很可能一下子就想到，记录的是SQL语句，任何在master端的写入操作我都同步一份到slave，这样传输的数据量并不大，而且比较符合人类思维，但是有几个潜在的问题需要考虑：</p>
+<ul>
+<li>有的函数和特定环境相关，如何保证复制后不同环境下数据是一致的？<br> 例如，时间生成函数可能在不同机器上不同，例如uuid等不同设备产生的结果不同，例如使用存储过程操作了本地某些文件并没有同步到对端。</li>
+<li>slave和master可能因为人为干预后就不再一致。<br> 例如，slave里面如果删除了一条记录再插入一条同样的记录，那用auto id产生的字段都会和master不一致。 </li>
+</ul>
+</li>
+<li><p>ROW模式<br> 行模式记录的是表里发生改变行的数据，相对于SQL记录而言，获取源数据的逻辑更靠后，对程序来说处理更简单，不需要考虑和特定环境相关的函数产生不同结果的问题，也不太存在人为干预导致数据不一致问题（可覆盖过来）。<br> 但是行模式同样存在自己的问题，比如，我想在表里面插入一新列，那这个表里所有的的行都要记录一遍到binary log，那日志量可谓惊人。</p>
+</li>
+<li><p>MIX模式<br> 现在人们还没想到第三种原理上不同的日志记录模式，但是肯定会有人想到，既然SQL和ROW模式各有各的优缺点，我们能否取长补短？<br> 于是出现了MIX模式。<br> MIX模式简单点说，就是针对某一次更改，在SQL和ROW模式中挑一个最优的方式来记录，例如，alert table，我们尽可能用SQL模式，避免产生太多的日志，而insert一行数据更倾向于ROW模式，因为此时ROW模式产生的数据量和SQL相当，并且不需要再次执行SQL解析。</p>
+</li>
+</ol>
+<p>binary log使用什么模式记录日志，可以在配置里面设置，例如下面使用的行模式：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> cat /etc/my.cnf | grep log</div><div class="line">log-bin=binlog.bin</div><div class="line">binlog-format=ROW</div><div class="line">binlog-row-image=minimal</div><div class="line">sync-binlog=1</div></pre></td></tr></table></figure></p>
+<p>relay log和binary log内部格式一样，配置为：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> cat /etc/my.cnf | grep relay-log</div><div class="line">relay-log-info-repository=TABLE</div><div class="line">relay-log=relay-log</div><div class="line">relay-log-index=relay-log.index</div><div class="line">relay-log-purge=1  </div><div class="line">relay-log-recovery=1</div></pre></td></tr></table></figure></p>
+<p>binary log可以设置自己的日志记录模式，但是relay log不能，因为relay log完全是从binary-log同步过来的，没有自主选择权。</p>
+<h2 id="日志相关操作"><a href="#日志相关操作" class="headerlink" title="日志相关操作"></a>日志相关操作</h2><p>目前产生了有哪些日志，我们可以通过mysql命令行查看：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="meta">master&gt;</span>show binary logs;</div><div class="line">+----------------+-----------+</div><div class="line">| Log_name       | File_size |</div><div class="line">+----------------+-----------+</div><div class="line">| binglog.000001 | 440656239 |</div><div class="line">+----------------+-----------+</div><div class="line">1 row in set (0.00 sec)</div></pre></td></tr></table></figure></p>
+<p>如果这里的日志比较多，我们还可以清除一些，例如，删除所有日志直到序号03：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">master&gt;</span>purge binary logs to 'binlog.000003';</div><div class="line">ERROR 1373 (HY000): Target log not found in binlog index</div></pre></td></tr></table></figure></p>
+<p>再例如，清除’2014-01-01 14:14:14’以前的日志：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">master&gt;</span>purge binary logs before '2014-01-01 14:14:14';</div><div class="line">Query OK, 0 rows affected, 1 warning (0.08 sec)</div></pre></td></tr></table></figure></p>
+<p>哦，这里发现一个warning，可以通过下面命令看WARING详情：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="meta">master&gt;</span>show warnings;</div><div class="line">+---------+------+-------------------------------------------------------------------------+</div><div class="line">| Level   | Code | Message                                                                 |</div><div class="line">+---------+------+-------------------------------------------------------------------------+</div><div class="line">| Warning | 1868 | file ./binlog.000001 was not purged because it is the active log file.  |</div><div class="line">+---------+------+-------------------------------------------------------------------------+</div><div class="line">1 row in set (0.00 sec)</div></pre></td></tr></table></figure></p>
+<p>如果想知道文件binlog.000001里面的具体内容，可以通过mysqlbinlog来查看(同样适用于relay log)：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> mysqlbinlog /var/lib/mysql/binlog.000001 </div><div class="line"><span class="meta">#</span> at 7522</div><div class="line"><span class="meta">#</span>161116 18:48:26 server id 1  end_log_pos 7575 CRC32 0x4fce539c 	Update_rows: table id 70 flags: STMT_END_F</div><div class="line"></div><div class="line">BINLOG '</div><div class="line">ejksWBMBAAAAUAAAAGIdAAAAAEYAAAAAAAEABmNpbmRlcgAIc2VydmljZXMADRISEgEDDw8PAwEP</div><div class="line">DxIOAAAA/QL9Av0C/QL9AgDvHuvhLdM=</div><div class="line">ejksWB8BAAAANQAAAJcdAAAAAEYAAAAAAAEAAgANEAACAf4KAAAA/Jma4KwaZbICAJxTzk8=</div><div class="line">'/*!*/;</div></pre></td></tr></table></figure></p>
+<p>上面是ROW模式记录的日志，这日志并没有SQL模式的那么容易看懂，通过MySQL命令也能查看，而且打印格式更可读一些：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="meta">mysql&gt;</span> show binlog events in 'binlog.000009' limit 6;</div><div class="line">+---------------+-------+----------------+-------------+----------------------------------------------------+</div><div class="line">| Log_name      | Pos   | Event_type     | End_log_pos | Info                                               |</div><div class="line">+---------------+-------+----------------+-------------+----------------------------------------------------+</div><div class="line">| binlog.000009 |   120 | Previous_gtids |         191 | 0c25d2e4-a5ba-11e6-8b89-0cc47aaba96e:1-5722078     |</div><div class="line">| binlog.000009 |   191 | Gtid           |         239 | SET @@SESSION.GTID_NEXT= '0c25d2e4-a5ba-11e6-8b89' |</div><div class="line">| binlog.000009 |   239 | Query          |         313 | BEGIN                                              |</div><div class="line">| binlog.000009 |   313 | Table_map      |         389 | table_id: 894 (cinder.volume_metadata)             |</div><div class="line">| binlog.000009 |   389 | Update_rows    |         451 | table_id: 894 flags: STMT_END_F                    |</div><div class="line">| binlog.000009 |   451 | Xid            |         482 | COMMIT /* xid=150492246 */                         |</div><div class="line">+---------------+-------+----------------+-------------+----------------------------------------------------+</div></pre></td></tr></table></figure></p>
+<h1 id="同步、异步和半同步模式"><a href="#同步、异步和半同步模式" class="headerlink" title="同步、异步和半同步模式"></a>同步、异步和半同步模式</h1><p>几乎所有人都能想到同步和异步两种日志同步模式，这里，同步和异步指的是，当master提交一条更新事务时，如果要等到slave返回，那就是同步模式，如果不管slave直接返回，那就是异步模式（这里的返回，我认为是等待slave的IO线程返回即可，具体取决于实现，如果要等待SQL线程也做完再返回，也有他的道理）。</p>
+<h2 id="同步模式"><a href="#同步模式" class="headerlink" title="同步模式"></a>同步模式</h2><p>同步的优点是，master和slave之间是强一致的，因为slave写入失败，master不会真正commit这条记录，但是缺点是，master每次都要等到slave返回，那这个性能，的确不敢恭维，特别是有多个slave的时候。</p>
+<h2 id="异步模式"><a href="#异步模式" class="headerlink" title="异步模式"></a>异步模式</h2><p>异步的优点是master和slave之间没有太多相关性，各自干各自的，不存在影响整体性能一说，多台slave也是如此，但缺点是，master和slave之间可能有日志同步不一致，当master突然挂了，slave里面的日志可能并不是当前最新的，存在丢数据的情况，再者，同步模式下，slave提供读功能完全没有问题，但是异步模式下slave提供的读功能需要考虑是否能接受延迟或者想办法规避延迟。</p>
+<h2 id="半同步模式"><a href="#半同步模式" class="headerlink" title="半同步模式"></a>半同步模式</h2><p>同日志记录的SQL模式和ROW模式一样，聪明的人们在同步和异步之外并没有想到第三种模式，于是来了一个各取其长的模式，叫半同步模式。</p>
+<p>目前MySQL默认支持的是异步模式(同步是第三方支持的)，也就是说，master干master的，slave干slave的，我们互不影响，但是可能slave和master数据不同步，而半同步模式采用了同步模式的方法，要求至少有一个slave返回OK后，master才返回给用户，所以针对有多个slave的场景，是非常实用的，但是，细细想来，如果只有一个slave，这不就是同步模型吗？这挂羊头卖狗肉的活也堪称半同步？</p>
+<p>事实上，为了避免被骂没干什么实事，半同步还有一个机制，就是当一定timeout内(rpl_semi_sync_master_timeout)没有slave返回，自动将半同步模式切换回异步模式，过一段时间slave追上master了，又自动将模式切换为半同步，有点像电视剧里生孩子的场景，数据和性能，保大还是保小，你看着办：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> grep Semi-sync /var/log/mysqld.log</div><div class="line">2016-09-27 09:31:18 145773 [Note] Semi-sync replication switched OFF.</div><div class="line">2016-09-27 10:07:06 145773 [Note] Semi-sync replication switched OFF.</div><div class="line">2016-09-27 10:07:59 145773 [Note] Semi-sync replication switched ON with slave (server_id: 2) at (mysqlsf.000001, 508650)</div><div class="line">2016-09-27 16:14:37 145773 [Note] Semi-sync replication switched OFF.</div><div class="line">2016-09-27 16:14:47 145773 [Note] Semi-sync replication switched ON with slave (server_id: 2) at (mysqlsf.000001, 73834284)</div></pre></td></tr></table></figure></p>
+<p>上面说的rpl_semi_sync_master_timeout，是master等待slave多久超时(单位ms)，默认是10秒还没有slave返回就切换为异步模式，内网环境好，推荐修改小一点，例如3s：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="meta">mysql&gt;</span> show global variables like '%semi%';</div><div class="line">+------------------------------------+-------+</div><div class="line">| Variable_name                      | Value |</div><div class="line">+------------------------------------+-------+</div><div class="line">| rpl_semi_sync_master_enabled       | ON    |</div><div class="line">| rpl_semi_sync_master_timeout       | 10000 | </div><div class="line">| rpl_semi_sync_master_trace_level   | 32    |</div><div class="line">| rpl_semi_sync_master_wait_no_slave | ON    |</div><div class="line">| rpl_semi_sync_slave_enabled        | ON    |</div><div class="line">| rpl_semi_sync_slave_trace_level    | 32    |</div><div class="line">+------------------------------------+-------+</div><div class="line">6 rows in set (0.00 sec)</div></pre></td></tr></table></figure></p>
+<p>出现这种二选一的艰难决策，显然在数据复制方面，目前的手段并不是很高明，同志们还需努力。</p>
+<h1 id="启用半同步"><a href="#启用半同步" class="headerlink" title="启用半同步"></a>启用半同步</h1><p>如何启用的文章网上很多，但有强迫症的人，不说一点什么，感觉人生都不那么完整了。</p>
+<p>启用半同步机制，非常简单，因为这是不是后妈生的，默认自带，先看看你的插件目录有没有这两个文件：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> ls -lh /usr/lib64/mysql/plugin/semisync_*</div><div class="line">-rwxr-xr-x 1 root root 519K Nov 21  2014 /usr/lib64/mysql/plugin/semisync_master.so*</div><div class="line">-rwxr-xr-x 1 root root 288K Nov 21  2014 /usr/lib64/mysql/plugin/semisync_slave.so*</div></pre></td></tr></table></figure></p>
+<p>当然，从MySQL命令里看是否加载了插件更准确些：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="meta">mysql&gt;</span> show plugins;</div><div class="line">+----------------------------+----------+--------------------+--------------------+-------------+</div><div class="line">| Name                       | Status   | Type               | Library            | License     |</div><div class="line">+----------------------------+----------+--------------------+--------------------+-------------+</div><div class="line">| binlog                     | ACTIVE   | STORAGE ENGINE     | NULL               | PROPRIETARY |</div><div class="line">...</div><div class="line">| rpl_semi_sync_master       | ACTIVE   | REPLICATION        | semisync_master.so | PROPRIETARY |</div><div class="line">| rpl_semi_sync_slave        | ACTIVE   | REPLICATION        | semisync_slave.so  | PROPRIETARY |</div><div class="line">+----------------------------+----------+--------------------+--------------------+-------------+</div></pre></td></tr></table></figure></p>
+<p>记得在配置里面添加相应选项：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> grep sync /etc/my.cnf</div><div class="line">sync-binlog=1</div><div class="line">sync-master-info=1</div><div class="line">rpl-semi-sync-slave-enabled=1</div><div class="line">rpl-semi-sync-master-enabled=1</div><div class="line">rpl-semi-sync-master-timeout=10000</div></pre></td></tr></table></figure></p>
+<p>上面有用show global variables like ‘%semi%’来打印半同步相关的信息，里面有rpl_semi_sync_master_enabled 为ON字段，如果为ON表示真的启用了，比配置里面配置了还要真。</p>
+<p>看看slave线程在不在：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="meta">mysql&gt;</span> show processlist;</div><div class="line">+--------+-------------+---------+--------+----------------------------------------+</div><div class="line">| Id     | User        | Command | Time   | State                                  |</div><div class="line">+--------+-------------+---------+--------+----------------------------------------+</div><div class="line">|     20 | system user | Connect | 877466 | Waiting for master to send event       |</div><div class="line">|     21 | system user | Connect |      0 | Slave has read all relay log; waiting  |</div><div class="line">|                                           for the slave I/O thread to update it  |</div><div class="line">|     22 | system user | Connect |      1 | Waiting for an event from Coordinator  |</div><div class="line">|     23 | system user | Connect |      3 | Waiting for an event from Coordinator  |</div><div class="line">| 628655 | root        | Query   |      0 | init                                   |</div><div class="line">+--------+-------------+---------+--------+----------------------------------------+</div><div class="line">7 rows in set (0.00 sec)</div></pre></td></tr></table></figure></p>
+<h2 id="性能选项"><a href="#性能选项" class="headerlink" title="性能选项"></a>性能选项</h2><p>同步可能需要考虑性能问题，同步慢了，对大家都不好，对于master，我们有两个非常重要的参数：innodb_flush_log_at_trx_commit和sync_binlog。</p>
+<p>如果启动了autocommit，那么每statement会写入binary log，如果不没有启用autocommit，那么每次transaction会写入binary log。</p>
+<ol>
+<li>sync_binlog<ul>
+<li>默认来说，sync_binlog是0，数据库不会在每次写入binary log后调用 fdatasync()来确保数据已经写入存储；</li>
+<li>如果设置为1，每次写的binary log都会同步到磁盘，这么看来，最多就丢一条日志(万一这条日志写入失败了就丢了)，这种方式最安全的，但也是性能最差的；</li>
+<li>如果设置为更大的值，例如200条，性能是好了，但是可能(可能而已，因为还有其他选项交叉决定)真会丢失200条binary log。</li>
+</ul>
+</li>
+<li>innodb_flush_log_at_trx_commit<br> innodb_flush_log_at_trx_commit默认为0，我直接抄这位仁兄<a href="http://blog.itpub.net/22664653/viewspace-1063134/" target="_blank" rel="external">http://blog.itpub.net/22664653/viewspace-1063134/</a>的BLOG了，因为他的图画的不错，解释也很好：<ul>
+<li>如果innodb_flush_log_at_trx_commit设置为0，log buffer将每秒一次地写入log file中，并且log file的flush(刷到磁盘)操作同时进行.该模式下，在事务提交的时候，不会主动触发写入磁盘的操作。</li>
+<li>如果innodb_flush_log_at_trx_commit设置为1，每次事务提交时MySQL都会把log buffer的数据写入log file，并且flush(刷到磁盘)中去。</li>
+<li>如果innodb_flush_log_at_trx_commit设置为2，每次事务提交时MySQL都会把log buffer的数据写入log file.但是flush(刷到磁盘)操作并不会同时进行。该模式下,MySQL会每秒执行一次 flush(刷到磁盘)操作。<br>并附上盗图一张：<br><img src="/2016/12/14/mysql-semi-synchronous-replication/02.write-log.png" alt="write-log"></li>
+</ul>
+</li>
+</ol>
+<p>一般来说，如果想要数据最安全，不太在意性能，建议两者都设置为1：</p>
+<blockquote>
+<p>For the greatest possible durability and consistency in a replication setup using InnoDB with transactions, you should useinnodb_flush_log_at_trx_commit=1 and sync_binlog=1 in the master my.cnf file.</p>
+</blockquote>
+<h1 id="同步状态查看"><a href="#同步状态查看" class="headerlink" title="同步状态查看"></a>同步状态查看</h1><p>MySQL主要提供了两个命令，用于查看主从节点的同步信息。我们可以在主节点查看master的状态信息，当然，也没啥太多内容：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="meta">master&gt;</span>show master status\G;</div><div class="line">*************************** 1. row ***************************</div><div class="line">             File: binlog.000001  #日志文件</div><div class="line">         Position: 418613282</div><div class="line">     Binlog_Do_DB: </div><div class="line"> Binlog_Ignore_DB:                #不记录入日志文件的db</div><div class="line">Executed_Gtid_Set: 8875511e-9a89-11e6-8292-a0369f9be84c:1-623844, a0b7791e-aa6a-11e6-aa1d-50af736f4ba0:1-3</div><div class="line">1 row in set (0.00 sec)</div></pre></td></tr></table></figure></p>
+<p>我们可以在从节点看自己作为slave的信息，这个就比较丰富了：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> mysql -hslave -uroot -e "show slave status\G"</div><div class="line">*************************** 1. row ***************************</div><div class="line">               Slave_IO_State: Queueing master event to the relay log #正在将master的log插入slave的relay log中。命令详解见 http://dev.mysql.com/doc/refman/5.7/en/slave-io-thread-states.html。</div><div class="line">                  Master_Host: 200.200.102.206</div><div class="line">                  Master_User: root</div><div class="line">                  Master_Port: 3306</div><div class="line">                Connect_Retry: 60</div><div class="line">              Master_Log_File: binlog.000007</div><div class="line">          Read_Master_Log_Pos: 715424679</div><div class="line">               Relay_Log_File: relay-log.000019</div><div class="line">                Relay_Log_Pos: 715424483</div><div class="line">        Relay_Master_Log_File: binlog.000007</div><div class="line">             Slave_IO_Running: Yes #从master的binary日志里，取最新记录，同步到slave的relay日志里，如果为No，可能是网络有问题，权限不够等。</div><div class="line">            Slave_SQL_Running: Yes #从slave的relay日志里，取日志记录，并执行更新操作，如果为No，可能是主从数据库不一致了，导致执行更新失败，此时Last_SQL_Error和Last_SQL_Error_Timestamp会记录错误原因和时间。出错后，为了不至于让数据库更糟糕，此线程会停止，而IO线程还会继续，保证最新日志同步，当人工介入，错误修复后，需stop slave再start slave重启SQL线程。当(Master_Log_File == Relay_Master_Log_File &amp;&amp; Relay_Log_Pos == Exec_Master_Log_Pos &amp;&amp; Slave_SQL_Running_State == "Wait")为true时，表示主从处于完全同步状态。</div><div class="line">              Replicate_Do_DB: </div><div class="line">          Replicate_Ignore_DB: </div><div class="line">           Replicate_Do_Table: </div><div class="line">       Replicate_Ignore_Table: </div><div class="line">      Replicate_Wild_Do_Table: </div><div class="line">  Replicate_Wild_Ignore_Table: </div><div class="line">                   Last_Errno: 0</div><div class="line">                   Last_Error: </div><div class="line">                 Skip_Counter: 0</div><div class="line">          Exec_Master_Log_Pos: 715424277</div><div class="line">              Relay_Log_Space: 715425168</div><div class="line">              Until_Condition: None</div><div class="line">               Until_Log_File: </div><div class="line">                Until_Log_Pos: 0</div><div class="line">           Master_SSL_Allowed: No</div><div class="line">           Master_SSL_CA_File: </div><div class="line">           Master_SSL_CA_Path: </div><div class="line">              Master_SSL_Cert: </div><div class="line">            Master_SSL_Cipher: </div><div class="line">               Master_SSL_Key: </div><div class="line">        Seconds_Behind_Master: 0 #Seconds_Behind_Master 是以秒为单位衡量slave节点 的SQL 线程与slave节点的 I/O 线程之间的延迟，也可以表示当前relay日志中没有在slave节点上执行的事务数量与master节点中已提交的事务数量的关系。如果发现 Seconds_Behind_Master 的值大于 0，那就意味着可能有较高的网络延迟或服务器负载。</div><div class="line">Master_SSL_Verify_Server_Cert: No</div><div class="line">                Last_IO_Errno: 0</div><div class="line">                Last_IO_Error: </div><div class="line">               Last_SQL_Errno: 0</div><div class="line">               Last_SQL_Error: </div><div class="line">  Replicate_Ignore_Server_Ids: </div><div class="line">             Master_Server_Id: 1</div><div class="line">                  Master_UUID: 8875511e-9a89-11e6-8292-a0369f9be84c</div><div class="line">             Master_Info_File: mysql.slave_master_info</div><div class="line">                    SQL_Delay: 0</div><div class="line">          SQL_Remaining_Delay: NULL</div><div class="line">      Slave_SQL_Running_State: Reading event from the relay log #这个表示slave的SQL线程正从relay日志里面读取日志来执行，如果是Wait状态，表示当前无事可做。命令详解见http://dev.mysql.com/doc/refman/5.7/en/slave-sql-thread-states.html。</div><div class="line">           Master_Retry_Count: 86400</div><div class="line">                  Master_Bind: </div><div class="line">      Last_IO_Error_Timestamp: </div><div class="line">     Last_SQL_Error_Timestamp: </div><div class="line">               Master_SSL_Crl: </div><div class="line">           Master_SSL_Crlpath: </div><div class="line">           Retrieved_Gtid_Set: 8875511e-9a89-11e6-8292-a0369f9be84c:1300-8753032</div><div class="line">            Executed_Gtid_Set: 8875511e-9a89-11e6-8292-a0369f9be84c:1-8753031,acdd9e1f-a23e-11e6-b4d4-50af736f4ba0:1-6</div><div class="line">                Auto_Position: 1</div></pre></td></tr></table></figure></p>
+<p>从上面的slave status，可以看出很多信息来，例如：</p>
+<ol>
+<li><p>IO错误1593</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">Slave_IO_Running: No</div><div class="line">Slave_SQL_Running: Yes</div><div class="line">Last_IO_Errno: 1593</div><div class="line">Last_IO_Error: Fatal error: The slave I/O thread stops because master and slave have equal MySQL server ids; these ids must be different for replication to work (or the --replicate-same-server-id option must be used on slave but this does not always make sense; please check the manual before using it).</div></pre></td></tr></table></figure>
+<p> MySQL的ServerID要不一样，才能正确Replication：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">200.200.102.206 cat /etc/my.cnf</div><div class="line">server-id=1</div><div class="line">200.200.102.207 cat /etc/my.cnf</div><div class="line">server-id=2</div></pre></td></tr></table></figure>
+</li>
+<li><p>SQL错误1146</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">Slave_IO_State: Waiting for master to send event</div><div class="line">Slave_IO_Running: Yes</div><div class="line">Slave_SQL_Running: No</div><div class="line">Last_SQL_Errno: 1146</div><div class="line">Last_SQL_Error: Error Table 'book3.no_tbl_on_slave' doesn't exist' on query. Default database: 'book3'. Query: 'INSERT INTO no_tbl_on_slave(id) VALUES(1)'</div></pre></td></tr></table></figure>
+<p> slave节点上没有创建数据表，需要创建再复制。</p>
+</li>
+<li><p>SQL错误1062</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">Slave_IO_Running: Yes</div><div class="line">Slave_SQL_Running: No</div><div class="line">Seconds_Behind_Master: NULL</div><div class="line">Last_SQL_Errno: 1062</div><div class="line">Last_SQL_Error: Error Duplicate entry '1' for key 'id' on query. Default database: 'book3'. Query: 'INSERT INTO uniq_test(id) VALUES(1),(2),(3)'</div></pre></td></tr></table></figure>
+<p> slave节点发现外键错误，我们可以跳过这个错误继续，但是最好找到根本原因，为啥会出现数据不一致，因为后面还可能会有类似错误。</p>
+</li>
+</ol>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ol><br>    <li>Ronald Bradford - 《Effective MySQL: Replication Techniques in Depth》</li><br>    <li>MySQL文档 - “15.14 InnoDB Startup Options and System Variables”<br>    <a href="http://dev.mysql.com/doc/refman/5.7/en/innodb-parameters.html" target="_blank" rel="external">http://dev.mysql.com/doc/refman/5.7/en/innodb-parameters.html</a></li><br>    <li>MySQL文档 - “Chapter 18 Replication”<br>    <a href="http://dev.mysql.com/doc/refman/5.7/en/replication.html" target="_blank" rel="external">http://dev.mysql.com/doc/refman/5.7/en/replication.html</a></li><br>    <li>MySQL文档 - “18.3 Replication Solutions”<br>    <a href="http://dev.mysql.com/doc/refman/5.7/en/replication-solutions.html" target="_blank" rel="external">http://dev.mysql.com/doc/refman/5.7/en/replication-solutions.html</a></li><br>    <li>北在南方 – “sync_binlog innodb_flush_log_at_trx_commit 浅析”<br>    <a href="http://blog.itpub.net/22664653/viewspace-1063134/" target="_blank" rel="external">http://blog.itpub.net/22664653/viewspace-1063134/</a></li><br>    <li>求知不倦 – “实战体验几种MySQL Cluster方案”<br>    <a href="http://blog.csdn.net/kingofworld/article/details/44786123" target="_blank" rel="external">http://blog.csdn.net/kingofworld/article/details/44786123</a><br>    </li><br></ol>
+
+
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+          
+            <a href="/tags/HA/" rel="tag"># HA</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/12/14/mysql-galera-cluster/" rel="next" title="MySQL galera cluster">
+                <i class="fa fa-chevron-left"></i> MySQL galera cluster
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/12/14/ha-in-mysql-replication/" rel="prev" title="HA in MySQL Replication">
+                HA in MySQL Replication <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">24</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">39</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#binary-log"><span class="nav-number">1.</span> <span class="nav-text">binary log</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#三种记录模式"><span class="nav-number">1.1.</span> <span class="nav-text">三种记录模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#日志相关操作"><span class="nav-number">1.2.</span> <span class="nav-text">日志相关操作</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#同步、异步和半同步模式"><span class="nav-number">2.</span> <span class="nav-text">同步、异步和半同步模式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#同步模式"><span class="nav-number">2.1.</span> <span class="nav-text">同步模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#异步模式"><span class="nav-number">2.2.</span> <span class="nav-text">异步模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#半同步模式"><span class="nav-number">2.3.</span> <span class="nav-text">半同步模式</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#启用半同步"><span class="nav-number">3.</span> <span class="nav-text">启用半同步</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#性能选项"><span class="nav-number">3.1.</span> <span class="nav-text">性能选项</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#同步状态查看"><span class="nav-number">4.</span> <span class="nav-text">同步状态查看</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

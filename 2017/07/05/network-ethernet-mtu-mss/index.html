@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Linux,Network," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="以太网帧网络数据传输，底层是物理设备的支持，如路由、交换、网卡、网线，通过网线传送电信号或者光信号，自然可以”连续”地传输，但是，考虑到连续传输，如果中间某个信号被干扰，一个bit不正确会导致整个串都不正确，损失颇大；其次，考虑到线路的多源共享问题，如果一直传送一个源的数据，其他的数据就得不到发送。于是，聪明的设计者将来自一个源的大段数据，拆分成小段，如果某一小段传输不正确，只影响这一小段，而非整">
+<meta name="keywords" content="Linux,Network">
+<meta property="og:type" content="article">
+<meta property="og:title" content="网络基础之以太网帧,MTU,MSS">
+<meta property="og:url" content="http://mnstory.net/2017/07/05/network-ethernet-mtu-mss/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="以太网帧网络数据传输，底层是物理设备的支持，如路由、交换、网卡、网线，通过网线传送电信号或者光信号，自然可以”连续”地传输，但是，考虑到连续传输，如果中间某个信号被干扰，一个bit不正确会导致整个串都不正确，损失颇大；其次，考虑到线路的多源共享问题，如果一直传送一个源的数据，其他的数据就得不到发送。于是，聪明的设计者将来自一个源的大段数据，拆分成小段，如果某一小段传输不正确，只影响这一小段，而非整">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2017/07/05/network-ethernet-mtu-mss/6.layer-table.png">
+<meta property="og:image" content="http://mnstory.net/2017/07/05/network-ethernet-mtu-mss/1.icmp-lowest.png">
+<meta property="og:image" content="http://mnstory.net/2017/07/05/network-ethernet-mtu-mss/2.sync-mss.png">
+<meta property="og:image" content="http://mnstory.net/2017/07/05/network-ethernet-mtu-mss/3.large-package-block.png">
+<meta property="og:image" content="http://mnstory.net/2017/07/05/network-ethernet-mtu-mss/4.sg-tso.png">
+<meta property="og:image" content="http://mnstory.net/2017/07/05/network-ethernet-mtu-mss/5.sg-off-on.png">
+<meta property="og:updated_time" content="2017-10-15T13:02:32.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="网络基础之以太网帧,MTU,MSS">
+<meta name="twitter:description" content="以太网帧网络数据传输，底层是物理设备的支持，如路由、交换、网卡、网线，通过网线传送电信号或者光信号，自然可以”连续”地传输，但是，考虑到连续传输，如果中间某个信号被干扰，一个bit不正确会导致整个串都不正确，损失颇大；其次，考虑到线路的多源共享问题，如果一直传送一个源的数据，其他的数据就得不到发送。于是，聪明的设计者将来自一个源的大段数据，拆分成小段，如果某一小段传输不正确，只影响这一小段，而非整">
+<meta name="twitter:image" content="http://mnstory.net/2017/07/05/network-ethernet-mtu-mss/6.layer-table.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2017/07/05/network-ethernet-mtu-mss/"/>
+
+
+
+
+
+  <title>网络基础之以太网帧,MTU,MSS | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/07/05/network-ethernet-mtu-mss/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">网络基础之以太网帧,MTU,MSS</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-07-05T23:00:00+08:00">
+                2017-07-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="以太网帧"><a href="#以太网帧" class="headerlink" title="以太网帧"></a>以太网帧</h1><p>网络数据传输，底层是物理设备的支持，如路由、交换、网卡、网线，通过网线传送电信号或者光信号，自然可以”连续”地传输，但是，考虑到连续传输，如果中间某个信号被干扰，一个bit不正确会导致整个串都不正确，损失颇大；其次，考虑到线路的多源共享问题，如果一直传送一个源的数据，其他的数据就得不到发送。于是，聪明的设计者将来自一个源的大段数据，拆分成小段，如果某一小段传输不正确，只影响这一小段，而非整体，根据一定的算法交替发送不同来源的数据，可实现线路共享，而分割的这一小段也就是我们说的帧(Frame)，帧也称为协议数据单元(PDU)。<br><a id="more"></a><br>由于帧是逻辑单元，不同的人根据不同需求来指定帧的格式，肯定有所不同，好在目前帧的格式不是很多，具体可参考 <a href="https://wenku.baidu.com/view/25f6f019964bcf84b9d57bb9.html" target="_blank">https://wenku.baidu.com/view/25f6f019964bcf84b9d57bb9.html</a><br>简单划分，可以划分为两种：</p>
+<ol>
+<li>IEEE 802.3 以太网标准，已经过多次更新以便将新技术纳入其中。</li>
+<li>DIX 以太网标准，现在称其为以太网II(Ethernet II)，是TCP/IP网络中使用的以太网帧格式。</li>
+</ol>
+<p>两种标准之间的差异很小，可以用一个格式统一表达，参考<a href="https://en.wikipedia.org/wiki/Ethernet_frame" target="_blank">https://en.wikipedia.org/wiki/Ethernet_frame</a>:<br><img src="/2017/07/05/network-ethernet-mtu-mss/6.layer-table.png" alt="6.layer-table"></p>
+<p>差异表现在：</p>
+<ol>
+<li>前序部分，802.3拆分为Preamble(7 octets)和SFD(Start of frame delimiter, 1 octet)；Ethernet II只有Preamble(8 octets)。</li>
+<li>对802.3来说，类型或长度部分，表示的是长度，其值小于等于1500；对Ethernet II来说，表示的是类型，其值大于1500，通过值大小即可区分两种帧。</li>
+</ol>
+<p>通过上图，我们可以看到，以太网帧主要由三部分组成：</p>
+<ol>
+<li>数据Payload部分(46-1500 octets)。</li>
+<li>以太网协议本身占用(18-22 octets)，包括：目的Mac(6 octets)、源MAC(6 octets)、标签(可选)(4 octets)、类型或长度(2 octets)、校验码(4 octets)。</li>
+<li>以太网协议填充占用(20 octets)，包括：前序(8 octets)、包间隙(12 octets)。</li>
+</ol>
+<p>Payload部分，即为每个帧能负载的字节大小。上图表显示Payload为[46, 1500]，但实际测验，低于46 bytes的包也可以传送，不知底层是否做了数据填充：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> ping -s 0 -M do 11.10.4.2</div><div class="line">PING 11.10.4.2 (11.10.4.2) 0(28) bytes of data.</div><div class="line">8 bytes from 11.10.4.2: icmp_seq=1 ttl=64</div><div class="line">8 bytes from 11.10.4.2: icmp_seq=2 ttl=64</div></pre></td></tr></table></figure></p>
+<p><img src="/2017/07/05/network-ethernet-mtu-mss/1.icmp-lowest.png" alt="1.icmp-lowest"><br>如上图，整个帧的Payload部分负载只有28 bytes(42-14)，而非46 bytes。<br>注：我们用ping -s SIZE -M do来发送指定大小的不分片包，理论上，SIZE的最大值为 = 路径最小MTU - IP头部分(20 bytes) - ICMP头部分(8 bytes)。</p>
+<p>通常，计算以太网帧的大小，需要算上太网协议本身占用部分，于是，以太网帧的大小范围应该是[64=46+18, 1522=1500+22]，其实最开始EthernetII和802.3规定最大帧为1518，后来为支持vlan，1998年802.3ac规定最大帧为1518+4(vlan)=1522。</p>
+<p>先说说，这最小值64 bytes是怎么来的。<br>以太网通过载波侦听多路访问 (CSMA) 技术控制节点共享访问，CSMA检查介质是否正在传送信号，如果介质上检测到来自另一节点的载波信号，则表示另一设备正在进行传输，这时候会等待，如果没有检查到，会立即传送，但是，也可能检查误差或故障，两设备同时传输，这时候变产生了数据冲突，数据冲突后需要重传这串数据。一条一定长度的线缆，在一串数据发送过程中，如果冲突，需要反馈JAM信号至发送端，这个动作完成前，至少应该这个串的发送过程还没结束，不然到底是哪条数据冲突了都不知道，就没法重传，而个检查反馈的时间，算下来在10Mbps的带宽情况下，刚好需要连续发送64 octets的数据才不至于错过时间。<br>不过，现在的 LAN 中设备之间几乎所有有线连接都是全双工连接，这类冲突已经不存在。</p>
+<h1 id="MTU"><a href="#MTU" class="headerlink" title="MTU"></a>MTU</h1><p>MTU(Maximum Transmission Unit)指的是以太网帧能携带的最大Payload大小，上面已经说过了，是[46, 1500] bytes。<br>而我们常常设置的，有人叫IP MTU，不过大多数的时候，并没有严格区分。<br>IP MTU，其确切含义是：一个IP报文不分片能通过某介质(如当前网卡)的最大值。IP报文头部有一个bit(DF, Don’t Fragment flag)表示不分片，不分片的报文因为大小限制，可能过不中间的交换设备，这时候会发送ICMP错误回来，设置DF的好处是，路径上的转发设备不再需要分包重组，对连续发送来说，可提高转发效率。</p>
+<p>理论上MTU最小值可以是Payload的最小值46 bytes，而你设置IP MTU的时候，并不能设置46 bytes。</p>
+<p>先说IPv4，实际上IP MTU最小值(能设置的值)为68 bytes：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> ifconfig eth0 mtu 68</div><div class="line"><span class="meta">#</span> ifconfig eth0 mtu 67</div><div class="line">SIOCSIFMTU: Invalid argument</div></pre></td></tr></table></figure></p>
+<p>注：也可以通过 /sys/class/net/eth0/mtu 查看或设置IP MTU。</p>
+<p>之所以不能设置为46，是因为IPv4协议有自己的最小值规定，参考 <a href="https://tools.ietf.org/html/rfc791" target="_blank">https://tools.ietf.org/html/rfc791</a></p>
+<blockquote>
+<p>Every internet module must be able to forward a datagram of 68 octets without further fragmentation. This is because an internet header may be up to 60 octets, and the minimum fragment is 8 octets.</p>
+</blockquote>
+<p>其实就是，一个IP报文，不管怎么分片，头部不能分片，既然头部的最大值可能为60 bytes，再加上最小分片8 bytes = 68 bytes，所以，IP MTU最小值为68 bytes(最大值是65535 bytes)。</p>
+<p>IP MTU还有一个建议值，不一定是最大值，只是从理论、历史、网络环境因素分析，这个值在普遍网络环境下比较适合，比如，IPv4的建议值是1500，前面描述了关于以太网帧结构，应该很清楚了，这1500就是以太网帧的Payload最大值。<br>网上也有人给出1500的理论分析，因为1542(1522+12+8)这个值，其搬包效率非常高为1500/1542=97.28%，再权衡链路共享，以太网帧校验，延迟，重传长度等因素，就选了这个值，也有一个比较有趣的回答是：</p>
+<blockquote>
+<p>I asked Bob Metcalfe where 1518 bytes comes from. Seriously, I met him at a party many years ago and hit him with this question. His answer, “Hmm, well I really don’t know!”</p>
+</blockquote>
+<p>参考 <a href="http://www.mail-archive.com/cisco@groupstudy.com/msg24534.html " target="_blank">http://www.mail-archive.com/cisco@groupstudy.com/msg24534.html </a></p>
+<p>既然特别强调了是IPv4协议，那就还有它的升级版，IPv6。<br>对IPv6而言，它的最小值是1280 bytes(最大值是65535 bytes，通过jumbogram可以支持4GB大小)，请参考 <a href="https://tools.ietf.org/html/rfc2460" target="_blank">https://tools.ietf.org/html/rfc2460</a></p>
+<blockquote>
+<p>IPv6 requires that every link in the internet have an MTU of 1280 octets or greater.  On any link that cannot convey a 1280-octet packet in one piece, link-specific fragmentation and reassembly must be provided at a layer below IPv6.</p>
+</blockquote>
+<p>测试一下MTU修改效果：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> ifconfig eth0 mtu 1000</div><div class="line"><span class="meta">#</span> ifconfig eth0 | grep mtu</div><div class="line">eth0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1000</div><div class="line"><span class="meta">#</span> ping -s 972 -M do 11.10.5.2</div><div class="line">PING 11.10.5.2 (11.10.5.2) 972(1000) bytes of data.</div><div class="line">980 bytes from 11.10.5.2: icmp_seq=1 ttl=64 time=0.196 ms</div><div class="line">980 bytes from 11.10.5.2: icmp_seq=2 ttl=64 time=0.717 ms</div><div class="line"><span class="meta">#</span> ping -s 973 -M do 11.10.5.2</div><div class="line">PING 11.10.5.2 (11.10.5.2) 973(1001) bytes of data.</div><div class="line">ping: local error: Message too long, mtu=1000</div><div class="line">ping: local error: Message too long, mtu=1000</div></pre></td></tr></table></figure></p>
+<h1 id="MSS"><a href="#MSS" class="headerlink" title="MSS"></a>MSS</h1><p>先说一下MSS(Maximum Segment Size)最大分段大小，其实是TCP协议层的一个概念，和IP MTU约束IP报文大小类似，MSS约束的是TCP分段大小。在TCP握手的时候可以指定MSS，根据协议可以算出，默认的MSS为：MTU(默认1500 bytes)-IP头(20 bytes)-TCP头(20 bytes) = 1460 bytes。<br><img src="/2017/07/05/network-ethernet-mtu-mss/2.sync-mss.png" alt="2.sync-mss"><br>可以通过iptables设置MSS，例如：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">iptables -t mangle -I FORWARD -p tcp --tcp-flags SYN,RST,ACK SYN -j TCPMSS --set-mss 1360       # SYNC 包</div><div class="line">iptables -t mangle -I FORWARD -p tcp --tcp-flags SYN,RST,ACK SYN,ACK -j TCPMSS --set-mss 1360  # SYNC ACK包</div></pre></td></tr></table></figure></p>
+<p>如果MSS设置超过MTU，路径上可能返回类似错误：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> tcpdump -i eth0 icmp -nn</div><div class="line">10:20:00.986208 IP 11.10.1.2 &gt; 11.10.1.1: ICMP 172.34.0.2 unreachable - need to frag (mtu 1500), length 556</div></pre></td></tr></table></figure></p>
+<p>返回类似错误，不一定代表网络不通，小包是没有问题的，UDP一般不受影响，只是TCP表现得性能下降数倍到数十倍，当然，类似现象也有可能是由于分片不当导致，我在QEMU虚拟化环境下(virtio-net)，遇到过此错误(icmp unreachable)，TCP流里面很多重传包，Dup Ack， Out-Of-Order包:<br><img src="/2017/07/05/network-ethernet-mtu-mss/3.large-package-block.png" alt="3.large-package-block"><br>原因并非是MSS和MTU不匹配，而是大包发送端启用了TSO，需要：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ethtool -K eth0 tso off</div></pre></td></tr></table></figure></p>
+<p>然后，我又遇到一次在QEMU虚拟化环境下(virtio-net)，这次没有icmp错误返回，但是数据报文正常和异常对比是这样的：<br><img src="/2017/07/05/network-ethernet-mtu-mss/4.sg-tso.png" alt="4.sg-tso"><br>可以看出，异常是从传送了一个大包开始的，虽然指定了MTU，虽然指定了MSS，虽然关闭了tso，然而并没什么卵用，他还是发出了一个大包，最后发现，问题出在回包端的的另外一个参数scatter-gather：<br><img src="/2017/07/05/network-ethernet-mtu-mss/5.sg-off-on.png" alt="5.sg-off-on"><br>sg参数和tso,gso有关联，关闭的时候，都关闭，开启的时候，都开启。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Linux/" rel="tag"># Linux</a>
+          
+            <a href="/tags/Network/" rel="tag"># Network</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/06/06/compile-with-docker/" rel="next" title="编译环境Docker化">
+                <i class="fa fa-chevron-left"></i> 编译环境Docker化
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/07/10/network-tso-ufo-gso-lro-gro/" rel="prev" title="网络基础之TSO,UFO,GSO,LRO,GRO">
+                网络基础之TSO,UFO,GSO,LRO,GRO <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">24</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">39</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#以太网帧"><span class="nav-number">1.</span> <span class="nav-text">以太网帧</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MTU"><span class="nav-number">2.</span> <span class="nav-text">MTU</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MSS"><span class="nav-number">3.</span> <span class="nav-text">MSS</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

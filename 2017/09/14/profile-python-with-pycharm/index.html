@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Python,Profile,PyCharm," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="好的武器可以事半功倍。 所以，我们定位Python模块性能，不需要绕弯子，直接用PyCharm自带的Profiles功能即可。 本地Profile本地运行的Python代码，Profile就和Debug一样简单，具体操作是：  工具栏上，点击”Profile ‘your project’” 在Run窗口里面，导航按钮上有一个软盘的图标，是用来保存profile信息的，手动点击一下，会更新你当前的p">
+<meta name="keywords" content="Python,Profile,PyCharm">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用PyCharm Profile Python性能">
+<meta property="og:url" content="http://mnstory.net/2017/09/14/profile-python-with-pycharm/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="好的武器可以事半功倍。 所以，我们定位Python模块性能，不需要绕弯子，直接用PyCharm自带的Profiles功能即可。 本地Profile本地运行的Python代码，Profile就和Debug一样简单，具体操作是：  工具栏上，点击”Profile ‘your project’” 在Run窗口里面，导航按钮上有一个软盘的图标，是用来保存profile信息的，手动点击一下，会更新你当前的p">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2017/09/14/profile-python-with-pycharm/remote-configure.png">
+<meta property="og:image" content="http://mnstory.net/2017/09/14/profile-python-with-pycharm/statistics-total.png">
+<meta property="og:image" content="http://mnstory.net/2017/09/14/profile-python-with-pycharm/callgraph.png">
+<meta property="og:updated_time" content="2017-10-15T04:19:03.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="使用PyCharm Profile Python性能">
+<meta name="twitter:description" content="好的武器可以事半功倍。 所以，我们定位Python模块性能，不需要绕弯子，直接用PyCharm自带的Profiles功能即可。 本地Profile本地运行的Python代码，Profile就和Debug一样简单，具体操作是：  工具栏上，点击”Profile ‘your project’” 在Run窗口里面，导航按钮上有一个软盘的图标，是用来保存profile信息的，手动点击一下，会更新你当前的p">
+<meta name="twitter:image" content="http://mnstory.net/2017/09/14/profile-python-with-pycharm/remote-configure.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2017/09/14/profile-python-with-pycharm/"/>
+
+
+
+
+
+  <title>使用PyCharm Profile Python性能 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/09/14/profile-python-with-pycharm/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">使用PyCharm Profile Python性能</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-09-14T21:07:45+08:00">
+                2017-09-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>好的武器可以事半功倍。</p>
+<p>所以，我们定位Python模块性能，不需要绕弯子，直接用PyCharm自带的Profiles功能即可。</p>
+<h1 id="本地Profile"><a href="#本地Profile" class="headerlink" title="本地Profile"></a>本地Profile</h1><p>本地运行的Python代码，Profile就和Debug一样简单，具体操作是：</p>
+<ol>
+<li>工具栏上，点击”Profile ‘your project’”</li>
+<li>在Run窗口里面，导航按钮上有一个软盘的图标，是用来保存profile信息的，手动点击一下，会更新你当前的profile stats窗口数据(或者在新窗口展现)，同时在Run窗口会输出pstat文件保存的位置，例如：<br>Snapshot saved to /tmp/LogTransfer7.pstat</li>
+<li>如果profile stats窗口不小心关闭了，可以通过tools-&gt;Open CProfile snapshot打开一个pstat文件，比如刚才保存的。<a id="more"></a>
+</li>
+</ol>
+<h1 id="远程Profile"><a href="#远程Profile" class="headerlink" title="远程Profile"></a>远程Profile</h1><p>一般的做法是，在Windows上编辑代码，然后配置一个自动上传代码到Linux服务器，具体操作：</p>
+<ol>
+<li>菜单”Tools” -&gt; “Deployment” -&gt; “Configuration”。</li>
+<li>在Deployment弹出窗口，点击”+”添加一个SFTP的Server，点击确定。</li>
+<li>在Connection Tab页配置SFTP连接信息，在Mappings页配置本地代码和源端代码的映射路径。</li>
+<li>点击左上角的”Use as Default”可以将其设置为默认。</li>
+<li>菜单”Tools” -&gt; “Deployment” -&gt; “Automatic Upload (always)” 可设置为保存的时候自动上传。</li>
+</ol>
+<p>配置完自动上传后，配置远程执行的Python interpreter，具体操作：</p>
+<ol>
+<li>菜单”File” -&gt; “Settings” -&gt; 点击左树”Project Interpreter” -&gt; 右边的”Project Interpreter”输入框的后面，有配置的图标，点击弹出下拉菜单-&gt;”Add Remote”。</li>
+<li>选择”Deployment configuration”，选择上面做自动上传的时候配置的那个配置名称即可。</li>
+<li>如果配置成功，Path mappings输入框会显示映射路径，下面的列表会显示找到的服务器上的库版本。<br><img src="/2017/09/14/profile-python-with-pycharm/remote-configure.png" alt="remote-configure"></li>
+</ol>
+<h2 id="异常-找不到模块"><a href="#异常-找不到模块" class="headerlink" title="异常 - 找不到模块"></a>异常 - 找不到模块</h2><p>如果报出类似错误：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">Traceback (most recent call last):</div><div class="line">...</div><div class="line">ImportError: No module named elasticsearch</div></pre></td></tr></table></figure></p>
+<p>可能是PyCharm远程运行和直接在服务器上运行的环境变量不一致，可以在代码最开始打印sys.path确认：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> sys</div><div class="line"><span class="keyword">print</span> sys.path</div></pre></td></tr></table></figure></p>
+<p>一般，此错误可以通过添加PYTHONPATH解决，PyCharm并没有加载服务器上的PYTHONPATH环境变量，此环境变量类似于JAVA的CLASSPATH，Linux系统的LD_LIBRARY_PATH，都是用于指定依赖库的加载路径的。参考官方回答：<a href="https://intellij-support.jetbrains.com/hc/en-us/community/posts/206594065-PyCharm-remote-debugging-doesn-t-respect-PYTHONPATH-settings" target="_blank" rel="external">https://intellij-support.jetbrains.com/hc/en-us/community/posts/206594065-PyCharm-remote-debugging-doesn-t-respect-PYTHONPATH-settings</a></p>
+<p>配置步骤为：</p>
+<ol>
+<li>打开Run/Edit Configurations菜单，展开左树Python/你的工程名字，Configuration选项卡下Python interpreter应该是选择的你的远程服务器的python命令，此选项的上面有一个Environment variables的配置，点开。</li>
+<li>添加远程服务器上的环境变量PYTHONPATH及其值。</li>
+</ol>
+<h2 id="异常-路径映射不正确："><a href="#异常-路径映射不正确：" class="headerlink" title="异常 - 路径映射不正确："></a>异常 - 路径映射不正确：</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">ssh://root@yourhost:<span class="number">22</span>/usr/bin/python -u /root/.pycharm_helpers/pydev/pydevd.py --multiproc --qt-support --client <span class="string">'0.0.0.0'</span> --port <span class="number">33563</span> --file /tmp/pycharm_project_431/access.py</div><div class="line">pydev debugger: process <span class="number">16685</span> <span class="keyword">is</span> connecting</div><div class="line"></div><div class="line">Connected to pydev debugger (build <span class="number">171.3780</span><span class="number">.115</span>)</div><div class="line">[<span class="string">'/tmp/pycharm_project_431'</span>, <span class="string">'/root/.pycharm_helpers/pydev'</span>, <span class="string">'/home/fantom/party/spark/python'</span>, <span class="string">'/usr/lib64/python2.7/site-packages/gtk-2.0'</span>, <span class="string">'/usr/lib/python2.7/site-packages'</span>]</div><div class="line">Traceback (most recent call last):</div><div class="line">  File <span class="string">"/root/.pycharm_helpers/pydev/pydevd.py"</span>, line <span class="number">1579</span>, <span class="keyword">in</span> &lt;module&gt;</div><div class="line">    globals = debugger.run(setup[<span class="string">'file'</span>], <span class="keyword">None</span>, <span class="keyword">None</span>, is_module)</div><div class="line">  File <span class="string">"/root/.pycharm_helpers/pydev/pydevd.py"</span>, line <span class="number">1016</span>, <span class="keyword">in</span> run</div><div class="line">    pydev_imports.execfile(file, globals, locals)  <span class="comment"># execute the script</span></div><div class="line">IOError: [Errno <span class="number">2</span>] No such file <span class="keyword">or</span> directory: <span class="string">'/tmp/pycharm_project_431/access.py'</span></div><div class="line"></div><div class="line">Process finished <span class="keyword">with</span> exit code <span class="number">1</span></div></pre></td></tr></table></figure>
+<p>那可能是你的路径并没有映射正确，参考上面”Path mappings”的地方。</p>
+<h1 id="分析Profile数据"><a href="#分析Profile数据" class="headerlink" title="分析Profile数据"></a>分析Profile数据</h1><p>这个Profile比起Perl的NYTProf来说，粒度比较粗糙，只到函数级别。</p>
+<p>视图有两种，一种是表格的统计结果展现窗口：<br><img src="/2017/09/14/profile-python-with-pycharm/statistics-total.png" alt="statistics-total"></p>
+<p>一种是调用关系的展现窗口：<br><img src="/2017/09/14/profile-python-with-pycharm/callgraph.png" alt="callgraph"></p>
+<p>通过两幅图提取关键信息，影响性能最主要的几个因素：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">parse_xml2json      143825      time 28.5% 整体耗时最多的</div><div class="line">parse_frame(w)      102194  own time 20.2% 自己耗时第一的</div><div class="line">fastkvd.kvdwrite    61      own time 14.4% 自己耗时第二的</div><div class="line">OutInnerRule.search 30657   own time  6.1% 自己耗时第三的</div><div class="line">ip_to_str           6786342     time  2.7% 函数调用次数太多的</div></pre></td></tr></table></figure></p>
+<ol>
+<li><p>对于函数本身实现比较耗时，需要分析代码，如果遇到调用了第三方库，需要考虑是否替换一直实现方法。<br> 我在分析过程中发现，fastkvd.kvdwrite是不可拆分函数，C++实现的，但是进入C++版本发现，其内部使用了string做大量json数据的连接，我对Java的性能优化记忆犹新，String连接内部空间扩充会非常耗时，应该换成StringBuffer，C++的stl库也一样，string可以使用reserve()提前分配好内存。</p>
+<p> 通过Profile还发现，json.dumps比较耗时，于是替换为usjon，号称比较快，安装方法为：</p>
+<blockquote>
+<ol>
+<li>下载 <a href="https://pypi.python.org/pypi/ujson" target="_blank" rel="external">https://pypi.python.org/pypi/ujson</a></li>
+<li><p>在编译环境上打包：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">python setup.py install --user</div></pre></td></tr></table></figure>
+<p>会生成：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">~/.local/lib/python2.7/site-packages/easy-install.pth</div><div class="line">~/.local/lib/python2.7/site-packages/ujson-1.35-py2.7-linux-x86_64.egg</div></pre></td></tr></table></figure>
+</li>
+<li><p>安装到运行时环境<br>将 ujson-1.35-py2.7-linux-x86_64.egg 复制到运行时 /home/fantom/share/Python-2.7/lib/site-packages 下，并将文件名添加进easy-install.pth：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">echo ./ujson-1.35-py2.7-linux-x86_64.egg &gt;&gt; /home/fantom/share/Python-2.7/lib/site-packages/easy-install.pth</div></pre></td></tr></table></figure>
+</li>
+</ol>
+</blockquote>
+<p> 对比两者性能，发现的确快(10万条dumps测试结果要快7倍)：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">2017-09-24 03:55:29.152 15347/MainThread I inserter.py:114  UJSON count 100000, cost 2.01 ms</div><div class="line">2017-09-24 03:55:35.763 15347/MainThread I inserter.py:126   JSON count 100000, cost 14.33 ms</div></pre></td></tr></table></figure>
+</li>
+<li><p>对于函数调用次数过多的，是否重构逻辑。<br> ip_to_str本身占用少，不需要重构，但是OutInnerRule.search逻辑，其实是可以加入Cache层的，如果输入参数相同，就不需要再去search了，这样一下子减少了很多调用，当然，这是内存换时间的做法。</p>
+</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Python/" rel="tag"># Python</a>
+          
+            <a href="/tags/Profile/" rel="tag"># Profile</a>
+          
+            <a href="/tags/PyCharm/" rel="tag"># PyCharm</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/09/11/port-c-to-python-with-swig/" rel="next" title="利用SWIG帮助Python调用C模块">
+                <i class="fa fa-chevron-left"></i> 利用SWIG帮助Python调用C模块
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/09/15/multi-process-parallel-functions-in-python/" rel="prev" title="Python多进程并行函数对比">
+                Python多进程并行函数对比 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">24</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">39</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#本地Profile"><span class="nav-number">1.</span> <span class="nav-text">本地Profile</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#远程Profile"><span class="nav-number">2.</span> <span class="nav-text">远程Profile</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#异常-找不到模块"><span class="nav-number">2.1.</span> <span class="nav-text">异常 - 找不到模块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#异常-路径映射不正确："><span class="nav-number">2.2.</span> <span class="nav-text">异常 - 路径映射不正确：</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分析Profile数据"><span class="nav-number">3.</span> <span class="nav-text">分析Profile数据</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

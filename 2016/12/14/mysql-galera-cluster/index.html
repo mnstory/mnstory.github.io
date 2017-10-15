@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="MySQL,Cluster," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="galera cluster是一个MySQL的多主高可用方案，相对于异步复制，最大的长处是不丢数据，因为他是同步复制。 优点与缺点优点 真正的多主模式（True Multi-master） 意味着你可以在任意节点读写，适度的规模可以提高集群整体的性能。 不会出现主从模式的故障转移（Master-Slave Failover）操作，也不需要VIP。 同步复制（Synchronous Replicat">
+<meta name="keywords" content="MySQL,Cluster">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL galera cluster">
+<meta property="og:url" content="http://mnstory.net/2016/12/14/mysql-galera-cluster/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="galera cluster是一个MySQL的多主高可用方案，相对于异步复制，最大的长处是不丢数据，因为他是同步复制。 优点与缺点优点 真正的多主模式（True Multi-master） 意味着你可以在任意节点读写，适度的规模可以提高集群整体的性能。 不会出现主从模式的故障转移（Master-Slave Failover）操作，也不需要VIP。 同步复制（Synchronous Replicat">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2016/12/14/mysql-galera-cluster/01.galera-rep.png">
+<meta property="og:image" content="http://mnstory.net/2016/12/14/mysql-galera-cluster/02.haproxy.png">
+<meta property="og:image" content="http://mnstory.net/2016/12/14/mysql-galera-cluster/03.quorum.png">
+<meta property="og:image" content="http://mnstory.net/2016/12/14/mysql-galera-cluster/04.arbitrator.png">
+<meta property="og:updated_time" content="2017-10-15T14:44:16.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MySQL galera cluster">
+<meta name="twitter:description" content="galera cluster是一个MySQL的多主高可用方案，相对于异步复制，最大的长处是不丢数据，因为他是同步复制。 优点与缺点优点 真正的多主模式（True Multi-master） 意味着你可以在任意节点读写，适度的规模可以提高集群整体的性能。 不会出现主从模式的故障转移（Master-Slave Failover）操作，也不需要VIP。 同步复制（Synchronous Replicat">
+<meta name="twitter:image" content="http://mnstory.net/2016/12/14/mysql-galera-cluster/01.galera-rep.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2016/12/14/mysql-galera-cluster/"/>
+
+
+
+
+
+  <title>MySQL galera cluster | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/12/14/mysql-galera-cluster/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">MySQL galera cluster</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-12-14T13:00:00+00:00">
+                2016-12-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>galera cluster是一个MySQL的多主高可用方案，相对于异步复制，最大的长处是不丢数据，因为他是同步复制。</p>
+<h1 id="优点与缺点"><a href="#优点与缺点" class="headerlink" title="优点与缺点"></a>优点与缺点</h1><h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ol>
+<li>真正的多主模式（True Multi-master）<br> 意味着你可以在任意节点读写，适度的规模可以提高集群整体的性能。<br> 不会出现主从模式的故障转移（Master-Slave Failover）操作，也不需要VIP。</li>
+<li>同步复制（Synchronous Replication）<br> 意味着没有slave lag，没有节点crash的时候出现的丢数据现象(Hot Standby)。<br> 并且是Multi-threaded Slave，性能也不错。<br> 紧耦合（Tightly Coupled）所有节点数据和状态一致。</li>
+<li>自动节点管理（Automatic Node Provisioning）<br> 不需要人工去备份数据库恢复到新节点。<br>参考：<a href="http://galeracluster.com/documentation-webpages/" target="_blank" rel="external">“Benefits of Galera Cluster”</a><a id="more"></a>
+我们看看galera的同步复制原理：<br><img src="/2016/12/14/mysql-galera-cluster/01.galera-rep.png" alt="galera-rep"></li>
+<li>先提交到当前节点的write-set内。</li>
+<li>将write-set改变复制到其他节点。</li>
+<li>到其他节点后，最关键的一步，用Primary key探测是否有冲突，有冲突就rollback，没有就commit，如果有问题的几点怎么办，把它踢出去。</li>
+</ol>
+<h2 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h2><ol>
+<li>只支持InnoDB<br> 对MyISAM，只支持DDL语句，就是说，创建了表可以在其他节点看到，但插入的数据各是各的。<br> 为什么是InnoDB？<br> 多主进行更新的时候，每个节点执行的是乐观策略（假定没有冲突），然后开始更新数据，等到要commit的时候，再问大家是不是有冲突，这样一来，如果有冲突，执行的语句是不是得回滚，而你知道的MyISAM它不支持事务，所以需要支持事务的引擎，而当前MySQL就InnoDB支持事务。</li>
+<li>表里面需要有PK<br> 如果没有Primary Key，那不同节点DELETE后，可能顺序不一致，表现在select limit语句在不同节点可能返回不一致。</li>
+<li>不支持lock/unlock tables, lock functions (GET_LOCK(), RELEASE_LOCK()… )<br> 当两个transaction从不同节点更新同一行数据的时候，只有一个transaction会成功，另外一个会返回ER_LOCK_DEADLOCK。<br> 这其实也没啥大问题，因为逻辑设计上也有问题，不应该将事同一时刻的一个写重定向到两个节点的情况，最好的解决方法是，只有一个节点写。<br> 当然，这是一件极掉逼格的一件事，人家的多主模式一下子被干成了单主，说出去不好听。</li>
+<li>查询日志不能存到表里，只能存文件。<br> log_output=FILE，这个一般也不用，特别是对我来说没啥影响。</li>
+<li>最大transaction size受 wsrep_max_ws_rows，wsrep_max_ws_size两变量控制。<br> 超出会被reject。准确的说，不是一个缺点。<br>参考：<a href="http://support.severalnines.com/hc/en-us/community/posts/207460763-Limitations-in-Galera-Cluster-for-MySQL" target="_blank" rel="external">“Limitations in Galera Cluster for MySQL”</a></li>
+</ol>
+<p>对于上述缺点，在部署之前，就应该考虑清楚能否接受，特别是现有表结构是否有不符合规范的地方，这里有个SQL语句可以查询不符合规矩的表：<br><figure class="highlight sql"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line">mysql&gt; SELECT DISTINCT</div><div class="line">              CONCAT(t.table_schema,'.',t.table_name) as tbl,</div><div class="line">              t.engine,</div><div class="line">              IF(ISNULL(c.constraint_name),'NOPK','') AS nopk,</div><div class="line">              IF(s.index_type = 'FULLTEXT','FULLTEXT','') as ftidx,</div><div class="line">              IF(s.index_type = 'SPATIAL','SPATIAL','') as gisidx</div><div class="line">         FROM information_schema.tables AS t</div><div class="line">         LEFT JOIN information_schema.key_column_usage AS c</div><div class="line">           ON (t.table_schema = c.constraint_schema AND t.table_name = c.table_name</div><div class="line">               AND c.constraint_name = 'PRIMARY')</div><div class="line">         LEFT JOIN information_schema.statistics AS s</div><div class="line">           ON (t.table_schema = s.table_schema AND t.table_name = s.table_name</div><div class="line">               AND s.index_type IN ('FULLTEXT','SPATIAL'))</div><div class="line">         WHERE t.table_schema NOT IN ('information_schema','performance_schema','mysql')</div><div class="line">           AND t.table_type = 'BASE TABLE'</div><div class="line">           AND (t.engine &lt;&gt; 'InnoDB' OR c.constraint_name IS NULL OR s.index_type IN ('FULLTEXT','SPATIAL'))</div><div class="line">         ORDER BY t.table_schema,t.table_name;</div><div class="line"></div><div class="line">+<span class="comment">-------------------------------+--------+------+-------+--------+</span></div><div class="line">| tbl                           | engine | nopk | ftidx | gisidx |</div><div class="line">+<span class="comment">-------------------------------+--------+------+-------+--------+</span></div><div class="line">| neutron.alembic_version       | InnoDB | NOPK |       |        |</div><div class="line">| neutron.alembic_version_fwaas | InnoDB | NOPK |       |        |</div><div class="line">| neutron.alembic_version_lbaas | InnoDB | NOPK |       |        |</div><div class="line">+<span class="comment">-------------------------------+--------+------+-------+--------+</span></div><div class="line">3 rows in <span class="keyword">set</span> (<span class="number">0.34</span> sec)</div></pre></td></tr></table></figure></p>
+<p>如上，我的数据库输出三个没有PK的表。</p>
+<h1 id="部署"><a href="#部署" class="headerlink" title="部署"></a>部署</h1><p>编译安装就不说了，文档太多。记得几个关键步骤：</p>
+<ol>
+<li><p>创建mysql用户</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">groupadd -g 3306 mysql</div><div class="line">useradd  -g mysql -u 3306 -r -s /bin/false mysql</div></pre></td></tr></table></figure>
+</li>
+<li><p>修改相关目录权限</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">chown mysql:mysql -R /var/log/mysql</div><div class="line">chown mysql:mysql -R /var/run/mysqld</div></pre></td></tr></table></figure>
+</li>
+<li><p>初始化</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">/usr/bin/mysql_install_db --user=mysql --datadir=/var/lib/mysql</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<h2 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h2><p>最主要的my.cnf信息，差不多这样配置，就能用：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line">[mysqld]</div><div class="line">datadir=/var/lib/mysql</div><div class="line">socket=/var/lib/mysql/mysql.sock</div><div class="line">user=mysql</div><div class="line"><span class="meta">#</span>使用galera一定要是ROW格式而不能是SQL格式，不然会影响性能和一致性</div><div class="line">binlog_format=ROW</div><div class="line"><span class="meta">#</span>不要bind到本地地址，例如127.0.0.1，这样其他机器无法访问</div><div class="line">bind-address=0.0.0.0</div><div class="line"><span class="meta">#</span>galera在非事务性的存储引擎，例如MyISAM上无法工作</div><div class="line">default_storage_engine=innodb</div><div class="line"><span class="meta">#</span>AUTO_INCREMENT字段，全部使用interleaved lock mode，此种方式不适用于SQL模式的日志复制，但是比较适合ROW模式，由于insert语句不使用表级auto-inc lock，所以速度比较快</div><div class="line">innodb_autoinc_lock_mode=2</div><div class="line"><span class="meta">#</span>为了提高性能，galera官方建议使用1s刷一次日志的方式，但是同时也是不安全的方式，如果有备用电源，我认为设置为2比较好</div><div class="line">innodb_flush_log_at_trx_commit=0</div><div class="line"></div><div class="line"><span class="meta">#</span>几台机器的必须一样，用来区分不同的集群</div><div class="line">wsrep_cluster_name=YourClusterName</div><div class="line"><span class="meta">#</span>这个插件位置最关键，没有的话运行不起来</div><div class="line">wsrep_provider=/usr/lib/galera/libgalera_smm.so</div><div class="line"><span class="meta">#</span>这个就是从谁那儿同步，后面可以是用逗号分隔开来的IP或者域名</div><div class="line">wsrep_cluster_address=gcomm://200.200.102.207,200.200.102.208</div><div class="line"><span class="meta">#</span>本地连出去的时候用的地址</div><div class="line">wsrep_node_address=200.200.102.203</div><div class="line"></div><div class="line"><span class="meta">#</span>如果你没看文档，还是不要配了</div><div class="line"><span class="meta">#</span>wsrep_provider_options="gcache.size=300M; gcache.page_size=300M"</div><div class="line"></div><div class="line"><span class="meta">#</span>sst(State Snapshot Transfer)的默认同步方式就是rysnc，具体请参考：http://galeracluster.com/documentation-webpages/sst.html </div><div class="line"><span class="meta">#</span>wsrep_sst_method=rsync</div><div class="line"></div><div class="line">[mysql_safe]</div><div class="line">log-error=/var/log/mysqld.log</div><div class="line">pid-file=/var/run/mysqld/mysqld.pid</div></pre></td></tr></table></figure></p>
+<h2 id="现有数据迁移"><a href="#现有数据迁移" class="headerlink" title="现有数据迁移"></a>现有数据迁移</h2><p>比如说从原来的semi-sync方式迁移到galera上，推荐使用原来的master作为first node，其实我觉得，最简单的是，将原来的数据mysqldump出来：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> mysqldump -u root -p --skip-create-options --all-databases &gt; migration.sql</div></pre></td></tr></table></figure></p>
+<p>skip-create-options保证了导入数据的时候，用的默认存储引擎，这样一来，原来的MyISAM也会顺利转换为InnoDB。</p>
+<p>在galera上导入：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> mysql -u root -p &lt; migration.sql</div></pre></td></tr></table></figure></p>
+<h2 id="启动顺序"><a href="#启动顺序" class="headerlink" title="启动顺序"></a>启动顺序</h2><p>必须要有一个不带连接NODE方式（参数–wsrep-new-cluster）先启动，作为first node，其他节点掉线了，first node还是能正常运行：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> systemctl start mysql --wsrep-new-cluster</div></pre></td></tr></table></figure></p>
+<p>运行 SHOW STATUS LIKE ‘wsrep_cluster_size’检测是否启动成功（这个结果显示的是多少个节点加入了这个cluster）。</p>
+<p>如果集群已经有节点存活，后续启动节点还是按不带连接NODE的方式启动，会提示错误：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">[ERROR] WSREP: It may not be safe to bootstrap the cluster from this node. It was not the last one to leave the cluster and may not contain all the updates. To force cluster bootstrap with this node, edit the grastate.dat file manually and set safe_to_bootstrap to 1 .</div><div class="line">[ERROR] WSREP: wsrep::connect(gcomm://) failed: 7</div><div class="line">[ERROR] Aborting</div></pre></td></tr></table></figure></p>
+<p>在重启整个galera cluster的时候，推荐使用most advanced node作为first node。</p>
+<ol>
+<li>Identify the node with the most advanced node state ID.</li>
+<li>Start the most advanced node as the first node of the cluster.</li>
+<li>Start the rest of the node as usual.</li>
+</ol>
+<p>具体参考<a href="http://galeracluster.com/documentation-webpages/restartingcluster.html" target="_blank" rel="external">http://galeracluster.com/documentation-webpages/restartingcluster.html</a></p>
+<h1 id="高可用"><a href="#高可用" class="headerlink" title="高可用"></a>高可用</h1><p>准备前端用HAProxy做负载，这样后端节点如果有故障，能自动跳过，而且不需要配置虚拟IP，简化工作，并且可以退一步做读写分离：<br><img src="/2016/12/14/mysql-galera-cluster/02.haproxy.png" alt="haproxy"><br>关于galera的推荐配置模型，详情可以参考：<a href="http://galeracluster.com/documentation-webpages/deploymentvariants.html" target="_blank" rel="external">http://galeracluster.com/documentation-webpages/deploymentvariants.html</a></p>
+<p>HAProxy相关配置可以参考：<a href="http://galeracluster.com/documentation-webpages/haproxy.html" target="_blank" rel="external">http://galeracluster.com/documentation-webpages/haproxy.html</a>，此处不再赘述。</p>
+<h1 id="故障"><a href="#故障" class="headerlink" title="故障"></a>故障</h1><h2 id="状态确认"><a href="#状态确认" class="headerlink" title="状态确认"></a>状态确认</h2><p>通过SHOW STATUS LIKE ‘wsrep_%’语句，可以查看当前的cluster状态：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">+---------------------------+------------+</div><div class="line">| Variable_name             | Value      |</div><div class="line">+---------------------------+------------+</div><div class="line">| wsrep_local_state_comment | Synced (6) |</div><div class="line">| wsrep_cluster_size        | 3          |</div><div class="line">| wsrep_ready               | ON         |</div><div class="line">+---------------------------+------------+</div></pre></td></tr></table></figure></p>
+<p>这三个可以重点关注：</p>
+<ol>
+<li>wsrep_local_state_comment<br> Synced表示自己已经和集群连接，并可操作。</li>
+<li>wsrep_cluster_size<br> 查看当前集群的节点个数。</li>
+<li>wsrep_ready<br> 为ON表示可以接客了。</li>
+</ol>
+<p>状态分类介绍，参考自<a href="http://blog.sina.com.cn/s/blog_53b13d950102uxpx.html" target="_blank" rel="external">《MySQL的Galera Cluster配置说明》</a>。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div></pre></td><td class="code"><pre><div class="line"><span class="meta">mysql&gt;</span> SHOW STATUS LIKE 'wsrep%';</div><div class="line">+------------------------------+--------------------------------------+</div><div class="line">| Variable_name                | Value                                |</div><div class="line">+------------------------------+--------------------------------------+</div><div class="line">| wsrep_local_state_uuid       | 07bfd155-ac9c-11e6-bcfd-8a32fed329f7 |</div><div class="line">| wsrep_protocol_version       | 7                                    |</div><div class="line">| wsrep_last_committed         | 2                                    |</div><div class="line">| wsrep_replicated             | 0                                    |</div><div class="line">| wsrep_replicated_bytes       | 0                                    |</div><div class="line">| wsrep_repl_keys              | 0                                    |</div><div class="line">| wsrep_repl_keys_bytes        | 0                                    |</div><div class="line">| wsrep_repl_data_bytes        | 0                                    |</div><div class="line">| wsrep_repl_other_bytes       | 0                                    |</div><div class="line">| wsrep_received               | 6                                    |</div><div class="line">| wsrep_received_bytes         | 398                                  |</div><div class="line">| wsrep_local_commits          | 0                                    |</div><div class="line">| wsrep_local_cert_failures    | 0                                    |</div><div class="line">| wsrep_local_replays          | 0                                    |</div><div class="line">| wsrep_local_send_queue       | 0                                    |</div><div class="line">| wsrep_local_send_queue_max   | 2                                    |</div><div class="line">| wsrep_local_send_queue_min   | 0                                    |</div><div class="line">| wsrep_local_send_queue_avg   | 0.500000                             |</div><div class="line">| wsrep_local_recv_queue       | 0                                    |</div><div class="line">| wsrep_local_recv_queue_max   | 1                                    |</div><div class="line">| wsrep_local_recv_queue_min   | 0                                    |</div><div class="line">| wsrep_local_recv_queue_avg   | 0.000000                             |</div><div class="line">| wsrep_local_cached_downto    | 18446744073709551615                 |</div><div class="line">| wsrep_flow_control_paused_ns | 0                                    |</div><div class="line">| wsrep_flow_control_paused    | 0.000000                             |</div><div class="line">| wsrep_flow_control_sent      | 0                                    |</div><div class="line">| wsrep_flow_control_recv      | 0                                    |</div><div class="line">| wsrep_cert_deps_distance     | 0.000000                             |</div><div class="line">| wsrep_apply_oooe             | 0.000000                             |</div><div class="line">| wsrep_apply_oool             | 0.000000                             |</div><div class="line">| wsrep_apply_window           | 0.000000                             |</div><div class="line">| wsrep_commit_oooe            | 0.000000                             |</div><div class="line">| wsrep_commit_oool            | 0.000000                             |</div><div class="line">| wsrep_commit_window          | 0.000000                             |</div><div class="line">| wsrep_local_state            | 4                                    |</div><div class="line">| wsrep_local_state_comment    | Synced                               |</div><div class="line">| wsrep_cert_index_size        | 0                                    |</div><div class="line">| wsrep_causal_reads           | 0                                    |</div><div class="line">| wsrep_cert_interval          | 0.000000                             |</div><div class="line">| wsrep_incoming_addresses     | ,                                    |</div><div class="line">| wsrep_desync_count           | 0                                    |</div><div class="line">| wsrep_evs_delayed            |                                      |</div><div class="line">| wsrep_evs_evict_list         |                                      |</div><div class="line">| wsrep_evs_repl_latency       | 0/0/0/0/0                            |</div><div class="line">| wsrep_evs_state              | OPERATIONAL                          |</div><div class="line">| wsrep_gcomm_uuid             | 162f9df1-acb3-11e6-99a4-cb92a5f5e579 |</div><div class="line">| wsrep_cluster_conf_id        | 2                                    |</div><div class="line">| wsrep_cluster_size           | 2                                    |</div><div class="line">| wsrep_cluster_state_uuid     | 07bfd155-ac9c-11e6-bcfd-8a32fed329f7 |</div><div class="line">| wsrep_cluster_status         | Primary                              |</div><div class="line">| wsrep_connected              | ON                                   |</div><div class="line">| wsrep_local_bf_aborts        | 0                                    |</div><div class="line">| wsrep_local_index            | 0                                    |</div><div class="line">| wsrep_provider_name          | Galera                               |</div><div class="line">| wsrep_provider_vendor        | Codership Oy &lt;info@codership.com&gt;    |</div><div class="line">| wsrep_provider_version       | 3.19(rb98f92f)                       |</div><div class="line">| wsrep_ready                  | ON                                   |</div><div class="line">+------------------------------+--------------------------------------+</div></pre></td></tr></table></figure>
+<ol>
+<li><p>集群完整性检查</p>
+<ul>
+<li>wsrep_cluster_state_uuid<br>在集群所有节点的值应该是相同的，有不同值的节点，说明其没有连接入集群。</li>
+<li>wsrep_cluster_conf_id<br>正常情况下所有节点上该值是一样的，如果值不同，说明该节点被临时”分区”了。当节点之间网络连接恢复的时候应该会恢复一样的值。</li>
+<li>wsrep_cluster_size<br>当前集群的节点个数，如果这个值跟预期的节点数一致，则所有的集群节点已经连接。</li>
+<li>wsrep_cluster_status<br>集群组成的状态如果不为”Primary”，说明出现”分区”或是”split-brain”状况。</li>
+</ul>
+</li>
+<li><p>节点状态检查</p>
+<ul>
+<li>wsrep_ready<br>该值为ON,则说明可以接受SQL负载，如果为Off，则需要检查wsrep_connected。</li>
+<li>wsrep_connected<br>如果该值为Off，且wsrep_ready值也为Off，说明该节点没有连接到集群，可能是wsrep_cluster_address或wsrep_cluster_name等配置错造成的，具体错误需要查看日志。</li>
+<li>wsrep_local_state_comment<br>如果wsrep_connected为On，但wsrep_ready为OFF，则可以从该项查看原因。</li>
+</ul>
+</li>
+<li><p>复制健康检查</p>
+<ul>
+<li>wsrep_flow_control_paused<br>表示复制停止了多长时间，集群因为Slave延迟而慢多少。该值为0~1之间，越靠近0越好，值为1表示复制完全停止。可优化wsrep_slave_threads来改善。</li>
+<li>wsrep_cert_deps_distance<br>有多少事务可以并行处理，wsrep_slave_threads设置的值不应该高出该这个太多。</li>
+<li>wsrep_flow_control_sent<br>表示该节点已经停止复制了多少次。</li>
+<li>wsrep_local_recv_queue_avg<br>表示slave事务队列的平均长度，slave有没有瓶颈，可以从这里看。最慢节点的wsrep_flow_control_sent和wsrep_local_recv_queue_avg值都是最高的，这两个值越低越好。</li>
+</ul>
+</li>
+<li><p>检测慢网络问题</p>
+<ul>
+<li>wsrep_local_send_queue_avg<br>网络瓶颈的预兆，如果这个值比较高的话，可能存在网络瓶颈。</li>
+</ul>
+</li>
+<li><p>冲突或死锁的数目</p>
+<ul>
+<li>wsrep_last_committed<br>最后提交的事务数目。</li>
+<li>wsrep_local_cert_failures/wsrep_local_bf_aborts<br>回滚/检测到的冲突数目。</li>
+</ul>
+</li>
+</ol>
+<h2 id="故障模拟"><a href="#故障模拟" class="headerlink" title="故障模拟"></a>故障模拟</h2><p>理论上，只要有超过三个的节点，单点故障是不会出现集群不可用的：</p>
+<ol>
+<li><p>模拟单点服务故障</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">killall -9 mysqld</div></pre></td></tr></table></figure>
+<p> 此时，其他节点会提示节点掉线，但集群可用： </p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">[Note] WSREP: forgetting 1168c050 (tcp://200.200.102.208:4567)</div><div class="line">[Note] WSREP: cleaning up 1168c050 (tcp://200.200.102.208:4567)</div></pre></td></tr></table></figure>
+</li>
+<li><p>模拟单点宕机故障<br> crash system</p>
+</li>
+<li><p>模拟网络故障<br> node1上目前运行了MySQL，并且和204, 208都有连接：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="meta">node1$</span> netstat -nap | grep 4567</div><div class="line">tcp        0      0 0.0.0.0:4567            0.0.0.0:*               LISTEN      76299/mysqld</div><div class="line">tcp        0      0 200.200.102.203:48938   200.200.102.208:4567    ESTABLISHED 76299/mysqld</div><div class="line">tcp        0      0 200.200.102.203:50728   200.200.102.204:4567    ESTABLISHED 76299/mysqld</div></pre></td></tr></table></figure>
+<p> 先确保所有iptables规则已经清除：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">node1$</span> iptables –F</div></pre></td></tr></table></figure>
+<p> 将进出4567端口的链接都断掉：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="meta">node1$</span> iptables -A OUTPUT -p tcp --dport 4567 -m state --state NEW,ESTABLISHED,RELATED -j DROP</div><div class="line"><span class="meta">node1$</span> iptables -A INPUT -p tcp --dport 4567 -m state --state NEW,ESTABLISHED,RELATED -j DROP</div><div class="line"><span class="meta">node1$</span> iptables -L -n --line-number</div><div class="line">Chain INPUT (policy ACCEPT)</div><div class="line">num  target     prot opt source      destination</div><div class="line">1    DROP       tcp  --  0.0.0.0/0   0.0.0.0/0  tcp dpt:4567 state NEW,RELATED,ESTABLISHED</div><div class="line">Chain OUTPUT (policy ACCEPT)</div><div class="line">num  target     prot opt source      destination</div><div class="line">1    DROP       tcp  --  0.0.0.0/0   0.0.0.0/0 tcp dpt:4567 state NEW,RELATED,ESTABLISHED</div></pre></td></tr></table></figure>
+<p> 此时本机状态会变化，并提示其他节点链接不上：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">/sf/bin/galera-callback --status Undefined --uuid 07bfd155-ac9c-11e6-bcfd-8a32fed329f7 --primary no --index 0 --members 4cb0894f-ad6e-11e6-b756-fe900259a6d0/200.200.102.203.acloud.vt/200.200.102.203:3306</div><div class="line">2016-11-18 17:43:39 76299 [Note] WSREP: (4cb0894f, 'tcp://0.0.0.0:4567') connection to peer 00000000 with addr tcp://200.200.102.208:4567 timed out, no messages seen in PT3S</div><div class="line">2016-11-18 17:43:43 76299 [Note] WSREP: (4cb0894f, 'tcp://0.0.0.0:4567') connection to peer 00000000 with addr tcp://200.200.102.204:4567 timed out, no messages seen in PT3S</div></pre></td></tr></table></figure>
+<p> 数据库也不能使用：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">node1&gt;</span> select * from test;</div><div class="line">ERROR 1047 (08S01): WSREP has not yet prepared node for application use</div></pre></td></tr></table></figure>
+<p> 其他机器会提示状态变化，如下之前的三台变为两台，数据库能使用，但是肯定不会向203同步了：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">/sf/bin/galera-callback --status Synced --uuid 07bfd155-ac9c-11e6-bcfd-8a32fed329f7 --primary yes --index 2 --members 4cb0894f-ad6e-11e6-b756-fe900259a6d0/200.200.102.203.acloud.vt/200.200.102.203:3306,66938990-ad66-11e6-8515-f7194270ea10/node-103.acloud.vt/node-103.acloud.vt:3306,ffeb7999-ad6e-11e6-b924-bbe152c16f21/node-108.acloud.vt/node-108:3306</div><div class="line">/sf/bin/galera-callback --status Synced --uuid 07bfd155-ac9c-11e6-bcfd-8a32fed329f7 --primary yes --index 1 --members 66938990-ad66-11e6-8515-f7194270ea10/node-103.acloud.vt/node-103.acloud.vt:3306,ffeb7999-ad6e-11e6-b924-bbe152c16f21/node-108.acloud.vt/node-108:3306</div><div class="line">2016-11-18 17:43:04 58856 [Note] WSREP: (ffeb7999, 'tcp://0.0.0.0:4567') reconnecting to 4cb0894f (tcp://200.200.102.203:4567), attempt 0</div><div class="line">2016-11-18 17:43:07 58856 [Note] WSREP: (ffeb7999, 'tcp://0.0.0.0:4567') connection to peer 00000000 with addr tcp://200.200.102.203:4567 timed out, no messages seen in PT3S</div></pre></td></tr></table></figure>
+<p> 删除规则后：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">node1$</span> iptables -D OUTPUT 1</div><div class="line"><span class="meta">node1$</span> iptables -D INPUT 1</div></pre></td></tr></table></figure>
+<p> node1再次上线，数据同步。</p>
+</li>
+</ol>
+<h2 id="常见故障"><a href="#常见故障" class="headerlink" title="常见故障"></a>常见故障</h2><ul>
+<li><p>未配置wsrep_node_address地址<br>  wsrep_node_address地址是用来链接其他节点的地址，如果没有配置，默认取第一个interface上的第一个IP，问题来了，这可能取到一些不正确的IP，例如，我的测试设备取到了127.0.0.1，于是，mysqld进程挂了。<br>  进程堆栈为：</p>
+  <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">Program received signal SIGABRT, Aborted.</div><div class="line">[Switching to Thread 0x7fffd0752700 (LWP 203059)]</div><div class="line">0x00007ffff5d695f7 in raise () from /lib64/libc.so.6</div><div class="line">Missing separate debuginfos, use: debuginfo-install glibc-2.17-106.el7_2.4.x86_64 glusterfs-3.6.0.29-265029.278635.x86_64 libaio-0.3.109-13.el7.x86_64 libgcc-4.8.5-4.el7.x86_64 libstdc++-4.8.5-4.el7.x86_64 nss-softokn-freebl-3.16.2.3-14.2.el7_2.x86_64 tcp_wrappers-libs-7.6-77.el7.x86_64 zlib-1.2.7-15.el7.x86_64</div><div class="line">(gdb) bt</div><div class="line"><span class="meta">#</span>0  0x00007ffff5d695f7 in raise () from /lib64/libc.so.6</div><div class="line"><span class="meta">#</span>1  0x00007ffff5d6ace8 in abort () from /lib64/libc.so.6</div><div class="line"><span class="meta">#</span>2  0x00007fffdb169667 in gu_abort () at galerautils/src/gu_abort.c:34</div><div class="line"><span class="meta">#</span>3  0x00007fffdb274113 in gcs_core_recv (conn=0x145cd60, recv_act=recv_act@entry=0x7fffd0751e80, timeout=9223372035999999999) at gcs/src/gcs_core.cpp:1141</div><div class="line"><span class="meta">#</span>4  0x00007fffdb27a91c in gcs_recv_thread (arg=0x145cb70) at gcs/src/gcs.cpp:1191</div><div class="line"><span class="meta">#</span>5  0x00007ffff7bc6dc5 in start_thread () from /lib64/libpthread.so.0</div><div class="line"><span class="meta">#</span>6  0x00007ffff5e2a28d in clone () from /lib64/libc.so.6</div></pre></td></tr></table></figure>
+<p>  错误日志：</p>
+  <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">2016-11-18 10:25:17 179929 [Note] WSREP: Running: 'wsrep_sst_rsync --role 'joiner' --address '127.0.0.1' --datadir '/var/lib/mysql/' --defaults-file '/etc/mysql/my.cnf' --defaults-group-suffix '' --parent '179929'  '' '</div><div class="line">2016-11-18 10:25:18 179929 [Note] WSREP: Prepared SST request: rsync|127.0.0.1:4444/rsync_sst</div><div class="line">2016-11-18 10:25:18 179929 [Warning] WSREP: 1.0 (200.200.102.203.acloud.vt): State transfer to 0.0 (node-108.acloud.vt) failed: -255 (Unknown error 255)</div><div class="line">2016-11-18 10:25:18 179929 [ERROR] WSREP: gcs/src/gcs_group.cpp:gcs_group_handle_join_msg():736: Will never receive state. Need to abort.</div><div class="line">2016-11-18 10:25:18 179929 [Note] WSREP: gcomm: terminating thread</div></pre></td></tr></table></figure>
+<p>  对比一下正确日志：</p>
+  <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">2016-11-18 10:26:46 197844 [Note] WSREP: Running: 'wsrep_sst_rsync --role 'joiner' --address '200.200.102.208' --datadir '/var/lib/mysql/' --defaults-file '/etc/mysql/my.cnf' --defaults-group-suffix '' --parent '197844'  '' '</div><div class="line">2016-11-18 10:26:46 197844 [Note] WSREP: Prepared SST request: rsync|200.200.102.208:4444/rsync_sst</div><div class="line">2016-11-18 10:26:48 197844 [Note] WSREP: 1.0 (200.200.102.203.acloud.vt): State transfer to 0.0 (node-108.acloud.vt) complete.</div><div class="line">2016-11-18 10:26:48 197844 [Note] WSREP: Member 1.0 (200.200.102.203.acloud.vt) synced with group.</div></pre></td></tr></table></figure>
+</li>
+</ul>
+<h1 id="脑裂"><a href="#脑裂" class="headerlink" title="脑裂"></a>脑裂</h1><blockquote>
+<p>“Split brain” is a condition whereby two or more computers or groups of computers lose contact with one another but still act as if the cluster were intact. This is like having two governments trying to rule the same country. If multiple computers are allowed to write to the same file system without knowledge of what the other nodes are doing, it will quickly lead to data corruption and other serious problems.</p>
+</blockquote>
+<p>一般来说，物理上我们会考虑尽量避免脑裂，例如，为了避免交换机或者网口故障，我们使用双网卡加双交换的方式，做汇聚口提供服务。当然，架构复杂了，成本就上升了。</p>
+<p>脑裂出现后，一般的稳定集群的办法：</p>
+<h2 id="投票"><a href="#投票" class="headerlink" title="投票"></a>投票</h2><p>一般来说票数（不一定是节点数，可能一个节点拥有更多权重，可以占多票），哪个group能占到二分之一以上的票数，则哪个group对资源具有控制权。<br>在galera里面叫做 <a href="http://galeracluster.com/documentation-webpages/weightedquorum.html" target="_blank" rel="external">WEIGHTED QUORUM</a>机制，实现了这机制，如下图，当左边的节点数大于右边的时候，左边为Primary Component，提供服务：<br><img src="/2016/12/14/mysql-galera-cluster/03.quorum.png" alt="quorum"></p>
+<p>当然，遇到两边权重一样的，就没得辄了，所以一般会避免节点数为偶数的情况，或者，为偶数的时候，调整为不同的权重：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">SET GLOBAL wsrep_provider_options="pc.weight=3"</div></pre></td></tr></table></figure></p>
+<p>例如两台机器，这样node2一定不可能是Primary Component：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">node1: pc.weight = 2</div><div class="line">node2: pc.weight = 1</div></pre></td></tr></table></figure></p>
+<h2 id="仲裁"><a href="#仲裁" class="headerlink" title="仲裁"></a>仲裁</h2><p>最简单的仲裁模型，例如两节点，谁能PING通网关谁就获得所有权，但是，单纯的PING网关这种仲裁并不严谨，如果两个都能PING通呢？如果两个都不能PING通呢？<br>所以，一般的仲裁都不是简单的用PING实现，而是在仲裁上，加上资源加锁机制，第一个取得仲裁上资源的节点，获得控制权。<br>现实中往往不是那么简单，例如获取仲裁资源的节点何时释放资源？冲裁节点如何物理部署？<br>galera里的仲裁机制叫做<a href="http://galeracluster.com/documentation-webpages/arbitrator.html" target="_blank" rel="external">Galera Arbitrator</a>，其实可以理解为不落地的模拟节点，由一个叫garbd的模拟进程实现。<br><img src="/2016/12/14/mysql-galera-cluster/04.arbitrator.png" alt="arbitrator"></p>
+<h2 id="fencing"><a href="#fencing" class="headerlink" title="fencing"></a>fencing</h2><p>前面的两种机制相对比较友好，咱们公平竞争，fencing的话比较腹黑，一般是利用某种技术把对方搞残，对方残了就不能和我竞争资源了。<br>这里的某种技术可能是某种能关闭电源的设备，当然，具体得根据场景，例如是两台虚拟机，完全可以是一个POWER OFF的API调用。</p>
+<p>这里fencing的动作也是有考虑的，你觉得是reboot好呢还是power off好？假设是reboot，问题没解决，两个节点互相fencing对方，那不成了不停重启了？如果是power off，两个节点互相fencing对方，不就全部挂掉了？<br>所以，我不太喜欢fencing。</p>
+<h2 id="共享资源自带锁"><a href="#共享资源自带锁" class="headerlink" title="共享资源自带锁"></a>共享资源自带锁</h2><p>共享资源自带锁，就是在要争取的资源上而不是节点上设置所属标记，这并不适用于所有场景，而且这个标记要用什么姿势来打，值得考虑。<br>共享资源自带锁，最典型的例子是磁盘锁，两方争抢的是共享磁盘上的文件的时候，我们将锁放在磁盘上，这样谁占有锁谁用就可以了。但是很多时候争取的共享资源不一定是共享文件，比如MySQL的主从复制，我数据并不放在共享存储上，而是放本地，问题出在谁对外提供服务，提供服务必然写数据库，会导致最终又两份数据。</p>
+<h1 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h1><h2 id="同步效果测试"><a href="#同步效果测试" class="headerlink" title="同步效果测试"></a>同步效果测试</h2><ol>
+<li><p>在node1上创建表</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="meta">node1&gt;</span> create table test(id int, description varchar(10));</div><div class="line">Query OK, 0 rows affected (0.01 sec)</div><div class="line"><span class="meta">node1&gt;</span> show tables;</div><div class="line">+----------------+</div><div class="line">| Tables_in_test |</div><div class="line">+----------------+</div><div class="line">| test           |</div><div class="line">+----------------+</div><div class="line">1 row in set (0.00 sec)</div></pre></td></tr></table></figure>
+</li>
+<li><p>在node2上查看DDL语句是否同步过来</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="meta">node2&gt;</span> show tables;</div><div class="line">+----------------+</div><div class="line">| Tables_in_test |</div><div class="line">+----------------+</div><div class="line">| test           |</div><div class="line">+----------------+</div><div class="line">1 row in set (0.00 sec)</div></pre></td></tr></table></figure>
+</li>
+<li><p>在node2上插入数据</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="meta">node2&gt;</span> insert into test values(1,'hello');</div><div class="line">Query OK, 1 row affected (0.00 sec)</div><div class="line"></div><div class="line"><span class="meta">node2&gt;</span> select * from test;</div><div class="line">+------+-------------+</div><div class="line">| id   | description |</div><div class="line">+------+-------------+</div><div class="line">|    1 | hello       |</div><div class="line">+------+-------------+</div><div class="line">1 row in set (0.00 sec)</div></pre></td></tr></table></figure>
+</li>
+<li><p>数据顺利同步到node1</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="meta">node1&gt;</span> select * from test;</div><div class="line">+------+-------------+</div><div class="line">| id   | description |</div><div class="line">+------+-------------+</div><div class="line">|    1 | hello       |</div><div class="line">+------+-------------+</div><div class="line">1 row in set (0.00 sec)</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<h2 id="回调脚本"><a href="#回调脚本" class="headerlink" title="回调脚本"></a>回调脚本</h2><p>wsrep_notify_cmd选项，可以用于指定回调脚本，回调时会将集群状态等信息当参数传入你的命令行，详情请参考：<a href="http://galeracluster.com/documentation-webpages/notificationcmd.html" target="_blank" rel="external">http://galeracluster.com/documentation-webpages/notificationcmd.html</a></p>
+<p>加入端回调示例：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">2016-11-18 11:55:54.586872 --status Joiner --uuid 07bfd155-ac9c-11e6-bcfd-8a32fed329f7 --primary yes --index 1 --members 8f210044-ad40-11e6-8704-2b622281540b/node1/200.200.102.203:3306,e6eae266-ad42-11e6-ae64-c3455ec5818c/node-108.acloud.vt/node-108:3306</div><div class="line">2016-11-18 11:55:57.785254 --status Synced</div></pre></td></tr></table></figure></p>
+<p>接受端回调示例：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">2016-11-18 11:55:54.508756 --status Synced --uuid 07bfd155-ac9c-11e6-bcfd-8a32fed329f7 --primary yes --index 0 --members 8f210044-ad40-11e6-8704-2b622281540b/node1/200.200.102.203:3306,e6eae266-ad42-11e6-ae64-c3455ec5818c/node-108.acloud.vt/node-108:3306</div><div class="line">2016-11-18 11:55:54.595162 --status Donor</div><div class="line">2016-11-18 11:55:56.219732 --status Synced</div></pre></td></tr></table></figure></p>
+<p>如果接受失败，还会有一条会滚，例如：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">2016-11-18 11:49:07.316609 --status Synced --uuid 07bfd155-ac9c-11e6-bcfd-8a32fed329f7 --primary yes --index 0 --members 8f210044-ad40-11e6-8704-2b622281540b/node1/200.200.102.203:3306</div></pre></td></tr></table></figure></p>
+<h2 id="脑裂测试"><a href="#脑裂测试" class="headerlink" title="脑裂测试"></a>脑裂测试</h2><p>两节点可能导致脑裂，测试步骤为：</p>
+<ol>
+<li>断开两节点之间的连线。<br> 此时会发现服务都不能提供服务。</li>
+<li>重新链接网线。<br> 还是不能提供服务，这个时候，需要在其中一个节点上，重置quorum，集群变得可用： <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">SET GLOBAL wsrep_provider_options='pc.bootstrap=1'</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>详情参考：<a href="http://galeracluster.com/documentation-webpages/quorumreset.html" target="_blank" rel="external">http://galeracluster.com/documentation-webpages/quorumreset.html</a></p>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ol>
+<li>Ronald Bradford - 《Effective MySQL: Replication Techniques in Depth》</li>
+<li>galera官方文档 <a href="http://galeracluster.com/documentation-webpages/index.html" target="_blank" rel="external">http://galeracluster.com/documentation-webpages/index.html</a></li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+          
+            <a href="/tags/Cluster/" rel="tag"># Cluster</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/12/14/mysql-semi-synchronous-replication/" rel="prev" title="MySQL Semi-Synchronous Replication">
+                MySQL Semi-Synchronous Replication <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">24</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">39</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#优点与缺点"><span class="nav-number">1.</span> <span class="nav-text">优点与缺点</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#优点"><span class="nav-number">1.1.</span> <span class="nav-text">优点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#缺点"><span class="nav-number">1.2.</span> <span class="nav-text">缺点</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#部署"><span class="nav-number">2.</span> <span class="nav-text">部署</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#配置"><span class="nav-number">2.1.</span> <span class="nav-text">配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#现有数据迁移"><span class="nav-number">2.2.</span> <span class="nav-text">现有数据迁移</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#启动顺序"><span class="nav-number">2.3.</span> <span class="nav-text">启动顺序</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#高可用"><span class="nav-number">3.</span> <span class="nav-text">高可用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#故障"><span class="nav-number">4.</span> <span class="nav-text">故障</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#状态确认"><span class="nav-number">4.1.</span> <span class="nav-text">状态确认</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#故障模拟"><span class="nav-number">4.2.</span> <span class="nav-text">故障模拟</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#常见故障"><span class="nav-number">4.3.</span> <span class="nav-text">常见故障</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#脑裂"><span class="nav-number">5.</span> <span class="nav-text">脑裂</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#投票"><span class="nav-number">5.1.</span> <span class="nav-text">投票</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#仲裁"><span class="nav-number">5.2.</span> <span class="nav-text">仲裁</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fencing"><span class="nav-number">5.3.</span> <span class="nav-text">fencing</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#共享资源自带锁"><span class="nav-number">5.4.</span> <span class="nav-text">共享资源自带锁</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#测试"><span class="nav-number">6.</span> <span class="nav-text">测试</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#同步效果测试"><span class="nav-number">6.1.</span> <span class="nav-text">同步效果测试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#回调脚本"><span class="nav-number">6.2.</span> <span class="nav-text">回调脚本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#脑裂测试"><span class="nav-number">6.3.</span> <span class="nav-text">脑裂测试</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考资料"><span class="nav-number">7.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>
