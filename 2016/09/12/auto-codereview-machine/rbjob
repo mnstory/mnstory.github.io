@@ -1,0 +1,532 @@
+#!/bin/node
+/**
+ * syntex check and submit comments to reviewboard
+ *     all api reference https://www.reviewboard.org/docs/manual/2.0/webapi/
+ *     su -c "./rbjob -r 21371 retrive --check log --flog 2>&1" www-data
+ *     su -c "./rbjob -r 21371 retrive --check all" www-data
+ * @author mnstory.net
+ * @version 20160910 - check syntex and post uniq comments
+ */
+
+//public defines
+var suspend = require('suspend'),
+    resume = suspend.resume;
+const fs = require('fs')
+var path = require('path')
+var request = require('request')
+var p = require('child_process')
+var moment = require('moment')
+
+function mkdirsSync(targets) { 
+    if (fs.existsSync(targets)) {
+        return true
+    }
+
+    var joinTarget
+    targets.split(path.sep).forEach(function(dirname) {
+        if(!joinTarget && !dirname) {
+            joinTarget='/'
+            return true
+        }
+        joinTarget = joinTarget ? path.join(joinTarget, dirname) : dirname
+        if (!fs.existsSync(joinTarget)) {
+            fs.mkdirSync(joinTarget)
+        }
+    })
+    return fs.existsSync(targets)
+}
+
+function strArrBeginWith(strArr, strMatch) {
+    for (i in strArr) {
+        if(strArr[i].indexOf(strMatch) == 0) {
+            return true
+        }
+    }
+    return false
+}
+
+function extractLastURLToken(url) {
+    if(!url || url.length <= 2) {
+        l.error('invalid url ' + (url?url:'<null>'))
+        return null
+    }
+
+    var lastOffset = ('/' == url[url.length - 1]) ? 1 : 0
+    var offset = url.lastIndexOf('/', url.length-1-lastOffset)
+    if(-1 == offset) {
+        l.error('url ' + url + ' not expected format')
+        return null
+    }
+    return url.substring(offset + 1, url.length-lastOffset)
+}
+
+mkdirsSync('/var/log/rb')
+var log4js = require('log4js')
+log4js.configure({
+    appenders: [
+        {
+            type: 'console',
+            category: "consoleRBJob"
+        },
+        {
+            type: 'dateFile',
+            filename: '/var/log/rb/job',
+            pattern: ".yyyy-MM-dd.log",
+            maxLogSize: 4096,
+            alwaysIncludePattern: true,
+            backups: 1,
+            category: 'RBJob',
+            layout: {
+                type: 'pattern',
+                pattern: "%d{ABSOLUTE} %-5p " + process.pid +" %c %m"
+            }
+        },
+    ],
+    replaceConsole: false,
+    levels: {
+        RBJob: 'trace',
+        consoleRBJob: 'trace'
+    }
+})
+
+var l = log4js.getLogger('consoleRBJob')
+
+//module defines
+var reviewURI
+var reviewRequestOption
+var outDir='/tmp/rb/job'
+var sessionDir=null
+
+function optParse(options) {
+    if(options.flog) {
+        l = log4js.getLogger('RBJob')
+    }
+    p.execSync('rm -rf ' + outDir)
+    
+    reviewURI='http://'+options.rserver+'/'
+    reviewRequestOption = {
+        'auth': {
+            'user': options.ruser,
+            'pass': options.rpass,
+            'sendImmediately': false
+        }
+    }
+    l.debug('reviewURI = ' + reviewURI)
+    l.debug('reviewRequestOption = ' + JSON.stringify(reviewRequestOption))
+    return true
+}
+
+function commentsParse(strComments) {
+    if(!strComments) {
+        l.error('strComments is empty when parse comments')
+        return null
+    }
+
+    var res = null
+    var comments = strComments.split("\n")
+    var regex = /at line ([0-9]+),/
+    for (var idx = 0; idx < comments.length; ++idx) {
+        //Log missing NO PRE-STATEMENT at line 99, column 9.  29219.  (Severity: 4)
+        var matched = comments[idx].match(regex)
+        if (!matched) {
+            continue
+        }
+        if(null == res) {
+            res = {}
+        }
+        res[matched[1]] = comments[idx]
+    }
+    return res;
+}
+
+function commentsCommit(reviewID, commentID) {
+    var url = reviewURI+'api/review-requests/'+reviewID+'/reviews/'+commentID+'/'
+    l.debug('post comment commit: ' + url)
+    var comment = {}
+    comment.api_format='json'
+    comment.ship_it=false
+    comment.public=1
+
+    request.put(url, reviewRequestOption).form(comment).on('data', function(d) {
+        var r = JSON.parse(d.toString())
+        if (!r || 'ok' != r.stat) {
+            l.error("fail to post comment commit " + JSON.stringify(comment) + " : " + d.toString())
+            return
+        }
+        l.debug("success to post comment commit " + JSON.stringify(comment))
+    })
+}
+
+function commentIDParse(text) {
+    var r = JSON.parse(text)
+    if (!r || 'ok' != r.stat) {
+        l.error("invalid response when parse commentID: " + text)
+        return -1
+    }
+    return r.review.id
+}
+
+function diffFilesParse(url, r) {
+    if(null == r || 0 == r.total_results) {
+        l.error('<'+url+'> invalid total results: ' + (r?r.total_results:-1))
+        return null
+    }
+
+    var files = []
+    for (var idx in r.files) {
+        var name = path.basename(r.files[idx].dest_file)
+        var ext = path.extname(name)
+        if(!ext || (ext != '.pm' && ext != '.pl')) {
+            l.debug('<'+url+'> not check: ' + name)
+            continue
+        }
+        var fileID = r.files[idx].dest_file
+
+        var newInsert = false
+        if(0 != r.files[idx].extra_data.total_line_count
+            && (0 == r.files[idx].extra_data.equal_count 
+                || (r.files[idx].extra_data.equal_count / r.files[idx].extra_data.total_line_count < 0.2))) {
+            newInsert = true
+        }
+        /*if('/src/app/vtp-common/StartOrder.pm' == fileID) {
+            l.debug("set start order to true")
+            newInsert = true
+        }*/
+        files.push({'fileDiffID':r.files[idx].id, 'name': name, 'fileID': fileID, 'newInsert': newInsert, 'patchedFileURL': r.files[idx].links.patched_file.href})
+    }
+
+    return 0 == files.length ? null : files
+}
+
+function responseBodyParse(text) {
+    var r
+    try {
+        r = JSON.parse(text);
+    } catch(e) {
+        //not a json object, just common text
+        return text
+    }
+
+    //if codereview return a json, filter invalid stat
+    if(r.stat && 'ok' != r.stat) {
+        l.error('<'+url+'> invalid response: ' + text)
+        return null
+    }
+
+    return r
+}
+
+function responseParse(url, error, response) {
+    //error occur
+    if(error) {
+        l.error('<'+url+'> error: ' + error)
+        return null
+    }
+    
+    //status code not right
+    if(response.statusCode < 200 || response.statusCode >= 300) {
+        l.debug('<'+url+'> invalid status: ' + response.statusCode + ' body: ' + response.body)
+        return null
+    }
+
+    return responseBodyParse(response.body)
+}
+
+function diffStat(reviewID, diffIdx, cb) {
+    var url = reviewURI+'api/review-requests/'+reviewID+'/diffs/'+diffIdx + '/'
+    request.get({url:url, auth:reviewRequestOption.auth}, function(error, response){
+        var r = responseParse(url, error, response)
+        return cb(0, r ? {'modifyTime': r.diff.timestamp, 'filesURL': r.diff.links.files.href} : null)
+    })
+}
+
+function diffPatchedFiles(url, cb) {
+    request.get({url:url, auth:reviewRequestOption.auth}, function(error, response){
+        return cb(0, diffFilesParse(url, responseParse(url, error, response)))
+    })
+}
+
+function syntexCheck(path, check) {
+    var checkCmd = null
+    if ('log' == check) {
+        checkCmd = 'perlcritic -s CodeLayout::RequireLogStatment ' + path
+    } else if ('l4' == check) {
+        checkCmd = 'perlcritic -4 --verbose 8 ' + path
+    } else if ('all' == check) {
+        checkCmd = 'perlcritic --verbose 8 ' + path
+    } else {
+        checkCmd = check + path
+    }
+    l.debug(checkCmd)
+
+    var checkResp
+    try {
+        checkResp = p.execSync(checkCmd).toString()
+    } catch(e) {
+        checkResp = e.stdout.toString()
+    }
+    fs.unlinkSync(path)
+    return commentsParse(checkResp)
+}
+
+function writeContent(content, filePath) {
+    mkdirsSync(path.dirname(filePath))
+    fs.writeFileSync(filePath, content)
+}
+
+function commentPost(url, fileDiffID, line, text, cb) {
+    // post file's ERROR check information to the server
+    // @see https://www.reviewboard.org/docs/manual/dev/webapi/2.0/resources/review-diff-comment-list/
+    var comment = {}
+    comment.api_format   = 'json'
+    comment.num_lines    = 1
+    comment.filediff_id  = fileDiffID
+    comment.issue_opened = true
+    comment.text_type    = 'plain'
+    comment.first_line   = line
+    comment.text         = text
+    request.post({url:url, form: comment, auth:reviewRequestOption.auth}, function(error, response){
+        var r = responseParse(url, error, response)
+        if(r) {
+            l.info('comment success: ' + text)
+        } else {
+            l.error('comment failed: ' + text)
+        }
+        cb(0, r)
+    })
+}
+
+function diffPatchedFileCheck(diff, check, cb) {
+    request.get({url:diff.patchedFileURL, auth:reviewRequestOption.auth}, function(error, response){
+        //download file
+        var fileContent = responseParse(diff.patchedFileURL, error, response)
+        if(null == fileContent) {
+            l.error('<'+diff.patchedFileURL+'> download file content failed')
+            return cb(0, null)
+        }
+
+        //write download file to filesystem
+        var patchedFileDir = outDir + '/' + diff.fileDiffID
+        var patchedFilePath = patchedFileDir + '/' + diff.name
+
+        writeContent(fileContent, patchedFilePath)
+        l.debug('<'+diff.patchedFileURL+'> download to "' + patchedFilePath + '"')
+        
+        var comments = syntexCheck(patchedFilePath, check)
+        //clean download resource
+        fs.rmdirSync(patchedFileDir)
+        return cb(0, comments)
+    })
+}
+
+function culminate(lastStat) {
+    var desc = ''
+    for (var fileID in lastStat) {
+        if(lastStat[fileID].IsNewInsert && lastStat[fileID].ErrorCount > 0) {
+            console.error('@' + fileID + ' ' + lastStat[fileID].ErrorCount + ' errors need check')
+            process.exitCode = 2
+        } else {
+            console.log('@' + fileID + ' ' + lastStat[fileID].ErrorCount + ' errors')
+        }
+    }
+}
+
+function workLog(type, s) {
+    var split = ' '
+    var record = null
+
+    if ('diff' == type) {
+        if(s.PostErrorCount > 0) {
+            record = s.CheckTime + split + s.DiffTime + split + s.ReviewID + split + s.DiffIndex + split + s.FileDiffID + split + (s.IsNewInsert?1:0) + split + s.ErrorCount + split + s.PostErrorCount + split + s.Name + '\n'
+        }
+        //l.debug('CheckTime DiffTime ReviewID DiffIndex FileDiffID IsNewInsert ErrorCount PostErrorCount Name')
+    }
+    l.debug(JSON.stringify(s))
+    if(record && sessionDir) {
+        fs.appendFileSync(sessionDir+'/'+type, record)
+    }
+}
+
+function onDeleteComments(reviewID) {
+    suspend(function*() {
+        var url = reviewURI+'api/review-requests/'+reviewID+'/reviews/'
+
+        var postsResponse = yield request.get(url+'?start=0&max-results=500', reviewRequestOption, resume())
+        var posts = responseBodyParse(postsResponse.body)
+        var regex = /at line ([0-9]+),/
+
+        l.debug('review ' + reviewID + ' already has ' + posts.total_results + ' comment posts, need to iterator delete')
+        for (var idxPost = 0; idxPost < posts.reviews.length; ++idxPost) {
+            var urlc = posts.reviews[idxPost].links.diff_comments.href
+            var commentsResponse = yield request.get(urlc+'?start=0&max-results=5000', reviewRequestOption, resume())
+            var rc = responseBodyParse(commentsResponse.body)
+            for (var idxComment = 0; idxComment < rc.diff_comments.length; ++idxComment) {
+                var comment=rc.diff_comments[idxComment]
+                if(comment.text.match(regex)) {
+                    var commentURL=comment.links.delete.href
+                    l.debug('<' + commentURL + '>' + ' delete ' + comment.text)
+                    request.delete({url:commentURL, auth:reviewRequestOption.auth}, function(error, response){
+                        l.debug(' delete ' + response.body + (error?("failed: " + error): ""))
+                    })
+                }
+            }
+        }
+    })()
+}
+
+function commentsFill(url, comments, cb) {
+    request.get({url:url, auth:reviewRequestOption.auth}, function(error, response){
+        var r = responseParse(url, error, response)
+        if(null == r) {
+            l.error('<'+url+'> comments parse failed')
+            return cb(0, null)
+        }
+        l.debug('<'+url+'> ' + r.diff_comments.length + ' comments')
+        for (var idxComment = 0; idxComment < r.diff_comments.length; ++idxComment) {
+            var fileDiffID = extractLastURLToken(r.diff_comments[idxComment].links.filediff.href)
+            if(fileDiffID) {
+                comments[fileDiffID + '.' + r.diff_comments[idxComment].first_line] = r.diff_comments[idxComment].text
+            }
+        }
+        return cb(0, r.links.next?r.links.next.href:null)
+    })
+}
+
+function onRetrive(reviewID, check) {
+    suspend(function*() {
+        var url = reviewURI+'api/review-requests/'+reviewID+'/reviews/'
+        var lastStat = {}
+        var commentID = null
+        var comments = null
+
+        // iterator all diffs
+        var diffIdx = 1
+        for (; diffIdx < 20; ++diffIdx) {
+            var stat = yield diffStat(reviewID, diffIdx, resume())
+            if(null == stat) {
+                l.debug('diff ' + reviewID + '/' + diffIdx + ' stat not ok, reach the end')
+                break
+            }
+
+            var patchedFiles = yield diffPatchedFiles(stat.filesURL, resume())
+            if(null == patchedFiles) {
+                l.debug('<'+stat.filesURL+'> no patched files should be check')
+                continue
+            }
+
+            for (var idx in patchedFiles) {
+                var patched = patchedFiles[idx]
+                var eCount = 0
+                var posteCount = 0
+
+                var lines = yield diffPatchedFileCheck(patched, check, resume())
+                for(var line in lines) {
+                    //lazy find old comments
+                    if(null == comments) {
+                        comments = {}
+                        var postsResponse = yield request.get(url+'?start=0&max-results=500', reviewRequestOption, resume())
+                        var posts = responseBodyParse(postsResponse.body)
+                        l.debug('review ' + reviewID + ' already has ' + posts.total_results + ' comment posts')
+                        for (var idxPost = 0; idxPost < posts.reviews.length; ++idxPost) {
+                            var nextURL = posts.reviews[idxPost].links.diff_comments.href+'?start=0&max-results=5000'
+                            while(nextURL) {
+                                nextURL = yield commentsFill(nextURL, comments, resume())
+                            }
+                        }
+                        //l.debug(JSON.stringify(comments))
+                    }
+                    var commentIdx = patched.fileDiffID+'.'+line
+                    if(comments[commentIdx]) {
+                        l.debug('already exists comments ' + commentIdx + ': ' + comments[commentIdx] 
+                            + ((lines[line] == comments[commentIdx])?'':(' => ' + lines[line])))
+                    } else {
+                        //lazy request commentID
+                        if(null == commentID) {
+                            var data = yield request.post(url, reviewRequestOption, resume())
+                            commentID = commentIDParse(data.body)
+                        }
+                        yield commentPost(url+commentID+'/diff-comments/', patched.fileDiffID, line, lines[line], resume())
+                        ++posteCount
+                    }
+                    ++eCount
+                }
+
+                lastStat[patched.fileID] = {
+                    'ReviewID': reviewID,
+                    'DiffIndex': diffIdx,
+                    'FileDiffID': patched.fileDiffID,
+                    'IsNewInsert': ((lastStat[patched.fileID]?lastStat[patched.fileID].IsNewInsert:false) || patched.newInsert),
+                    'ErrorCount': eCount,
+                    'PostErrorCount': posteCount,
+                    'DiffTime': moment(stat.modifyTime).local().format('YYYY-MM-DD HH:mm:ss'),
+                    'CheckTime': moment().format('YYYY-MM-DD HH:mm:ss'),
+                    'Name': patched.fileID,
+                }
+
+                workLog('diff', lastStat[patched.fileID])
+            }
+        }
+        
+        if(null != commentID) {
+            commentsCommit(reviewID, commentID)
+        }
+
+        workLog('review', lastStat)
+        culminate(lastStat)
+    })()
+}
+
+function main() {
+    var param = require('commander')
+    param
+        .version('2016.08.06')
+        .description('Review Board manage tool')
+        .option('-s, --rserver <addr>', 'Review Board server address, default is [127.0.0.1]', '127.0.0.1')
+        .option('-u, --ruser <username>', 'Review Board server login username, default is [root]', 'root')
+        .option('-p, --rpass <password>', 'Review Board server login password, default is []', '')
+        .option('--flog', 'log to file')
+
+        .option('-r, --reviewID <id>', '@retrive Review ID')
+        .option('--check <cmd>', '@retrive check command, can be "log" "l4" "all" "\$userdef", default is [log]', 'log')
+        .option('--session [dir]', '@retrive session record dir, default no session and session dir is [/etc/rb]', '/etc/rb')
+
+    param
+        .command('retrive [env]')
+        .description('Retrive all original/patched files special by reviewid')
+        
+        .action(function(env, options){
+            if(!optParse(options.parent)) {
+                console.log("opt parse failed")
+                process.exit(1)
+            }
+            if(!options.parent.reviewID) {
+                console.log("reviewid is required")
+                process.exit(1)
+            }
+            if(strArrBeginWith(options.parent.rawArgs, '--session')) {
+                sessionDir = options.parent.session
+                mkdirsSync(sessionDir)
+            }
+            var check=options.parent.check
+            onRetrive(parseInt(options.parent.reviewID), check)
+        })
+
+    param
+        .command('delcomment [env]')
+        .description('Delete all comments submited by this tool')
+        .action(function(env, options){
+            if(!optParse(options.parent)) {
+                console.log("opt parse failed")
+                process.exit(1)
+            }
+            if(!options.parent.reviewID) {
+                console.log("reviewid is required")
+                process.exit(1)
+            }
+
+            onDeleteComments(parseInt(options.parent.reviewID))
+        })
+    param.parse(process.argv)
+}
+
+main()

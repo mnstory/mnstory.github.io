@@ -1,0 +1,84 @@
+#!/bin/bash
+# monitor code submit and auto check
+#     su -c "./rbeye >>/var/log/rb/eye.$(date +%F).log 2>&1" www-data
+# @author mnstory.net
+# @version 20160910 - auto check by page list
+
+if [ -f "$0" ]; then
+	SCRIPTDIR=$(dirname $(realpath $0 2>/dev/null) 2>/dev/null)
+fi
+if [ -z "$SCRIPTDIR" ]; then
+	SCRIPTDIR=.
+fi
+
+rb_username="root"
+rb_password=""
+rb_baseurl="http://127.0.0.1"
+rb_tmpdir="/tmp/rb/"
+
+ldebug()
+{
+    echo -e $(date +"%F %T") "$$ $@" 1>&2
+}
+
+coolywork()
+{
+	local timeafter=$1
+	local cookies="${rb_tmpdir}cookies.txt"
+	local home="${rb_tmpdir}home.txt"
+	local rid_records="${rb_tmpdir}rid_records.txt"
+	local curlcmd="curl -v -c $cookies -b $cookies"
+
+	mkdir -p "$rb_tmpdir" 2>/dev/null
+    rm -f "$cookies" 2>/dev/null
+
+	$curlcmd $rb_baseurl/account/login/ >/dev/null 2>&1
+	local csrf=$(cat $cookies | grep csrftoken | awk '{print $7}')	
+	$curlcmd -d "username=${rb_username}&password=${rb_password}&csrfmiddlewaretoken=${csrf}" $rb_baseurl/account/login/ >/dev/null 2>&1
+	$curlcmd -H 'Pragma:no-cache; Cache-Control:no-cache' $rb_baseurl/r/ 2>/dev/null > "$home"
+	cat "$home" | grep -oP '<a href="/r/\d+/">.*</div>|datetime=".*"' | awk -F/ '{id=$3; getline T; t=substr(T,11,22); print id,t}' > "$rid_records"
+
+	while read line; do
+		local rid=${line% *}
+		local uptime=${line#* }
+		local uptime_sec=$(date --date="$uptime" +%s)
+
+		if [[ -n "$timeafter" && $uptime_sec -lt $timeafter ]]; then
+			#ldebug "by pass $rid $uptime, $uptime_sec < $timeafter"
+			continue
+		fi
+		local rbjobcmd="$SCRIPTDIR/rbjob --flog -r $rid retrive --session --check l4"
+		ldebug "$rbjobcmd (at $uptime, start)"
+		$rbjobcmd
+		lasterr=$?
+		ldebug "$rbjobcmd (exit $lasterr)"
+	done < "$rid_records"
+
+	return 0
+}
+
+main()
+{
+	if [ "?" = "$1" ]; then
+		echo "$0 [timeafter]"
+		return 1
+	fi
+
+	local timeafter=""
+	if [ -n "$1" ]; then
+		timeafter=$(date --date="$timeafter" +%s)
+	#else
+	#	timeafter=$(date +%s)
+	fi
+	
+    while : ; do 
+    	local timecheckpoint=$(date +%s)
+    	coolywork $timeafter
+    	sleep 15
+    	timeafter=$timecheckpoint
+    done
+
+    return 0
+}
+
+main "$@"

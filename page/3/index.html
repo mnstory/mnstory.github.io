@@ -737,6 +737,505 @@
 
 
     
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/11/03/write-a-daemon-process/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2016/11/03/write-a-daemon-process/" itemprop="url">写一个daemon进程</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-11-03T23:00:00+08:00">
+                2016-11-03
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>linux API提供int daemon(int nochdir, int noclose)函数，功能相对简单，有的地方考虑并不周全，比如文件描述符继承且没有close，raf@raf.org的 <a href="http://libslack.org/" target="_blank" rel="external">http://libslack.org/</a> 里有daemon的实现（也是shell里面daemon命令的源码），逻辑严谨，注释清晰，先欣赏一下他的源码，如果能看明白，这篇文章就不用看了，如果看不明白，请继续。</p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2016/11/03/write-a-daemon-process/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/09/12/auto-codereview-machine/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2016/09/12/auto-codereview-machine/" itemprop="url">代码上库前的自动review实现</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-09-12T23:00:00+08:00">
+                2016-09-12
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>perlcritic是一款PERL的静态代码检测工具，官网为： <a href="http://www.perlcritic.org" target="_blank" rel="external">http://www.perlcritic.org</a> 源码下载： <a href="https://github.com/Perl-Critic/Perl-Critic" target="_blank" rel="external">https://github.com/Perl-Critic/Perl-Critic</a> 可以参考 <a href="http://search.cpan.org/dist/Perl-Critic/" target="_blank" rel="external">http://search.cpan.org/dist/Perl-Critic/</a> 使用，可以使用CPAN安装：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">perl -MCPAN -e shell</div><div class="line"><span class="meta">&gt;</span> install Perl::Critic</div></pre></td></tr></table></figure></p>
+<p>本日志自动扫描工具建立在Critic基础上，为我们的日志检测规则写了一插件，名为RequireLogStatment，安装文件覆盖 /usr/local/share/perl/5.14.2/Perl/Critic/Policy/CodeLayout/RequireLogStatment.pm 即可使用。<br></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2016/09/12/auto-codereview-machine/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/07/26/simple-perl-unittest-lib/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2016/07/26/simple-perl-unittest-lib/" itemprop="url">PERL单元测试简易框架</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-07-26T23:00:00+08:00">
+                2016-07-26
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>本来是写个测试脚本来测试函数是否正确，写着写着就把输出写的漂亮了些，于是将代码抽出来，做成一个公共框架。</p>
+<p>说是框架，非常王婆卖瓜，因为就一百五十行SHELL脚本，PERL本是有单元测试的，但是我认为几行代码用那单元测试有点小题大做，最关键是，我的需求非常少，就是要跑几句代码，检测一下返回值，并且匹配一下预期数据，然后列出测试结果而已。</p>
+<p>我之前喜欢这样简单测试PERL函数代码：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">perl -T -w -e 'use VTP::MutexVMs; use Data::Dumper; print Dumper(VTP::MutexVMs::mutexVMIDs())'</div></pre></td></tr></table></figure></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2016/07/26/simple-perl-unittest-lib/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/07/14/qemu-core-analysis-deadlock/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2016/07/14/qemu-core-analysis-deadlock/" itemprop="url">QEMU CORE分析之死锁</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-07-14T23:00:00+08:00">
+                2016-07-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <h1 id="main线程8003"><a href="#main线程8003" class="headerlink" title="main线程8003"></a>main线程8003</h1><p>QEMU出CORE，死在pthread_mutex_lock里：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">Core was generated by `/usr/bin/kvm -id 3114792937754 -chardev socket,id=qmp,path=/var/run/qemu-server'.</div><div class="line">Program terminated with signal SIGSEGV, Segmentation fault.</div><div class="line"><span class="meta">#</span>0  0x00007fe1ed7d8cec in __lll_lock_wait () from /lib/x86_64-linux-gnu/libpthread.so.0</div><div class="line">(gdb) bt</div><div class="line"><span class="meta">#</span>0  0x00007fe1ed7d8cec in __lll_lock_wait () from /lib/x86_64-linux-gnu/libpthread.so.0</div><div class="line"><span class="meta">#</span>1  0x00007fe1ed7d4339 in _L_lock_926 () from /lib/x86_64-linux-gnu/libpthread.so.0</div><div class="line"><span class="meta">#</span>2  0x00007fe1ed7d415b in pthread_mutex_lock () from /lib/x86_64-linux-gnu/libpthread.so.0</div><div class="line"><span class="meta">#</span>3  0x00007fe1f4b84739 in qemu_mutex_lock (mutex=mutex@entry=0x7fe1f5223940 &lt;qemu_global_mutex&gt;) at util/qemu-thread-posix.c:73</div><div class="line"><span class="meta">#</span>4  0x00007fe1f485d096 in qemu_mutex_lock_iothread () at /home/jenkins/workspace/Compile/HCI5.2_Compile/src/app/vtp-qemu-kvm/qemu-2.5.1/cpus.c:1235</div><div class="line"><span class="meta">#</span>5  0x00007fe1f4afb264 in os_host_main_loop_wait (timeout=15740693) at main-loop.c:279</div><div class="line"><span class="meta">#</span>6  main_loop_wait (nonblocking=&lt;optimized out&gt;) at main-loop.c:530</div><div class="line"><span class="meta">#</span>7  0x00007fe1f48290b0 in main_loop () at vl.c:2240</div><div class="line"><span class="meta">#</span>8  main (argc=&lt;optimized out&gt;, argv=&lt;optimized out&gt;, envp=&lt;optimized out&gt;) at vl.c:5167</div></pre></td></tr></table></figure></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2016/07/14/qemu-core-analysis-deadlock/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
   </section>
 
   
@@ -786,7 +1285,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">24</span>
+                <span class="site-state-item-count">28</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -799,7 +1298,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">39</span>
+                <span class="site-state-item-count">51</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>

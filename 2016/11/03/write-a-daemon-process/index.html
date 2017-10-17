@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="API,C," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="linux API提供int daemon(int nochdir, int noclose)函数，功能相对简单，有的地方考虑并不周全，比如文件描述符继承且没有close，raf@raf.org的 http://libslack.org/ 里有daemon的实现（也是shell里面daemon命令的源码），逻辑严谨，注释清晰，先欣赏一下他的源码，如果能看明白，这篇文章就不用看了，如果看不明白，请继">
+<meta name="keywords" content="API,C">
+<meta property="og:type" content="article">
+<meta property="og:title" content="写一个daemon进程">
+<meta property="og:url" content="http://mnstory.net/2016/11/03/write-a-daemon-process/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="linux API提供int daemon(int nochdir, int noclose)函数，功能相对简单，有的地方考虑并不周全，比如文件描述符继承且没有close，raf@raf.org的 http://libslack.org/ 里有daemon的实现（也是shell里面daemon命令的源码），逻辑严谨，注释清晰，先欣赏一下他的源码，如果能看明白，这篇文章就不用看了，如果看不明白，请继">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2017-10-17T15:01:21.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="写一个daemon进程">
+<meta name="twitter:description" content="linux API提供int daemon(int nochdir, int noclose)函数，功能相对简单，有的地方考虑并不周全，比如文件描述符继承且没有close，raf@raf.org的 http://libslack.org/ 里有daemon的实现（也是shell里面daemon命令的源码），逻辑严谨，注释清晰，先欣赏一下他的源码，如果能看明白，这篇文章就不用看了，如果看不明白，请继">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2016/11/03/write-a-daemon-process/"/>
+
+
+
+
+
+  <title>写一个daemon进程 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/11/03/write-a-daemon-process/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">写一个daemon进程</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-11-03T23:00:00+08:00">
+                2016-11-03
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>linux API提供int daemon(int nochdir, int noclose)函数，功能相对简单，有的地方考虑并不周全，比如文件描述符继承且没有close，raf@raf.org的 <a href="http://libslack.org/" target="_blank" rel="external">http://libslack.org/</a> 里有daemon的实现（也是shell里面daemon命令的源码），逻辑严谨，注释清晰，先欣赏一下他的源码，如果能看明白，这篇文章就不用看了，如果看不明白，请继续。<a id="more"></a><br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">daemon_init</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *name)</span></span></div><div class="line"><span class="function"></span>&#123;</div><div class="line">    <span class="keyword">pid_t</span> pid;</div><div class="line">    <span class="keyword">long</span> nopen;</div><div class="line">    <span class="keyword">int</span> fd;</div><div class="line"> </div><div class="line">    <span class="comment">/* Don't setup a daemon-friendly process context if started by init(8) or inetd(8). */</span></div><div class="line">    <span class="keyword">if</span> (!(daemon_started_by_init() || daemon_started_by_inetd()))</div><div class="line">    &#123;</div><div class="line">        <span class="comment">/* Background the process. Lose process session/group leadership. */</span></div><div class="line">        <span class="keyword">if</span> ((pid = fork()) == <span class="number">-1</span>)</div><div class="line">            <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">        <span class="keyword">if</span> (pid)</div><div class="line">            <span class="built_in">exit</span>(EXIT_SUCCESS);</div><div class="line"> </div><div class="line">        <span class="comment">/* Become a process session leader. This can only fail when we're already a session leader. */</span></div><div class="line">        setsid();</div><div class="line"> </div><div class="line"><span class="meta">#<span class="meta-keyword">ifndef</span> NO_EXTRA_SVR4_FORK</span></div><div class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> SVR4</span></div><div class="line">        <span class="comment">/* Ignore SIGHUP because when the session leader terminates (which is about to happen), all processes in the foreground process group are sent the SIGHUP signal (apparently). It is expected that clients will set their own SIGHUP handler after the call to daemon_init() if necessary. */</span></div><div class="line">        &#123;</div><div class="line">            <span class="class"><span class="keyword">struct</span> <span class="title">sigaction</span> <span class="title">act</span>[1];</span></div><div class="line">            act-&gt;sa_handler = SIG_IGN;</div><div class="line">            sigemptyset(&amp;act-&gt;sa_mask);</div><div class="line">            act-&gt;sa_flags = <span class="number">0</span>;</div><div class="line">            <span class="keyword">if</span> (sigaction(SIGHUP, act, <span class="literal">NULL</span>) == <span class="number">-1</span>)</div><div class="line">                <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">        &#125;</div><div class="line"> </div><div class="line">        <span class="comment">/* Lose process session leadership to prevent gaining a controlling terminal in SVR4. */</span></div><div class="line">        <span class="keyword">if</span> ((pid = fork()) == <span class="number">-1</span>)</div><div class="line">            <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">        <span class="keyword">if</span> (pid)</div><div class="line">            <span class="built_in">exit</span>(EXIT_SUCCESS);</div><div class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></div><div class="line">    &#125;</div><div class="line"> </div><div class="line">    <span class="comment">/* Enter the root directory to prevent hampering umounts. */</span></div><div class="line">    <span class="keyword">if</span> (chdir(ROOT_DIR) == <span class="number">-1</span>)</div><div class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line"> </div><div class="line">    <span class="comment">/* Clear umask to enable explicit file modes. */</span></div><div class="line">    umask(<span class="number">0</span>);</div><div class="line"> </div><div class="line">    <span class="comment">/* We need to close all open file descriptors. Check how many file descriptors we have (If indefinite, a usable number (1024) will be returned). Flaw: If many files were opened and then this limit was reduced to below the highest file descriptor, we may not close all file descriptors. */</span></div><div class="line">    <span class="keyword">if</span> ((nopen = limit_open()) == <span class="number">-1</span>)</div><div class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line"> </div><div class="line">    <span class="comment">/* Close all open file descriptors. If started by inetd, we don't close stdin, stdout and stderr. Don't forget to open any future tty devices with O_NOCTTY so as to prevent gaining a controlling terminal (not necessary with SVR4). */</span></div><div class="line">    <span class="keyword">if</span> (daemon_started_by_inetd())</div><div class="line">    &#123;</div><div class="line">        <span class="keyword">for</span> (fd = <span class="number">0</span>; fd &lt; nopen; ++fd)</div><div class="line">        &#123;</div><div class="line">            <span class="keyword">switch</span> (fd)</div><div class="line">            &#123;</div><div class="line">                <span class="keyword">case</span> STDIN_FILENO:</div><div class="line">                <span class="keyword">case</span> STDOUT_FILENO:</div><div class="line">                <span class="keyword">case</span> STDERR_FILENO:</div><div class="line">                    <span class="keyword">break</span>;</div><div class="line">                <span class="keyword">default</span>:</div><div class="line">                    close(fd);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">else</span></div><div class="line">    &#123;</div><div class="line">        <span class="keyword">for</span> (fd = <span class="number">0</span>; fd &lt; nopen; ++fd)</div><div class="line">            close(fd);</div><div class="line"> </div><div class="line">        <span class="comment">/* Open stdin, stdout and stderr to /dev/null just in case some code buried in a library somewhere expects them to be open. */</span></div><div class="line">        <span class="keyword">if</span> ((fd = open(<span class="string">"/dev/null"</span>, O_RDWR)) == <span class="number">-1</span>)</div><div class="line">            <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line"> </div><div class="line">        <span class="comment">/* This is only needed for very strange (hypothetical) POSIX implementations where STDIN_FILENO != 0 or STDOUT_FILE != 1 or STDERR_FILENO != 2 (yeah, right). */</span></div><div class="line">        <span class="keyword">if</span> (fd != STDIN_FILENO)</div><div class="line">        &#123;</div><div class="line">            <span class="keyword">if</span> (dup2(fd, STDIN_FILENO) == <span class="number">-1</span>)</div><div class="line">                <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">             close(fd);</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">if</span> (dup2(STDIN_FILENO, STDOUT_FILENO) == <span class="number">-1</span>)</div><div class="line">            <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">        <span class="keyword">if</span> (dup2(STDIN_FILENO, STDERR_FILENO) == <span class="number">-1</span>)</div><div class="line">            <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">    &#125;</div><div class="line">     <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>要写一个daemon进程，需要了解如下知识。</p>
+<h1 id="终端设备"><a href="#终端设备" class="headerlink" title="终端设备"></a>终端设备</h1><p>终端设备(terminal or tty devices) 是一类特定的字符设备，他可以作为session的控制终端（为session提供输入输出界面），包含如下三类：</p>
+<ol>
+<li>虚拟控制台(virtual consoles)<br> 为什么要有控制台？<br> 进程输出一些信息，用户要输入一些信息，例如单模式下提示用户输入用户名密码等，很多情况下离不开“人机交互界面”，这就是控制台，简单点想，就是你接在主机上的显示器，你也可以不接显示器，它也一样存在，只是你就要摸黑了。<br> 控制台设备为/dev/console，有了控制台就可以供人机交互，但当你和其他人共用一台机器的时候，用同一个显示器进入，大家敲的命令，执行的输出都搅在一起，谁都感觉不爽，于是虚拟控制台的概念出来了。<br> 虚拟控制台命名为/dev/tty[1-N]，其中/dev/tty0表示当前虚拟控制台。这里的每一个/dev/tty#就代表一个虚拟控制台，有了这玩意，按一下alt+F[1-6]就可以自由切换多个虚拟控制台，每个虚拟控制台的输入输出和权限可以相互独立，互不干涉。</li>
+<li><p>串口(serial ports)<br> 既然你桌上的显示器是用来做人机交互的，类似你桌上的显示器的硬件还很多，而且形形色色，通过串口走的其他字符设备，也能做终端，于是也叫/dev/ttyXXX，那XXX怎么规定好呢，以前的设备种类比较少，于是就用了一个字符来区分设备种类，剩下的就是序号，所以你可以看到串口设备在系统里面是/dev/ttyS#或/dev/ttyC#这样的。</p>
+</li>
+<li><p>伪终端(pseudoterminals or PTYs)<br> 后来有了网络，绝大多数时候，我们都不用跑到机房打开显示器去使用服务器，而是用ssh等软件远程连接到服务器，客户端软件的输入窗口就变成了类似控制台的功能，可以输入，也可以输出。<br> 那么，如何让远程连接的程序也能和系统里的进程做人机交互呢？</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"> client                         server</div><div class="line">+-------+  internet     +-------------------------+</div><div class="line">| putty |-------------&gt; | sshd                    |</div><div class="line">+-------+               |    |                    |</div><div class="line">                        |    +- spawn &apos;vi main.c&apos; |</div><div class="line">                        |    +- spawn &apos;dmesg&apos;     |</div><div class="line">                        +-------------------------+</div></pre></td></tr></table></figure>
+<p> 类似上图，我们可以让sshd将putty接收到的数据转发到vi进程，也可以让dmesg输出的数据转发到sshd再由sshd转发到putty，当然，系统为这部分转发做了抽象，抽象成为伪终端。<br> 伪终端有server和client的概念，类似sshd进程，只需要打开server端，类似vi和dmesg只需要打开client端，他们之间即可传递输入输出数据。在linux下，这个server端是/dev/ptmx，client端是/dev/pts/#，不同的/dev/pts/#之间做隔离互不影响，这样可以同时支持多个伪终端。<br> 如下，两个sshd进程打开/dev/ptmx各三次，生成两个伪终端pts/0 pts/1：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> lsof /dev/ptmx</div><div class="line">COMMAND    PID USER   FD   TYPE DEVICE SIZE/OFF  NODE NAME</div><div class="line">sshd    125860 root    7u   CHR    5,2      0t0 12660 /dev/ptmx</div><div class="line">sshd    125860 root    9u   CHR    5,2      0t0 12660 /dev/ptmx</div><div class="line">sshd    125860 root   10u   CHR    5,2      0t0 12660 /dev/ptmx</div><div class="line">sshd    230540 root    7u   CHR    5,2      0t0 12660 /dev/ptmx</div><div class="line">sshd    230540 root    9u   CHR    5,2      0t0 12660 /dev/ptmx</div><div class="line">sshd    230540 root   10u   CHR    5,2      0t0 12660 /dev/ptmx</div><div class="line"></div><div class="line"><span class="meta">#</span> ps xf -o pid,pgid,ppid,sid,tty,start,command</div><div class="line">   PID   PGID   PPID    SID TT        STARTED COMMAND</div><div class="line"> 10757  10757      1  10757 ?          Oct 11 /usr/sbin/sshd</div><div class="line">125860 125860  10757 125860 ?        09:22:17  \_ sshd: root@pts/0 </div><div class="line">126015 126015 125860 126015 pts/0    09:22:18  |   \_ -bash</div><div class="line">136159 136159 126015 126015 pts/0    09:22:32  |       \_ /usr/bin/perl</div><div class="line">230540 230540  10757 230540 ?        09:50:58  \_ sshd: root@pts/1 </div><div class="line">230665 230665 230540 230665 pts/1    09:50:58      \_ -bash</div><div class="line">154533 154533 230665 230665 pts/1    11:08:12          \_ ps xf -o pid,pgid</div></pre></td></tr></table></figure>
+<p> 类似printf，最终将数据输出到终端/dev/tty，你也可以，打开两个ssh感受下：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">echo &quot;hello, i am pts0&quot; &gt; /dev/pts/1</div></pre></td></tr></table></figure>
+<p> 图形界面下也有字符输入输出，dabian下x-window控制台一般是/dev/tty7。</p>
+</li>
+</ol>
+<h1 id="进程组-GROUP-与会话-SESSION"><a href="#进程组-GROUP-与会话-SESSION" class="headerlink" title="进程组(GROUP)与会话(SESSION)"></a>进程组(GROUP)与会话(SESSION)</h1><p>我们知道进程的概念，每个进程他有自己的父进程，也有自己所在的进程组，进程组之于进程正如文件夹之于文件，主要是方便统一管理，例如，你可以使用”kill -SIGNUMBER -PGID”向进程组ID发送信号，则进程组内所有的进程都会收到相同信号。</p>
+<p>每个进程组有进程组ID(group leader id)，该ID就是进程组组长的PID，可调用setpgid函数来设置组ID。</p>
+<p>如果一个进程使用open tty打开一个终端设备，使得进程可以和终端设备进行人机交互，那么这个进程就叫前台进程。</p>
+<p>理论上来说，一个终端设备只能同时关联到一个进程，但是我们可能有多个进程都要同时和终端交互的需求，比如使用 dmesg | grep error等命令，创建了一组进程，这组进程都可以输出到终端并接受到ctrl+c发出的SIGINT，比如使用gdb调试进程，父子进程都可以交叉接收你的输入，所以和终端设备交互的单位可以认为是进程组，能够关联控制终端的进程组叫做前台进程组(foreground process group)，因为控制终端一次只能服务于一个进程组，那些当前没获得控制终端的，叫做后台进程组(background process group)。</p>
+<p>你可以在命令行后面加&amp;，使得一个进程变成后台进程，也可以在输入ctrl+z将当前运行的前台进程变成后台进程，然后通过jobs可以查看当前的后台进程列表，通过 fg %x进后台进程调为前台进程，x表示jobs里面显示的工作号。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> sleep 33</div><div class="line">^Z</div><div class="line">[1]+  Stopped                 sleep 33</div><div class="line"><span class="meta">#</span> jobs</div><div class="line">[1]+  Stopped                 sleep 33</div><div class="line"><span class="meta">#</span> fg %1</div><div class="line">sleep 33</div><div class="line">^C</div></pre></td></tr></table></figure></p>
+<p>但是ctrl+z和&amp;还有一些区别，比如ctrl+z变成后台进程后，进程同时处于stopped状态，而&amp;是running状态：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> sleep 30</div><div class="line">^Z</div><div class="line">[1]+  Stopped                 sleep 30</div><div class="line"><span class="meta">#</span> sleep 33 &amp;</div><div class="line">[2] 4351</div><div class="line"><span class="meta">#</span> jobs</div><div class="line">[1]+  Stopped                 sleep 30</div><div class="line">[2]-  Running                 sleep 33 &amp;</div></pre></td></tr></table></figure></p>
+<p>一个session可以有多个进程组，这些进程组可以由一个前台进程组(forkground process group)和多个后台进程组(background process group)组成。</p>
+<p>在控制终端输入的中断键、退出键会转换为信号发送到前端进程组，所以，你会发现Ctrl+c可以停止一组进程，控制终端还会产生一些其他信号，一个健壮的程序都应该明确知道如何处理： </p>
+<ul>
+<li>输入CTRL+c，产生SIGINT信号。</li>
+<li>输入CTRL+\，产生SIGQUIT信号。</li>
+<li>输入CTRL+z，产生SIGTSTP信号。</li>
+<li>后台进程尝试读terminal的时候，产生SIGTTIN信号。</li>
+<li>后台进程尝试写terminal的时候，产生SIGTTOU信号。</li>
+<li>断开终端，产生SIGHUP信号，发送给session leader（有人说也发送给孤儿进程组，但是我测试发现孤儿进程没反应）。</li>
+</ul>
+<p>我们可以调用setsid是来创建一个新的session，该函数内部调用setpgid（表明既是新的session又是group leader）然后调用ioctl(TIOCNOTTY)脱离控制终端。</p>
+<h1 id="守护进程"><a href="#守护进程" class="headerlink" title="守护进程"></a>守护进程</h1><h2 id="后台进程"><a href="#后台进程" class="headerlink" title="后台进程"></a>后台进程</h2><p>一般来说，我们理解的后台进程就是在命令后面加&amp;操作符，终端进行了一次fork操作，让命令走新的fork分支，而不阻塞终端窗口输入。此后台进程没有获得控制终端，不能接收输入（但是可以往终端输出信息）。</p>
+<p>在终端窗口发送的控制键(例如ctrl+c)不能作用于后台进程，所以不会导致后台进程退出，    但是，以远程ssh为例，关闭伪终端的时候，会发送SIGHUP给session leader process，对于leader进程而言，收到这个信号有自己不同的处理方式。</p>
+<p>以ubuntu的bash为例，它会清理所有jobs，会往”所有在当前session的进程发送sighup”(这里我个人理解，没有找到相关资料，测试出来的现象并不能跨session，但是如果是当前session，那么setsid后，还有必要ignore sighup吗？) 不管是运行状态还是非运行状态(非运行的会先cont再sighup)，默认情况下，进程收到sighup都会退出，所以，如果你想让自己的进程不至于在关闭终端窗口后就退出，你需要屏蔽sighup信号（nohup命令执行效果相同），详情参考<a href="https://www.gnu.org/software/bash/manual/html_node/Signals.html#Signals" target="_blank" rel="external">https://www.gnu.org/software/bash/manual/html_node/Signals.html#Signals</a>。</p>
+<p>此外，并非所有session leader都使用类似处理方式，基于不同实现和配置，有的处理只给前台进程发送sighup，后台进程在终端退出后会变成孤儿。</p>
+<h2 id="守护进程-1"><a href="#守护进程-1" class="headerlink" title="守护进程"></a>守护进程</h2><p>后台进程已经可以在一定程度上不受控制终端约束，可达到控制终端退出后自己仍然运行的目的，但是还有几个问题：</p>
+<ol>
+<li>上面讲了关闭终端后的sighup问题，可能导致后台进程退出。</li>
+<li>控制终端退出了，后台进程之前的输出怎么办？所以守护进程应该是无控制终端的。</li>
+<li>LINUX的进程会继承多父进程的很多特性，例如文件mask，当前目录，文件句柄，信号处理特征等，可能导致进程本身和环境依赖相关，理应重置。</li>
+</ol>
+<h1 id="守护进程的实现"><a href="#守护进程的实现" class="headerlink" title="守护进程的实现"></a>守护进程的实现</h1><ol>
+<li><p>为了防止守护进程变成僵尸，我们第一步是让进程变成一个孤儿进程。</p>
+ <figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/* step1: first time fork and exit parent, make child as a orphan */</span></div><div class="line"><span class="keyword">if</span> (<span class="number">-1</span> == (pid = fork())) &#123;</div><div class="line">    lerror(<span class="string">"first time fork failed %d"</span>, errno);</div><div class="line">    <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">if</span> (<span class="number">0</span> != pid) &#123;</div><div class="line">    <span class="built_in">exit</span>(<span class="number">0</span>);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>要脱离控制终端的控制，就要和控制终端所在的session分开</p>
+ <figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/* step2: child as a new session and a group leader. This can only fail when we're aleady a session leader. */</span></div><div class="line">setsid();</div></pre></td></tr></table></figure>
+<p> setsid函数，会让当前进程变成新的进程组组长，并设置新session，这样，当前进程所在的session就和控制终端所在的session隔离开了，控制终端所在session接收到的输入或信号，不会影响到当前进程。我们可以看一下session源码：</p>
+ <figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/* Create a new session with the calling process as its leader. The process group IDs of the session and the calling process are set to the process ID of the calling process, which is returned. */</span></div><div class="line"><span class="keyword">int</span> __setsid ()</div><div class="line">&#123;</div><div class="line">    <span class="keyword">pid_t</span> pid = getpid ();</div><div class="line">    <span class="keyword">int</span> tty;</div><div class="line">    <span class="keyword">int</span> save = errno;</div><div class="line"> </div><div class="line">    <span class="keyword">if</span> (__getpgid (pid) == pid)</div><div class="line">    &#123;</div><div class="line">        <span class="comment">/* Already the leader.  */</span></div><div class="line">        __set_errno (EPERM);</div><div class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="comment">//设置当前进程为新进程组组长</span></div><div class="line">    <span class="keyword">if</span> (setpgid (pid, pid) &lt; <span class="number">0</span>)</div><div class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">    <span class="comment">//使用 IOCTL 脱离 控制终端</span></div><div class="line">    tty = open (<span class="string">"/dev/tty"</span>, <span class="number">0</span>);</div><div class="line">    <span class="keyword">if</span> (tty &lt; <span class="number">0</span>)</div><div class="line">    &#123;</div><div class="line">        __set_errno (save);</div><div class="line">        <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">    &#125;</div><div class="line">    (<span class="keyword">void</span>) __ioctl (tty, TIOCNOTTY, <span class="number">0</span>);</div><div class="line">    (<span class="keyword">void</span>) __close (tty);</div><div class="line"> </div><div class="line">    __set_errno (save);</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>屏蔽掉sighup信号</p>
+<p> 按照我上面的疑问，如果session leader不会跨session发送sighup，这里似乎也不那么必要，如果这里设置了ignore，子进程也会继承。</p>
+ <figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/* step3: Ignore SIGHUP because when the session leader terminates, all processes in the FOREGROUND process group are sent the SIGHUP signal (apparently). It is expected that clients will set their own SIGHUP handler after the call todaemon_init() if necessary.</span></div><div class="line"><span class="comment">    */</span></div><div class="line">&#123;</div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sigaction</span> <span class="title">act</span>[1];</span></div><div class="line">    act-&gt;sa_handler = SIG_IGN;</div><div class="line">    sigemptyset(&amp;act-&gt;sa_mask);</div><div class="line">    act-&gt;sa_flags = <span class="number">0</span>;</div><div class="line">    <span class="keyword">if</span> (sigaction(SIGHUP, act, <span class="literal">NULL</span>) == <span class="number">-1</span>) &#123;</div><div class="line">        lerror(<span class="string">"set SIGHUP failed %d"</span>, errno);</div><div class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>二次fork，防止后续有误操作再次关联控制终端</p>
+<p> 这里二次fork的目的，是防止后续误操作再次关联控制终端，因为第二步我们已经设置了当前进程为session leader，而session leader是能够open tty，虽然自己写的代码很清楚不会这么干，但是不排除后续调用别人的代码会有如此操作，于是这里就先fork一个子进程，子进程不是session leader，父进程(原来的session leader)退出，子进程变成当前进程，后续即使有人想关联控制终端，也必然关联失败。</p>
+ <figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/* step4: Lose process session leadership to prevent gaining a controlling terminal in SVR4.*/</span></div><div class="line"><span class="keyword">if</span> (<span class="number">-1</span> == (pid = fork())) &#123;</div><div class="line">    lerror(<span class="string">"second time fork failed %d"</span>, errno);</div><div class="line">    <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">&#125;</div><div class="line"><span class="keyword">if</span> (<span class="number">0</span> != pid) &#123;</div><div class="line">    <span class="built_in">exit</span>(<span class="number">0</span>);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>重置一些继承过来的变量</p>
+<p> 上面说过，文件mask，当前目录，文件句柄，信号处理特征等都会继承，这里只处理当前目录和文件mask。</p>
+ <figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/* step5: reset inherited env */</span></div><div class="line"><span class="comment">/* Enter the root directory to prevent hampering umounts. */</span></div><div class="line"><span class="keyword">if</span> (<span class="number">-1</span> == chdir(<span class="string">"/"</span>)) &#123;</div><div class="line">    lerror(<span class="string">"chdir to / %d"</span>, errno);</div><div class="line">    <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">/* Clear umask to enable explicit file modes. */</span></div><div class="line">umask(<span class="number">0</span>);</div></pre></td></tr></table></figure>
+</li>
+<li><p>关闭继承描述符并设置输入输出到/dev/null</p>
+<p> 本来可以和5合在一起说，但是这个解释有点多，所以单独出来。<br> 为什么要关闭继承句柄？请参见实际工程中遇到的BUG<a href="https://mnstory.net/2017/04/16/locate-problem-of-python-child-zombie/">《定位Python执行命令僵尸卡死》</a>一文。<br> 因为守护进程和控制中断失去了关联，输人输出都不能再继续，所以重置输入输出为/dev/null，这样没有了输入输出，也不会有ctrl+z之类的触发信号，所以上述讲到的哪些信号屏蔽也不需要做。</p>
+ <figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/* step6: We need to close all open file descriptors, and redirect /dev/null */</span></div><div class="line">    closeAllfds(<span class="number">1</span>);</div><div class="line">    </div><div class="line">    <span class="keyword">if</span>(<span class="number">-1</span> == redirectDftFD(<span class="string">"/dev/null"</span>)) &#123;</div><div class="line">        lerror(<span class="string">"can't redirect default fd to /dev/null"</span>);</div><div class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p> 两函数实现为：</p>
+ <figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">closeAllfds</span><span class="params">(<span class="keyword">int</span> bIngoreDftFD)</span> </span>&#123;</div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">rlimit</span> <span class="title">rl</span>;</span></div><div class="line">    <span class="keyword">int</span> closeCnt = <span class="number">0</span>;</div><div class="line"> </div><div class="line">    <span class="keyword">if</span>(<span class="number">-1</span> == getrlimit(RLIMIT_NOFILE, &amp;rl)) &#123;</div><div class="line">        lerror(<span class="string">"getrlimit RLIMIT_NOFILE failed %d:%s\n"</span>, errno, strerror(errno));</div><div class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">if</span>(rl.rlim_max == RLIM_INFINITY) &#123;</div><div class="line">        <span class="comment">//If many files were opened and then this limit was reduced to 1024, we may not close all file descriptors.</span></div><div class="line">        rl.rlim_max = <span class="number">1024</span>; </div><div class="line">    &#125;</div><div class="line"> </div><div class="line">    <span class="keyword">int</span> fd = <span class="number">0</span>;</div><div class="line">    <span class="keyword">while</span>(fd &lt; (<span class="keyword">int</span>)rl.rlim_max) &#123;</div><div class="line">        <span class="keyword">if</span>(!bIngoreDftFD || (fd != STDIN_FILENO &amp;&amp; fd != STDOUT_FILENO &amp;&amp; fd != STDERR_FILENO)) &#123;</div><div class="line">            <span class="keyword">if</span>(<span class="number">-1</span> == close(fd)) &#123;</div><div class="line">                <span class="keyword">if</span>(EINTR == errno) &#123;</div><div class="line">                    <span class="keyword">continue</span>; <span class="comment">//try again</span></div><div class="line">                &#125;</div><div class="line">                <span class="keyword">if</span>(EBADF != errno) &#123;</div><div class="line">                    lerror(<span class="string">"close fd %d failed %d:%s\n"</span>, fd, errno, strerror(errno));</div><div class="line">                &#125;</div><div class="line">            &#125; <span class="keyword">else</span> &#123;</div><div class="line">                ++closeCnt;</div><div class="line">                lerror(<span class="string">"close fd %d, total count %d\n"</span>, fd, closeCnt);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        ++fd;</div><div class="line">    &#125;</div><div class="line"> </div><div class="line">    <span class="keyword">return</span> closeCnt;</div><div class="line">&#125;</div><div class="line"> </div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">redirectDftFD</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span>* toPath)</span> </span>&#123;</div><div class="line">    <span class="keyword">int</span> fd;</div><div class="line"> </div><div class="line">    <span class="keyword">if</span>(<span class="literal">NULL</span> == toPath || <span class="string">'\0'</span> == toPath[<span class="number">0</span>]) &#123;</div><div class="line">        lerror(<span class="string">"invalid redirect dest %p"</span>, toPath);</div><div class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">    &#125;</div><div class="line"> </div><div class="line">    fd = open(toPath, O_RDWR);</div><div class="line">    <span class="keyword">if</span>(<span class="number">-1</span> == fd) &#123;</div><div class="line">        lerror(<span class="string">"open(%s) failed %d:%s\n"</span>, toPath, errno, strerror(errno));</div><div class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> (STDIN_FILENO != fd) &#123;</div><div class="line">        <span class="keyword">if</span> (<span class="number">-1</span> == dup2(fd, STDIN_FILENO)) &#123;</div><div class="line">            lerror(<span class="string">"dup2(%d, %d) failed %d:%s\n"</span>, fd, STDIN_FILENO, errno, strerror(errno));</div><div class="line">            close(fd);</div><div class="line">            <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">        &#125;</div><div class="line">        close(fd);</div><div class="line">    &#125;</div><div class="line"> </div><div class="line">    <span class="comment">//if error occur, can't rollback</span></div><div class="line">    <span class="keyword">if</span> (<span class="number">-1</span> == dup2(STDIN_FILENO, STDOUT_FILENO)) &#123;</div><div class="line">        lerror(<span class="string">"dup2(%d, %d) failed %d:%s\n"</span>, STDIN_FILENO, STDOUT_FILENO, errno, strerror(errno));</div><div class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">    &#125;</div><div class="line"> </div><div class="line">    <span class="keyword">if</span> (<span class="number">-1</span> == dup2(STDIN_FILENO, STDERR_FILENO)) &#123;</div><div class="line">        lerror(<span class="string">"dup2(%d, %d) failed %d:%s\n"</span>, STDIN_FILENO, STDERR_FILENO, errno, strerror(errno));</div><div class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">    &#125;</div><div class="line"> </div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/API/" rel="tag"># API</a>
+          
+            <a href="/tags/C/" rel="tag"># C</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/09/12/auto-codereview-machine/" rel="next" title="代码上库前的自动review实现">
+                <i class="fa fa-chevron-left"></i> 代码上库前的自动review实现
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/12/14/mysql-galera-cluster/" rel="prev" title="MySQL galera cluster">
+                MySQL galera cluster <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">28</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">51</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#终端设备"><span class="nav-number">1.</span> <span class="nav-text">终端设备</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#进程组-GROUP-与会话-SESSION"><span class="nav-number">2.</span> <span class="nav-text">进程组(GROUP)与会话(SESSION)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#守护进程"><span class="nav-number">3.</span> <span class="nav-text">守护进程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#后台进程"><span class="nav-number">3.1.</span> <span class="nav-text">后台进程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#守护进程-1"><span class="nav-number">3.2.</span> <span class="nav-text">守护进程</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#守护进程的实现"><span class="nav-number">4.</span> <span class="nav-text">守护进程的实现</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>
