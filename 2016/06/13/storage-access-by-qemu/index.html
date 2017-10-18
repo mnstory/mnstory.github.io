@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Qemu,Storage," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="存储相关命令查看是否有FC存储：123# lspci -nn | grep &quot;Fibre Channel&quot;81:00.0 Fibre Channel [0c04]: Brocade Communications Systems, Inc. 425/825/42B/82B 4Gbps/8Gbps PCIe dual port FC HBA [1657:0013] (rev 01)81:00.1 Fi">
+<meta name="keywords" content="Qemu,Storage">
+<meta property="og:type" content="article">
+<meta property="og:title" content="QEMU虚拟存储的几种访问形式">
+<meta property="og:url" content="http://mnstory.net/2016/06/13/storage-access-by-qemu/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="存储相关命令查看是否有FC存储：123# lspci -nn | grep &quot;Fibre Channel&quot;81:00.0 Fibre Channel [0c04]: Brocade Communications Systems, Inc. 425/825/42B/82B 4Gbps/8Gbps PCIe dual port FC HBA [1657:0013] (rev 01)81:00.1 Fi">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2016/06/13/storage-access-by-qemu/image001.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/13/storage-access-by-qemu/image003.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/13/storage-access-by-qemu/image005.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/13/storage-access-by-qemu/image007.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/13/storage-access-by-qemu/image009.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/13/storage-access-by-qemu/image011.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/13/storage-access-by-qemu/image013.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/13/storage-access-by-qemu/image015.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/13/storage-access-by-qemu/image017.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/13/storage-access-by-qemu/image019.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/13/storage-access-by-qemu/image021.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/13/storage-access-by-qemu/image023.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/13/storage-access-by-qemu/image025.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/13/storage-access-by-qemu/image027.png">
+<meta property="og:updated_time" content="2017-10-18T15:12:47.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="QEMU虚拟存储的几种访问形式">
+<meta name="twitter:description" content="存储相关命令查看是否有FC存储：123# lspci -nn | grep &quot;Fibre Channel&quot;81:00.0 Fibre Channel [0c04]: Brocade Communications Systems, Inc. 425/825/42B/82B 4Gbps/8Gbps PCIe dual port FC HBA [1657:0013] (rev 01)81:00.1 Fi">
+<meta name="twitter:image" content="http://mnstory.net/2016/06/13/storage-access-by-qemu/image001.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2016/06/13/storage-access-by-qemu/"/>
+
+
+
+
+
+  <title>QEMU虚拟存储的几种访问形式 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/06/13/storage-access-by-qemu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">QEMU虚拟存储的几种访问形式</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-06-13T23:00:00+08:00">
+                2016-06-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="存储相关命令"><a href="#存储相关命令" class="headerlink" title="存储相关命令"></a>存储相关命令</h1><p>查看是否有FC存储：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> lspci -nn | grep <span class="string">"Fibre Channel"</span></span></div><div class="line">81:00.0 Fibre Channel [0c04]: Brocade Communications Systems, Inc. 425/825/42B/82B 4Gbps/8Gbps PCIe dual port FC HBA [1657:0013] (rev 01)</div><div class="line">81:00.1 Fibre Channel [0c04]: Brocade Communications Systems, Inc. 425/825/42B/82B 4Gbps/8Gbps PCIe dual port FC HBA [1657:0013] (rev 01)</div></pre></td></tr></table></figure></p>
+<p>其中ID为81:00.0 的 vendor &amp; device ID 为 1657: 0013（上面中括号内），通过device ID，可以查找是否已经有设备驱动存在：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> grep 1657 /lib/modules/`uname -r`/modules.* | grep 0013</span></div><div class="line">/lib/modules/3.10.0/modules.alias:alias pci:v00001657d00000013sv*sd*bc*sc*i* bfa</div></pre></td></tr></table></figure></p>
+<a id="more"></a>
+<p>上面命令最后的bfa为此HBA的驱动名称，查看是否已经加载驱动：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> lsmod | grep bfa</span></div><div class="line">bfa                  2300947  6 </div><div class="line">scsi_transport_fc      55172  1 bfa</div></pre></td></tr></table></figure></p>
+<p>如果没有加载，可以通过modprobe -v bfa手动加载：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> modinfo bfa</span></div><div class="line">filename:       /lib/modules/3.10.0/kernel/drivers/scsi/bfa/bfa.ko</div><div class="line">version:        3.2.3.0</div><div class="line">author:         Brocade Communications Systems, Inc.</div><div class="line">description:    Brocade Fibre Channel HBA Driver fcpim ipfc</div><div class="line">license:        GPL</div><div class="line">rhelversion:    7.1</div></pre></td></tr></table></figure></p>
+<p>查看fc adapters详细信息：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> ls -l /sys/class/fc_host/</span></div><div class="line">total 0</div><div class="line">lrwxrwxrwx 1 root root 0 May 13 11:49 host11 -&gt; ../../devices/pci0000:80/0000:80:01.0/0000:81:00.0/host11/fc_host/host11/</div><div class="line">lrwxrwxrwx 1 root root 0 May 13 11:49 host12 -&gt; ../../devices/pci0000:80/0000:80:01.0/0000:81:00.1/host12/fc_host/host12/</div><div class="line"><span class="meta">#</span><span class="bash"> ls -lh /sys/class/fc_host/host11/</span></div><div class="line">total 0</div><div class="line">-r--r--r-- 1 root root 4.0K May 17 14:38 active_fc4s</div><div class="line">lrwxrwxrwx 1 root root    0 May 17 14:38 device -&gt; ../../../host11/</div><div class="line">-rw-r--r-- 1 root root 4.0K May 17 14:38 dev_loss_tmo</div><div class="line">-r--r--r-- 1 root root 4.0K May 17 14:38 fabric_name</div><div class="line">--w------- 1 root root 4.0K May 17 14:38 issue_lip</div><div class="line">-r--r--r-- 1 root root 4.0K May 17 14:38 maxframe_size</div><div class="line">-r--r--r-- 1 root root 4.0K May 17 14:38 max_npiv_vports</div><div class="line">-r--r--r-- 1 root root 4.0K May 13 11:52 node_name</div><div class="line">-r--r--r-- 1 root root 4.0K May 17 14:38 npiv_vports_inuse</div><div class="line">-r--r--r-- 1 root root 4.0K May 17 14:38 port_id</div><div class="line">-r--r--r-- 1 root root 4.0K May 13 11:52 port_name</div><div class="line">-r--r--r-- 1 root root 4.0K May 17 14:38 port_state</div><div class="line">-r--r--r-- 1 root root 4.0K May 17 14:38 port_type</div><div class="line">drwxr-xr-x 2 root root    0 May 17 14:38 power/</div><div class="line">-r--r--r-- 1 root root 4.0K May 17 14:38 speed</div><div class="line">drwxr-xr-x 2 root root    0 May 17 14:38 statistics/</div><div class="line">lrwxrwxrwx 1 root root    0 May 13 11:49 subsystem -&gt; ../../../../../../../class/fc_host/</div><div class="line">-r--r--r-- 1 root root 4.0K May 17 14:38 supported_classes</div><div class="line">-r--r--r-- 1 root root 4.0K May 17 14:38 supported_fc4s</div><div class="line">-r--r--r-- 1 root root 4.0K May 17 14:38 supported_speeds</div><div class="line">-r--r--r-- 1 root root 4.0K May 17 14:38 symbolic_name</div><div class="line">-rw-r--r-- 1 root root 4.0K May 17 14:38 tgtid_bind_type</div><div class="line">-rw-r--r-- 1 root root 4.0K May 13 11:49 uevent</div><div class="line">--w------- 1 root root 4.0K May 17 14:38 vport_create</div><div class="line">--w------- 1 root root 4.0K May 17 14:38 vport_delete</div><div class="line"><span class="meta">#</span><span class="bash"> cat /sys/class/fc_host/host11/speed </span></div><div class="line">unknown</div><div class="line"><span class="meta">#</span><span class="bash"> cat /sys/class/fc_host/host11/node_name </span></div><div class="line">0x20008c7cff65a8e4</div><div class="line"><span class="meta">#</span><span class="bash"> cat /sys/class/fc_host/host11/port_name </span></div><div class="line">0x10008c7cff65a8e4</div><div class="line"><span class="meta">#</span><span class="bash"> cat /sys/class/fc_host/host11/port_id</span></div><div class="line">0x000000</div><div class="line"><span class="meta">#</span><span class="bash"> cat /sys/class/fc_host/host11/port_type </span></div><div class="line">Unknown</div></pre></td></tr></table></figure></p>
+<p>如果安装了systool也可以用如下命令查看详细信息：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> systool -c fc_host</span></div><div class="line"><span class="meta">#</span><span class="bash"> systool -c fc_host -v host11</span></div></pre></td></tr></table></figure></p>
+<p>查看当前的MUTLIPATH情况：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> multipath -ll</span></div><div class="line">36f01faf000dcec22000048b25549e4f6 dm-3 DELL,MD36xxf</div><div class="line">size=500G features='0' hwhandler='0' wp=rw</div><div class="line">`-+- policy='round-robin 0' prio=1 status=active</div><div class="line">  `- 12:0:1:10 sdi 8:128 active ready running</div><div class="line">36f01faf000dcec22000048b45549e501 dm-69 DELL,MD36xxf</div><div class="line">size=500G features='0' hwhandler='0' wp=rw</div><div class="line">`-+- policy='round-robin 0' prio=1 status=active</div><div class="line">  `- 12:0:1:11 sdj 8:144 active ready running</div><div class="line">36f01faf000dcec2200004bd4555467b9 dm-4 DELL,MD36xxf</div><div class="line">size=1.3T features='0' hwhandler='0' wp=rw</div><div class="line">`-+- policy='round-robin 0' prio=1 status=active</div><div class="line">  `- 12:0:1:4  sdg 8:96  active ready running</div><div class="line">36f01faf000dcec22000048b05549e4ea dm-2 DELL,MD36xxf</div><div class="line">size=500G features='0' hwhandler='0' wp=rw</div><div class="line">`-+- policy='round-robin 0' prio=1 status=active</div><div class="line">  `- 12:0:1:9  sdh 8:112 active ready running</div><div class="line">36f01faf000dcec22000048a85549e49d dm-0 DELL,MD36xxf</div><div class="line">size=500G features='0' hwhandler='0' wp=rw</div><div class="line">`-+- policy='round-robin 0' prio=1 status=active</div><div class="line">  `- 12:0:1:1  sdf 8:80  active ready running</div></pre></td></tr></table></figure></p>
+<p>使用lsblk查看当前block设备情况：<br>NAME       : 这是块设备名<br>MAJ:MIN    : 本栏显示主要和次要设备号<br>RM         : 本栏显示设备是否可移动设备。注意，在本例中设备sdb和sr0的RM值等于1，这说明他们是可移动设备<br>SIZE       : 本栏列出设备的容量大小信息。例如298.1G表明该设备大小为298.1GB，而1K表明该设备大小为1KB<br>RO         : 该项表明设备是否为只读。在本案例中，所有设备的RO值为0，表明他们不是只读的<br>TYPE       : 本栏显示块设备是否是磁盘或磁盘上的一个分区<br>MOUNTPOINT : 本栏指出设备挂载的挂载点</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> lsblk </span></div><div class="line">NAME                                                              MAJ:MIN RM   SIZE RO TYPE  MOUNTPOINT</div><div class="line">sdf                                                                 8:80   0   500G  0 disk  </div><div class="line">├─sdf1                                                              8:81   0 492.2G  0 part  </div><div class="line">└─36f01faf000dcec22000048a85549e49d (dm-0)                        253:0    0   500G  0 mpath </div><div class="line">  └─36f01faf000dcec22000048a85549e49d-part1 (dm-69)               253:69   0 492.2G  0 part  </div><div class="line">sdg                                                                 8:96   0   1.3T  0 disk  </div><div class="line">└─36f01faf000dcec2200004bd4555467b9 (dm-1)                        253:1    0   1.3T  0 mpath </div><div class="line">sdh                                                                 8:112  0   500G  0 disk  </div><div class="line">└─36f01faf000dcec22000048b05549e4ea (dm-2)                        253:2    0   500G  0 mpath /36f01fa</div><div class="line">sdi                                                                 8:128  0   500G  0 disk  </div><div class="line">└─36f01faf000dcec22000048b25549e4f6 (dm-3)                        253:3    0   500G  0 mpath /36f01fa</div><div class="line">sdj                                                                 8:144  0   500G  0 disk  </div><div class="line">└─36f01faf000dcec22000048b45549e501 (dm-4)                        253:4    0   500G  0 mpath</div></pre></td></tr></table></figure>
+<p>查看某一块设备信息：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> lsblk -b /dev/sdf</span></div><div class="line">NAME                                               MAJ:MIN RM         SIZE RO TYPE  MOUNTPOINT</div><div class="line">sdf                                                  8:80   0 536870912000  0 disk  </div><div class="line">├─sdf1                                               8:81   0 528449564160  0 part  </div><div class="line">└─36f01faf000dcec22000048a85549e49d (dm-0)         253:0    0 536870912000  0 mpath </div><div class="line">  └─36f01faf000dcec22000048a85549e49d-part1 (dm-1) 253:1    0 528449564160  0 part</div></pre></td></tr></table></figure></p>
+<p>-S参数，输出scsi info，TRAN栏为fc，表示是FC存储：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> lsblk -S</span></div><div class="line">NAME HCTL       TYPE VENDOR   MODEL             REV TRAN</div><div class="line">sda  0:0:10:0   disk ATA      INTEL SSDSC2BB48 0140 </div><div class="line">sdb  0:0:11:0   disk ATA      INTEL SSDSC2BB48 0140 </div><div class="line">sdc  0:0:12:0   disk ATA      INTEL SSDSC2BB48 0140 </div><div class="line">sdd  0:0:13:0   disk ATA      INTEL SSDSC2BB48 0140 </div><div class="line">sde  5:0:0:0    disk ATA      FORESEE 128GB SS N053 sata</div><div class="line">sdf  12:0:1:1   disk DELL     MD36xxf          0784 fc</div><div class="line">sdg  12:0:1:4   disk DELL     MD36xxf          0784 fc</div><div class="line">sdh  12:0:1:9   disk DELL     MD36xxf          0784 fc</div><div class="line">sdi  12:0:1:10  disk DELL     MD36xxf          0784 fc</div><div class="line">sdj  12:0:1:11  disk DELL     MD36xxf          0784 fc</div></pre></td></tr></table></figure></p>
+<h1 id="共享外置存储在两台机的差异"><a href="#共享外置存储在两台机的差异" class="headerlink" title="共享外置存储在两台机的差异"></a>共享外置存储在两台机的差异</h1><p>共享外置映射到两台机器上，本身HBA卡不一致，by path路径有细微的变化，by id的无变化：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line">node1 # lspci -nn</div><div class="line">81:00.0 Fibre Channel [0c04]: QLogic Corp. ISP2532-based 8Gb Fibre Channel to PCI Express HBA [1077:2532] (rev 02)</div><div class="line">81:00.1 Fibre Channel [0c04]: QLogic Corp. ISP2532-based 8Gb Fibre Channel to PCI Express HBA [1077:2532] (rev 02)</div><div class="line">node2 # lspci -nn</div><div class="line">81:00.0 Fibre Channel [0c04]: Brocade Communications Systems, Inc. 425/825/42B/82B 4Gbps/8Gbps PCIe dual port FC HBA [1657:0013] (rev 01)</div><div class="line">81:00.1 Fibre Channel [0c04]: Brocade Communications Systems, Inc. 425/825/42B/82B 4Gbps/8Gbps PCIe dual port FC HBA [1657:0013] (rev 01)</div><div class="line">node1 # ll /dev/disk/by-path/</div><div class="line">pci-0000:81:00.0-fc-0x2012f01fafdcec22-lun-9 -&gt; ../../sdh</div><div class="line">node2 # ll /dev/disk/by-path/</div><div class="line">pci-0000:81:00.1-fc-0x2012f01fafdcec22-lun-9 -&gt; ../../sdh</div><div class="line">node1 # ll /dev/disk/by-id/</div><div class="line">scsi-36f01faf000dcec22000048b05549e4ea -&gt; ../../dm-2</div><div class="line">wwn-0x6f01faf000dcec22000048b05549e4ea -&gt; ../../sdh</div><div class="line">node2 # ll /dev/disk/by-id/</div><div class="line">scsi-36f01faf000dcec22000048b05549e4ea -&gt; ../../dm-2</div><div class="line">wwn-0x6f01faf000dcec22000048b05549e4ea -&gt; ../../sda</div><div class="line">node1 # multipath -ll</div><div class="line">36f01faf000dcec22000048b05549e4ea dm-2 DELL,MD36xxf</div><div class="line">size=500G features='0' hwhandler='0' wp=rw</div><div class="line">`-+- policy='round-robin 0' prio=1 status=active</div><div class="line">  `- 1:0:1:9  sdh 8:112 active ready running</div><div class="line">node2 # multipath -ll</div><div class="line">36f01faf000dcec22000048b05549e4ea dm-2 DELL,MD36xxf</div><div class="line">size=500G features='0' hwhandler='0' wp=rw</div><div class="line">`-+- policy='round-robin 0' prio=1 status=active</div><div class="line">  `- 12:0:1:9  sdh 8:112 active ready running</div></pre></td></tr></table></figure></p>
+<h1 id="QEMU虚拟存储的几种访问形式"><a href="#QEMU虚拟存储的几种访问形式" class="headerlink" title="QEMU虚拟存储的几种访问形式"></a>QEMU虚拟存储的几种访问形式</h1><h2 id="将HOST机QCOW2镜像，映射给GUEST机作为IDE磁盘"><a href="#将HOST机QCOW2镜像，映射给GUEST机作为IDE磁盘" class="headerlink" title="将HOST机QCOW2镜像，映射给GUEST机作为IDE磁盘"></a>将HOST机QCOW2镜像，映射给GUEST机作为IDE磁盘</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-drive file=/data/images/f9263e855786/vm-disk-1.qcow2,if=none,id=drive-ide0,cache=none -device ide-hd,bus=ide.0,unit=0,drive=drive-ide0,id=ide0</div></pre></td></tr></table></figure>
+<h2 id="将HOST机QCOW2镜像，映射给GUEST机作为SCSI磁盘"><a href="#将HOST机QCOW2镜像，映射给GUEST机作为SCSI磁盘" class="headerlink" title="将HOST机QCOW2镜像，映射给GUEST机作为SCSI磁盘"></a>将HOST机QCOW2镜像，映射给GUEST机作为SCSI磁盘</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-device lsi,id=scsihw0,bus=pci.0,addr=0x5 -drive file=/data/images/f9263e855786/vm-disk-2.qcow2,if=none,id=drive-scsi0,cache=none -device scsi-hd,bus=scsihw0.0,scsi-id=0,drive=drive-scsi0,id=scsi0</div></pre></td></tr></table></figure>
+<h2 id="将HOST机QCOW2镜像，映射给GUEST机作为VIRTIO-BLK磁盘"><a href="#将HOST机QCOW2镜像，映射给GUEST机作为VIRTIO-BLK磁盘" class="headerlink" title="将HOST机QCOW2镜像，映射给GUEST机作为VIRTIO-BLK磁盘"></a>将HOST机QCOW2镜像，映射给GUEST机作为VIRTIO-BLK磁盘</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-drive file=/data/images/f9263e855786/vm-disk-1.qcow2,if=none,id=drive-virtio1,cache=none,aio=native,cache.direct=on -device virtio-blk-pci,drive=drive-virtio1,id=virtio1,bus=pci.0,addr=0xb</div></pre></td></tr></table></figure>
+<p>此种方式（代号qcow2-on-fc），虚拟机内部跑IO，会反映到HOST机，但是虚拟机IO WAIT和IO UTIL都比HOST高，因为有虚拟机一层的损耗，损耗还挺高，例如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">GUEST： %iowait 60% %util 100%</div><div class="line">HOST：  %iowait  0% %util  80%</div></pre></td></tr></table></figure></p>
+<h2 id="将HOST机存储设备，映射给GUEST机为IDE磁盘"><a href="#将HOST机存储设备，映射给GUEST机为IDE磁盘" class="headerlink" title="将HOST机存储设备，映射给GUEST机为IDE磁盘"></a>将HOST机存储设备，映射给GUEST机为IDE磁盘</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-drive file=/dev/mapper/36f01faf000dcec22000048a85549e49d,if=none,id=drive-ide1,cache=none,aio=native -device ide-hd,bus=ide.0,unit=1,drive=drive-ide1,id=ide1</div></pre></td></tr></table></figure>
+<p>GUEST机(redhat 5)内部，lspci显示：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">00:01.1 IDE interface [0101]: Intel Corporation 82371SB PIIX3 IDE [Natoma/Triton II] [8086:7010]</div></pre></td></tr></table></figure></p>
+<p>fdisk -l发现有新增的磁盘 /dev/hdb，这种方式，磁盘类型和ID均会发生变化，HOST机里面查看到的是：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">host # ls -l /dev/mapper/36f01faf000dcec22000048a85549e49d</div><div class="line">/dev/mapper/36f01faf000dcec22000048a85549e49d -&gt; ../dm-0</div><div class="line">host # ls -l /dev/disk/by-id/</div><div class="line">scsi-36f01faf000dcec22000048a85549e49d -&gt; ../../dm-0</div><div class="line">wwn-0x6f01faf000dcec22000048a85549e49d -&gt; ../../sdf    </div><div class="line">host # lspci</div><div class="line">    81:00.0 Fibre Channel: Brocade Communications Systems, Inc. 425/825/42B/82B 4Gbps/8Gbps PCIe dual port FC HBA (rev 01)</div><div class="line">    81:00.1 Fibre Channel: Brocade Communications Systems, Inc. 425/825/42B/82B 4Gbps/8Gbps PCIe dual port FC HBA (rev 01)    </div><div class="line">host # multipath -ll</div><div class="line">    36f01faf000dcec22000048a85549e49d dm-0 DELL,MD36xxf</div><div class="line">    size=500G features='0' hwhandler='0' wp=rw</div><div class="line">    `-+- policy='round-robin 0' prio=1 status=active</div><div class="line">      `- 12:0:1:1  sdf 8:80  active ready running</div></pre></td></tr></table></figure></p>
+<p>从GUEST机查看磁盘ID已经变化，且类似不再是SCSI，而是IDE：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">guest # ls -l /dev/disk/by-id/</div><div class="line">ata-SANGFOR_HARDDISK_7961700010988-L -&gt; ../../hdb</div></pre></td></tr></table></figure></p>
+<h2 id="将HOST机存储设备，映射给GUEST机为VIRTIO-BLK磁盘"><a href="#将HOST机存储设备，映射给GUEST机为VIRTIO-BLK磁盘" class="headerlink" title="将HOST机存储设备，映射给GUEST机为VIRTIO-BLK磁盘"></a>将HOST机存储设备，映射给GUEST机为VIRTIO-BLK磁盘</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-drive file=/dev/mapper/36f01faf000dcec2200004bd4555467b9,if=none,id=drive-virtio3,cache=none,aio=native,cache.direct=on -device virtio-blk-pci,drive=drive-virtio3,id=virtio3,bus=pci.0,addr=0xd</div></pre></td></tr></table></figure>
+<p>GUEST机(redhat 5)内部，lspci显示：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">00:0d.0 SCSI storage controller [0100]: Red Hat, Inc Virtio block device [1af4:1001]</div></pre></td></tr></table></figure></p>
+<p>fdisk -l发现有新增的磁盘 /dev/vdc，此种方式（代号map-dev-vdx），磁盘类型和ID均会发生变化，和上面的差别是使用了VIRTIO-BLK替代了IDE。虚拟机内部跑IO，会反映到HOST机，但是虚拟机IO WAIT和IO UTIL都比HOST高，因为有虚拟机一层的损耗，损耗还挺高，例如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">GUEST： %iowait 20% %util 100%</div><div class="line">HOST：  %iowait  0% %util  75%</div></pre></td></tr></table></figure></p>
+<h2 id="将HOST机存储设备，透传给GUEST机为SCSI磁盘"><a href="#将HOST机存储设备，透传给GUEST机为SCSI磁盘" class="headerlink" title="将HOST机存储设备，透传给GUEST机为SCSI磁盘"></a>将HOST机存储设备，透传给GUEST机为SCSI磁盘</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-device lsi,id=scsi0,bus=pci.0,addr=0xb -drive file=/dev/sdh,if=none,id=drive-scsi0-0-0-0,format=raw -device scsi-block,bus=scsi0.0,channel=0,scsi-id=0,lun=0,drive=drive-scsi0-0-0-0,id=scsi0-0-0-0</div></pre></td></tr></table></figure>
+<p>GUSET机(redhat 5)内部，lspci显示：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">00:0b.0 SCSI storage controller: LSI Logic / Symbios Logic 53c895a</div></pre></td></tr></table></figure></p>
+<p>fdisk -l发现有新增的磁盘 /dev/sda，参数里的/dev/sdh和/dev/disk/by-path/pci-0000:81:00.1-fc-0x2012f01fafdcec22-lun-9等路径等效：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> ls -l /dev/disk/by-id/</span></div><div class="line">scsi-36f01faf000dcec22000048b05549e4ea -&gt; ../../sda</div></pre></td></tr></table></figure></p>
+<h2 id="将HOST机存储设备，透传给GUEST机为VIRTIO-SCSI磁盘"><a href="#将HOST机存储设备，透传给GUEST机为VIRTIO-SCSI磁盘" class="headerlink" title="将HOST机存储设备，透传给GUEST机为VIRTIO-SCSI磁盘"></a>将HOST机存储设备，透传给GUEST机为VIRTIO-SCSI磁盘</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-device virtio-scsi-pci,id=scsi0,bus=pci.0,addr=0xb -drive file=/dev/disk/by-id/wwn-0x6f01faf000dcec22000048b05549e4ea,if=none,id=drive-scsi-dev0,format=raw -device scsi-block,bus=scsi0.0,channel=0,scsi-id=0,lun=9,drive=drive-scsi-dev0,id=scsi-dev0</div></pre></td></tr></table></figure>
+<p>等价，但是推荐用前者，因为ID是不会变的但PATH是会变的：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-device virtio-scsi-pci,id=scsi0,bus=pci.0,addr=0xb -drive file=/dev/disk/by-path/pci-0000:81:00.1-fc-0x2012f01fafdcec22-lun-9,if=none,id=drive-scsi-dev0,format=raw -device scsi-block,bus=scsi0.0,channel=0,scsi-id=0,lun=9,drive=drive-scsi-dev0,id=scsi-dev0</div></pre></td></tr></table></figure></p>
+<p>GUSET机(redhat 5)内部，由于无驱动，lspci显示：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">00:0b.0 SCSI storage controller: Red Hat, Inc Device 1004</div></pre></td></tr></table></figure></p>
+<p>而且，fdisk -l也看不到任何磁盘。并且，lsmod | grep virtio 看并没有virtio_scsi驱动，<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">grep VIRTIO /boot/config-`uname -r`</div></pre></td></tr></table></figure></p>
+<p>输出里面找不到CONFIG_SISC_VIRTIO。</p>
+<p>GUSET机(centos 6.3)内部，默认有驱动，lspci显示：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">00:0b.0 SCSI storage controller: LSI Logic / Symbios Logic 53c895a</div></pre></td></tr></table></figure></p>
+<p>fdisk -l显示/dev/sda，查看HOST机，我们之前映射的是：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">host # realpath /dev/disk/by-path/pci-0000:81:00.1-fc-0x2012f01fafdcec22-lun-9</div><div class="line">/dev/sdh</div><div class="line">host # ll /dev/disk/by-id/</div><div class="line">scsi-36f01faf000dcec22000048b05549e4ea -&gt; ../../dm-2</div><div class="line">wwn-0x6f01faf000dcec22000048b05549e4ea -&gt; ../../sdh</div></pre></td></tr></table></figure></p>
+<p>查看GUEST机，映射后scsi的ID直接从HOST机透进来了：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">guest # ll /dev/disk/by-id/</div><div class="line">scsi-36f01faf000dcec22000048b05549e4ea -&gt; ../../sda</div><div class="line">wwn-0x6f01faf000dcec22000048b05549e4ea -&gt; ../../sda</div></pre></td></tr></table></figure></p>
+<p>在aSV里面修改配置映射匹配：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">vi `find /cfs/ -name 3816770497938.conf`</div></pre></td></tr></table></figure></p>
+<p>在类似：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ide0: 36f01faf000dcec22000048b25549e4f6:vm-disk-1.qcow2,cache=directsync,preallocate=off,forecast=disable,cache_size=256,size=30G</div></pre></td></tr></table></figure></p>
+<p>的IDE磁盘选项下面添加：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">scsi0: 36f01faf000dcec22000048b25549e4f6:file:/dev/sdf</div><div class="line">scsi0: 3600a0980006c8a6d000003a0574733a7:file:/dev/disk/by-id/wwn-0x600a0980006c888a0000047c5746b94c,iothread=on</div></pre></td></tr></table></figure></p>
+<p>其中file:/dev/sdf是你要映射的HOST机fc磁盘路径。启动虚拟机后，在GUEST机内部可以lspci或fdisk -l看到新增的磁盘。但是不是透传，而是映射<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-drive file=/dev/sdf,if=none,id=drive-virtio0,cache=none,aio=native -device virtio-blk-pci,drive=drive-virtio0,id=virtio0,bus=pci.0,addr=0xa</div></pre></td></tr></table></figure></p>
+<p>添加：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">scsihw: virtio-scsi-pci</div><div class="line">scsi0: 36f01faf000dcec22000048b25549e4f6:file:/dev/sdf</div></pre></td></tr></table></figure></p>
+<p>得到：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-device virtio-scsi-pci,id=virtioscsi0,bus=pci.3,addr=0x1 -drive file=/dev/sdf,if=none,id=drive-scsi0,cache=none,aio=native,cache.direct=on -device scsi-block,bus=virtioscsi0.0,channel=0,scsi-id=0,lun=0,drive=drive-scsi0,id=scsi0</div></pre></td></tr></table></figure></p>
+<p>和实际想要的匹配：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-device virtio-scsi-pci,id=scsi0,bus=pci.0,addr=0xb -drive file=/dev/sdf,if=none,id=drive-scsi-dev0,format=raw -device scsi-block,bus=scsi0.0,channel=0,scsi-id=0,lun=9,drive=drive-scsi-dev0,id=scsi-dev0</div></pre></td></tr></table></figure></p>
+<p>此种方式（代号pt-dev-vscsi），虚拟机内部跑IO，HOST机是看不到IO波动的。</p>
+<h2 id="将HOST机HBA卡-pci-透传给GUEST机-利用VT-d"><a href="#将HOST机HBA卡-pci-透传给GUEST机-利用VT-d" class="headerlink" title="将HOST机HBA卡(pci)透传给GUEST机(利用VT-d)"></a>将HOST机HBA卡(pci)透传给GUEST机(利用VT-d)</h2><ol>
+<li>确保BIOS里面VT-d已经开启(一般情况下都是开启的)</li>
+<li><p>修改内核启动项，设置 </p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">intel_iommu=on iommu=pt</div></pre></td></tr></table></figure>
+<p> 这两个参数的含义：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">intel_iommu=on</div><div class="line">		Enable intel iommu driver.</div><div class="line">iommu=pt</div><div class="line">		This option enables Pass Through in context mapping if</div><div class="line">		Pass Through is supported in hardware. With this option</div><div class="line">		DMAR is disabled in kernel and kernel uses swiotlb, but</div><div class="line">		KVM can still uses VT-d IOTLB hardware.</div></pre></td></tr></table></figure>
+<p> 更多内核参数内容可以参考。<br> aSV可以使用如下命令简便设置：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sed -i 's/intel_iommu=off/intel_iommu=on/g' /boot/boot/grub/grub.cfg</div></pre></td></tr></table></figure>
+<p>然后重启系统，重启后可查看dmesg日志，有”Intel-IOMMU: enabled”，aSV的日志显示类似：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> cat /sf/<span class="built_in">log</span>/blackbox/today/LOG_dmesg.txt  | grep -e DMAR -e IOMMU</span></div><div class="line">ACPI: DMAR 000000006fc3bd48 00162 (v01 ALASKA   A M I  00000001 INTL 20091013)</div><div class="line">Intel-IOMMU: enabled</div><div class="line">dmar: IOMMU 0: reg_base_addr fbffc000 ver 1:0 cap d2078c106f0466 ecap f020de</div><div class="line">dmar: IOMMU 1: reg_base_addr c7ffc000 ver 1:0 cap d2078c106f0466 ecap f020de</div><div class="line">IOAPIC id 10 under DRHD base  0xfbffc000 IOMMU 0</div><div class="line">IOAPIC id 8 under DRHD base  0xc7ffc000 IOMMU 1</div><div class="line">IOAPIC id 9 under DRHD base  0xc7ffc000 IOMMU 1</div><div class="line">IOMMU 0 0xfbffc000: using Queued invalidation</div><div class="line">IOMMU 1 0xc7ffc000: using Queued invalidation</div><div class="line">IOMMU: hardware identity mapping for device 0000:ff:08.0</div><div class="line">IOMMU: hardware identity mapping for device 0000:ff:08.2</div><div class="line">IOMMU: Setting RMRR:</div><div class="line">IOMMU: Setting identity map for device 0000:03:00.0 [0x7261f000 - 0x7a65efff]</div><div class="line">IOMMU: Prepare 0-16MiB unity mapping for LPC</div></pre></td></tr></table></figure>
+</li>
+<li><p>确保pci_stub驱动存在，执行 modprobe pci_stub</p>
+</li>
+<li><p>更换驱动<br> 查看当前需要映射的PCI，例如FC的HBA卡：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> lspci -nn | grep HBA</span></div><div class="line">81:00.0 Fibre Channel [0c04]: QLogic Corp. ISP2532-based 8Gb Fibre Channel to PCI Express HBA [1077:2532] (rev 02)</div><div class="line">81:00.1 Fibre Channel [0c04]: QLogic Corp. ISP2532-based 8Gb Fibre Channel to PCI Express HBA [1077:2532] (rev 02)</div></pre></td></tr></table></figure>
+<p> 以 81:00.0 为例，我们要将其使用的qla2xxx驱动替换成pci-stub驱动，映射前：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> lspci -nn -v</span></div><div class="line">81:00.0 Fibre Channel [0c04]: QLogic Corp. ISP2532-based 8Gb Fibre Channel to PCI Express HBA [1077:2532] (rev 02)</div><div class="line">    Subsystem: QLogic Corp. Device [1077:015d]</div><div class="line">    Physical Slot: 5</div><div class="line">    Flags: bus master, fast devsel, latency 0, IRQ 33</div><div class="line">    I/O ports at f100 [size=256]</div><div class="line">    Memory at fbe84000 (64-bit, non-prefetchable) [size=16K]</div><div class="line">    Memory at fbd00000 (64-bit, non-prefetchable) [size=1M]</div><div class="line">    Expansion ROM at fbe40000 [disabled] [size=256K]</div><div class="line">    Capabilities: [44] Power Management version 3</div><div class="line">    Capabilities: [4c] Express Endpoint, MSI 00</div><div class="line">    Capabilities: [88] MSI: Enable- Count=1/32 Maskable- 64bit+</div><div class="line">    Capabilities: [98] Vital Product Data</div><div class="line">    Capabilities: [a0] MSI-X: Enable+ Count=32 Masked-</div><div class="line">    Capabilities: [100] Advanced Error Reporting</div><div class="line">    Capabilities: [138] Power Budgeting &lt;?&gt;</div><div class="line">    Kernel driver in use: qla2xxx</div></pre></td></tr></table></figure>
+<p> 81:00.0 的 vendor &amp; device ID 为 1077:2532，上面中括号内。<br> 为pci-stub设置新的vendor和device ID：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> <span class="built_in">echo</span> <span class="string">"1077 2532"</span> &gt; /sys/bus/pci/drivers/pci-stub/new_id</span></div></pre></td></tr></table></figure>
+<p> 和原来驱动解绑</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"># echo &quot;0000:81:00.0&quot; &gt; /sys/bus/pci/devices/0000:81:00.0/driver/unbind</div></pre></td></tr></table></figure>
+<p> 绑定pci-stub驱动</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"># echo &quot;0000:81:00.0&quot; &gt; /sys/bus/pci/drivers/pci-stub/bind</div></pre></td></tr></table></figure>
+<p> 再次查看 81:00.0  详细信息，发现驱动变成pci-stub了，而且HOST机不能再使用此设备</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> lspci -nn -v</span></div><div class="line">81:00.0 Fibre Channel [0c04]: QLogic Corp. ISP2532-based 8Gb Fibre Channel to PCI Express HBA [1077:2532] (rev 02)</div><div class="line">    Subsystem: QLogic Corp. Device [1077:015d]</div><div class="line">    Physical Slot: 5</div><div class="line">    Flags: fast devsel, IRQ 33</div><div class="line">    I/O ports at f100 [size=256]</div><div class="line">    Memory at fbe84000 (64-bit, non-prefetchable) [size=16K]</div><div class="line">    Memory at fbd00000 (64-bit, non-prefetchable) [size=1M]</div><div class="line">    Expansion ROM at fbe40000 [disabled] [size=256K]</div><div class="line">    Capabilities: [44] Power Management version 3</div><div class="line">    Capabilities: [4c] Express Endpoint, MSI 00</div><div class="line">    Capabilities: [88] MSI: Enable- Count=1/32 Maskable- 64bit+</div><div class="line">    Capabilities: [98] Vital Product Data</div><div class="line">    Capabilities: [a0] MSI-X: Enable- Count=32 Masked-</div><div class="line">    Capabilities: [100] Advanced Error Reporting</div><div class="line">    Capabilities: [138] Power Budgeting &lt;?&gt;</div><div class="line">    Kernel driver in use: pci-stub</div></pre></td></tr></table></figure>
+</li>
+<li><p>给虚拟机启动参数添加需要透传的pci设备，例如透传刚才的81:00.0，则加入</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-device pci-assign,host=81:00.0</div></pre></td></tr></table></figure>
+<p> 然后启动虚拟机，如果运气好就能启动成功，如果运气不好，例如遇到slot冲突，例如，日志提示：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">kvm: -device pci-bridge,id=pci.3,chassis_nr=3,bus=pci.0,addr=0x5: PCI: slot 5 function 0 not available for pci-bridge, in use by kvm-pci-assign</div></pre></td></tr></table></figure>
+<p> 从lspci看 81:00.0 设备的 Physical Slot是5，与之前的命令行冲突了，修改命令，将其他device的addr修改为其他不冲突的值，再次启动即可。启动虚拟机后，会看到和HOST机一样的HBA卡，而HOST不能再使用此HBA，如果此HBA驱动也存在，即可正常识别，下为GUEST机内识别HBA卡截图：<br> <img src="/2016/06/13/storage-access-by-qemu/image001.png" alt="image001"><br> <img src="/2016/06/13/storage-access-by-qemu/image003.png" alt="image003"><br> 以上步骤，写成脚本为：pci-redirect.sh</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash">!/bin/bash</span></div><div class="line"><span class="meta">#</span><span class="bash"> redirect pci, write by mnstory.net@20160607</span></div><div class="line">main()</div><div class="line">&#123;</div><div class="line">    if ! grep -P 'intel_iommu=on|iommu=pt' /proc/cmdline &gt;/dev/null; then</div><div class="line">        echo "please switch on iommu in kernel params first"</div><div class="line">        echo "for aSV, execute follow commands: "</div><div class="line">        echo "    sed -i 's/intel_iommu=off/intel_iommu=on/g' /boot/boot/grub/grub.cfg"</div><div class="line">        echo "    reboot -f"</div><div class="line">        return 1</div><div class="line">    fi</div><div class="line">    </div><div class="line">    local filter="HBA"</div><div class="line">    if [ -n "$1" ]; then</div><div class="line">        echo "use '$1' replace filter '$filter'"</div><div class="line">        filter="$1"</div><div class="line">    else</div><div class="line">        echo "use '$filter' as default filter, you can pass your own"</div><div class="line">    fi</div><div class="line">    </div><div class="line">    modprobe pci_stub</div><div class="line"> </div><div class="line">    local args=""</div><div class="line">    for id in $(lspci -nn -D | grep "$filter" | awk '&#123;print $1&#125;'); do</div><div class="line">        local vender="$(lspci -s $id -n | awk '&#123;print $3&#125;' | awk -F: '&#123;print $1,$2&#125;')"</div><div class="line">        echo $vender &gt; /sys/bus/pci/drivers/pci-stub/new_id</div><div class="line">        echo $id &gt; /sys/bus/pci/devices/$id/driver/unbind</div><div class="line">        echo $id &gt; /sys/bus/pci/drivers/pci-stub/bind</div><div class="line">        if lspci -s $id -nnvD | grep pci-stub &gt;/dev/null; then</div><div class="line">            echo -e "parse "$(lspci -s $id -nnD) "\033[01;32mSUCCESS\033[00m"</div><div class="line">            args="$args -device pci-assign,host=$id"</div><div class="line">        fi</div><div class="line">    done</div><div class="line">    </div><div class="line">    if [ -z "$args" ]; then</div><div class="line">        echo "no target device found filter by $filter"</div><div class="line">        return 1</div><div class="line">    fi</div><div class="line"> </div><div class="line">    echo "add follow args as your QEMU params(filter by $filter)"</div><div class="line">    echo -e "\033[1m   $args\033[00m"</div><div class="line">    return 0</div><div class="line">&#125;</div><div class="line"> </div><div class="line">main "$@"</div></pre></td></tr></table></figure>
+<p> 此种方式（代号pt-pci），虚拟机内部跑IO，HOST机是看不到IO的。</p>
+</li>
+</ol>
+<h1 id="性能验证"><a href="#性能验证" class="headerlink" title="性能验证"></a>性能验证</h1><h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>HOST机配置：<br>CPU： Intel(R) Xeon(R) CPU E5-2660 v3 @ 2.60GHz，2x10物理核，开超频<br>MEM： 128G</p>
+<p>GUEST机配置：<br>CPU： 虚拟Intel(R) Xeon(R) CPU E5-2660 v3 @ 2.60GHz，1x20虚拟核<br>MEM： 64G</p>
+<p>存储：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">81:00.0 Fibre Channel [0c04]: QLogic Corp. ISP2532-based 8Gb Fibre Channel to PCI Express HBA [1077:2532] (rev 02)</div><div class="line">36f01faf000dcec2200004bd4555467b9 dm-1 DELL,MD36xxf</div><div class="line">size=1.3T features='0' hwhandler='0' wp=rw</div><div class="line">`-+- policy='round-robin 0' prio=1 status=active</div><div class="line">  `- 2:0:0:4  sdb 8:16  active ready running</div></pre></td></tr></table></figure></p>
+<p>测试脚本fio-stress.sh：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div><div class="line">132</div><div class="line">133</div><div class="line">134</div><div class="line">135</div><div class="line">136</div><div class="line">137</div><div class="line">138</div><div class="line">139</div><div class="line">140</div><div class="line">141</div><div class="line">142</div><div class="line">143</div><div class="line">144</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash">!/bin/bash</span></div><div class="line"> </div><div class="line">filename=/dev/disk/by-id/wwn-0x6f01faf000dcec2200004bd4555467b9</div><div class="line">runtime=1</div><div class="line">group="default"</div><div class="line"> </div><div class="line">uniform()</div><div class="line">&#123;</div><div class="line">    local val="$1"</div><div class="line">    local extra=""</div><div class="line"> </div><div class="line">    if [ "$&#123;val%KB*&#125;" != "$val" ]; then</div><div class="line">        echo "scale=2; $&#123;val%KB*&#125;/1024" | bc -l</div><div class="line">        return 0</div><div class="line">    fi</div><div class="line"> </div><div class="line">    if [ "$&#123;val%MB*&#125;" != "$val" ]; then</div><div class="line">        echo $&#123;val%MB*&#125;</div><div class="line">        return 0</div><div class="line">    fi</div><div class="line"> </div><div class="line">    if [ "$&#123;val%GB*&#125;" != "$val" ]; then</div><div class="line">        echo "scale=2; $&#123;val%GB*&#125;*1024" | bc -l</div><div class="line">        return 0</div><div class="line">    fi</div><div class="line"> </div><div class="line">    if [ "$&#123;val%B*&#125;" != "$val" ]; then</div><div class="line">        echo "scale=2; $&#123;val%B*&#125;/1024/1024" | bc -l</div><div class="line">        return 0</div><div class="line">    fi</div><div class="line"> </div><div class="line">    echo $val</div><div class="line">&#125;</div><div class="line"> </div><div class="line">parseRW()</div><div class="line">&#123;</div><div class="line">    local action="$1"</div><div class="line">    shift</div><div class="line"> </div><div class="line">    local blk=$(echo "$@" | grep -P -A1 "$action\s*:")</div><div class="line">    local io="0"</div><div class="line">    local bw="0"</div><div class="line">    local iops="0"</div><div class="line">    local latmin="0"</div><div class="line">    local latmax="0"</div><div class="line">    local latavg="0"</div><div class="line">    if [ -n "$blk" ]; then</div><div class="line">        io=$(echo "$blk" | sed -n  's/.*io=\([^,]*\).*/\1/p')</div><div class="line">        io=$(uniform $io)</div><div class="line">        bw=$(echo "$blk" | sed -n  's/.*bw=\([^,]*\).*/\1/p')</div><div class="line">        bw=$(uniform $bw)</div><div class="line">        iops=$(echo "$blk" | sed -n  's/.*iops=\([^,]*\).*/\1/p')</div><div class="line">        latmin=$(echo "$blk" | sed -n  's/.*min=\([^,]*\).*/\1/p')</div><div class="line">        latmax=$(echo "$blk" | sed -n  's/.*max=\([^,]*\).*/\1/p')</div><div class="line">        latavg=$(echo "$blk" | sed -n  's/.*avg=\([^,]*\).*/\1/p')</div><div class="line">    fi</div><div class="line"> </div><div class="line">    echo "$io $bw $iops $latmin $latmax $latavg"</div><div class="line">&#125;</div><div class="line"> </div><div class="line">parseCPU()</div><div class="line">&#123;</div><div class="line">    local blk=$(echo "$@" | grep -P "cpu\s*:")</div><div class="line">    local usr="0"</div><div class="line">    local sys="0"</div><div class="line">    local ctx="0"</div><div class="line">    if [ -n "$blk" ]; then</div><div class="line">        usr=$(echo "$blk" | sed -n  's/.*usr=\([^,]*\).*/\1/p')</div><div class="line">        sys=$(echo "$blk" | sed -n  's/.*sys=\([^,]*\).*/\1/p')</div><div class="line">        ctx=$(echo "$blk" | sed -n  's/.*ctx=\([^,]*\).*/\1/p')</div><div class="line">    fi</div><div class="line"> </div><div class="line">    echo "$&#123;usr%\%*&#125; $&#123;sys%\%*&#125; $ctx"</div><div class="line">&#125;</div><div class="line"> </div><div class="line">run()</div><div class="line">&#123;</div><div class="line">    local ioengine="$1"</div><div class="line">    local direct="$2"</div><div class="line">    local rw="$3"</div><div class="line">    local bs="$4"</div><div class="line">    local iodepth="$5"</div><div class="line">    local numjobs="$6"</div><div class="line">    local name="$ioengine-$direct-$rw-$bs-$iodepth-$numjobs"</div><div class="line"> </div><div class="line">    local cmd="fio -filename=$filename -rw=$rw -bs=$bs -iodepth=$iodepth -direct=$direct -time_based -thread -ioengine=$ioengine -numjobs=$numjobs -runtime=$runtime -group_reporting -name=name"</div><div class="line"> </div><div class="line">    echo -e -n "$group $name $@ \t"</div><div class="line">    local res="$($cmd)"</div><div class="line">    # usr sys ctx      r-io r-bw r-iops r-latmin r-latmax r-latavg     w-io w-bw w-iops w-latmin w-latmax w-latavg</div><div class="line">    echo -e "$(parseCPU "$res") \t$(parseRW 'read' "$res") \t\t$(parseRW 'write' "$res")"</div><div class="line">&#125;</div><div class="line"> </div><div class="line">v1()</div><div class="line">&#123;</div><div class="line">    for ioengine in "sync" "libaio"; do </div><div class="line">        for direct in "0" "1"; do </div><div class="line">            for rw in "read" "randread" "write" "randwrite" "randrw"; do </div><div class="line">                for bs in "4k" "8k" "32k" "2048k"; do</div><div class="line">                    for iodepth in 1 32 64 128; do</div><div class="line">                        for numjobs in 1 8 32 64; do</div><div class="line">                            run "$ioengine" "$direct" "$rw" "$bs" "$iodepth" "$numjobs"</div><div class="line">                        done</div><div class="line">                    done</div><div class="line">                done</div><div class="line">            done</div><div class="line">        done</div><div class="line">    done</div><div class="line">&#125;</div><div class="line"> </div><div class="line">v2()</div><div class="line">&#123;</div><div class="line">    for ioengine in "sync" "libaio"; do </div><div class="line">        for direct in "1"; do </div><div class="line">            for rw in "read" "randread" "write" "randwrite"; do </div><div class="line">                for bs in "4k" "2048k"; do</div><div class="line">                    for iodepth in 128; do</div><div class="line">                        for numjobs in 8 32; do</div><div class="line">                            run "$ioengine" "$direct" "$rw" "$bs" "$iodepth" "$numjobs"</div><div class="line">                        done</div><div class="line">                    done</div><div class="line">                done</div><div class="line">            done</div><div class="line">        done</div><div class="line">    done</div><div class="line">&#125;</div><div class="line"> </div><div class="line">main()</div><div class="line">&#123;</div><div class="line">    if [ -n "$1" ]; then</div><div class="line">        group="$1"</div><div class="line">    fi</div><div class="line">    if [ -n "$2" ]; then</div><div class="line">        filename="$2"</div><div class="line">    fi</div><div class="line">    if [ -n "$3" ]; then</div><div class="line">        runtime="$3"</div><div class="line">    fi</div><div class="line"> </div><div class="line">    echo -e "group name ioengine direct rw bs iodepth numjobs \tusr sys ctx \t\tr-io r-bw r-iops r-latmin r-latmax r-latavg \tw-io w-bw w-iops w-latmin w-latmax w-latavg"</div><div class="line">    v2</div><div class="line">&#125;</div><div class="line"> </div><div class="line">main "$@"</div></pre></td></tr></table></figure></p>
+<h2 id="read"><a href="#read" class="headerlink" title="read"></a>read</h2><p><img src="/2016/06/13/storage-access-by-qemu/image005.png" alt="image005"></p>
+<p><img src="/2016/06/13/storage-access-by-qemu/image007.png" alt="image007"></p>
+<p>同步读，bw性能都是一致的,IOPS性能，以最高性能libaio为基准数据，其中map-dev-vdx和qcow2-on-fc性能相当，比physical差15%左右，pt-dev-vscsi比physical差13%，pt-pci和physical相当，符合理论。</p>
+<h2 id="write"><a href="#write" class="headerlink" title="write"></a>write</h2><p><img src="/2016/06/13/storage-access-by-qemu/image009.png" alt="image009"></p>
+<p><img src="/2016/06/13/storage-access-by-qemu/image011.png" alt="image011"></p>
+<p>write，顺序写的情况libaio能充分发挥异步多深度(128 iodepth)批量提交的优势，比sync方式效果高很多。</p>
+<p>同步写，bw性能都是一致的,IOPS性能，以最高性能libaio为基准数据，其中map-dev-vdx和qcow2-on-fc性能相当，比physical差48%左右，pt-dev-vscsi比physical差13%，pt-pci和physical相当，符合理论。</p>
+<h2 id="randread"><a href="#randread" class="headerlink" title="randread"></a>randread</h2><p><img src="/2016/06/13/storage-access-by-qemu/image013.png" alt="image013"></p>
+<p><img src="/2016/06/13/storage-access-by-qemu/image015.png" alt="image015"></p>
+<p>多jobs(32 vs. 8)在randread的情况下比randwrite好。<br>随机读的bw，不论jobs多说还是同步异步，效果都差不多，看来压力已经足够。</p>
+<p>随机读， IOPS性能，以最高性能sync为基准数据，除qcow2-on-fc性能最好，超过physical 36%外，其他几种方式与physical齐平，libaio情况，pt-dev-vscsi比physical差5%。</p>
+<h2 id="randwrite"><a href="#randwrite" class="headerlink" title="randwrite"></a>randwrite</h2><p><img src="/2016/06/13/storage-access-by-qemu/image017.png" alt="image017"></p>
+<ol>
+<li>randwrite 应该看8job的数据，因为8job数据好于32job太多，可以看出，当写线程增加，randwrite性能急剧下降。几种方式的性能可以认为无差别。</li>
+<li>randwrite，存储寻道成为瓶颈，libaio和sync并无太明显差异。</li>
+</ol>
+<p><img src="/2016/06/13/storage-access-by-qemu/image019.png" alt="image019"></p>
+<p>随机写的两幅图，非常有意思，因为随着jobs增加，性能变化却巨大，randwrite-iops图，bs为4K的情况下计算IOPS，Jobs为8的性能远远高于jobs为32的，说明写IO的jobs越多，会导致写排队和竞争增加，性能大幅度下降。<br>但是从randwrite-bw图看，在bs为2048K时好像结论相反，其实结论也能正确理解，当bs增大，iops会相应降低，写入寻道和写入竞争相对会降低，所以bw符合常规，还是jobs越大，bw越大。<br>两幅图综合说明，IO性能，真的需要找到一个平衡点，压力太小，效果不好，压力太大，效果急剧下降。</p>
+<p>随机读， IOPS性能，以最高性能libaio为基准数据，除qcow2-on-fc性能最好，超过physical 14%外，其他几种方式与physical齐平，相差不过2%。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><img src="/2016/06/13/storage-access-by-qemu/image021.png" alt="image021"><br><img src="/2016/06/13/storage-access-by-qemu/image023.png" alt="image023"><br>如果排除开挂的sync write（这是由于QEMU IO路径实现影响），可以看出，顺序IOPS从高到底为 physical, pt-pci, pt-dev-vscisi,qcow2-on-fc,map-dev-vdx；bw可以认为相同。<br><img src="/2016/06/13/storage-access-by-qemu/image025.png" alt="image025"><br><img src="/2016/06/13/storage-access-by-qemu/image027.png" alt="image027"><br>随机IO，排除qcow2-on-fc由于缓存等因素影响，导致随机IO性能颇高，其他的，性能差不多。bw，以pt-pci最接近physical，qcow2-on-fc随机IO吞吐最高。</p>
+<p>虚拟化场景，QCOW2是个性能波动较大的实现，好的时候太好，差的时候太差；如果追求稳定IO，建议选择pt-pci，如果追求稳定和兼容的平衡，建议使用pt-dev-vscisi方式。</p>
+<p>下载 <a href="fio-stress.sh">fio-stress.sh</a> <a href="pci-redirect.sh">pci-redirect.sh</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Qemu/" rel="tag"># Qemu</a>
+          
+            <a href="/tags/Storage/" rel="tag"># Storage</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/06/30/qemu-hugepages/" rel="prev" title="大页内存在虚拟化中的应用">
+                大页内存在虚拟化中的应用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">31</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">53</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#存储相关命令"><span class="nav-number">1.</span> <span class="nav-text">存储相关命令</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#共享外置存储在两台机的差异"><span class="nav-number">2.</span> <span class="nav-text">共享外置存储在两台机的差异</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#QEMU虚拟存储的几种访问形式"><span class="nav-number">3.</span> <span class="nav-text">QEMU虚拟存储的几种访问形式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#将HOST机QCOW2镜像，映射给GUEST机作为IDE磁盘"><span class="nav-number">3.1.</span> <span class="nav-text">将HOST机QCOW2镜像，映射给GUEST机作为IDE磁盘</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#将HOST机QCOW2镜像，映射给GUEST机作为SCSI磁盘"><span class="nav-number">3.2.</span> <span class="nav-text">将HOST机QCOW2镜像，映射给GUEST机作为SCSI磁盘</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#将HOST机QCOW2镜像，映射给GUEST机作为VIRTIO-BLK磁盘"><span class="nav-number">3.3.</span> <span class="nav-text">将HOST机QCOW2镜像，映射给GUEST机作为VIRTIO-BLK磁盘</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#将HOST机存储设备，映射给GUEST机为IDE磁盘"><span class="nav-number">3.4.</span> <span class="nav-text">将HOST机存储设备，映射给GUEST机为IDE磁盘</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#将HOST机存储设备，映射给GUEST机为VIRTIO-BLK磁盘"><span class="nav-number">3.5.</span> <span class="nav-text">将HOST机存储设备，映射给GUEST机为VIRTIO-BLK磁盘</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#将HOST机存储设备，透传给GUEST机为SCSI磁盘"><span class="nav-number">3.6.</span> <span class="nav-text">将HOST机存储设备，透传给GUEST机为SCSI磁盘</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#将HOST机存储设备，透传给GUEST机为VIRTIO-SCSI磁盘"><span class="nav-number">3.7.</span> <span class="nav-text">将HOST机存储设备，透传给GUEST机为VIRTIO-SCSI磁盘</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#将HOST机HBA卡-pci-透传给GUEST机-利用VT-d"><span class="nav-number">3.8.</span> <span class="nav-text">将HOST机HBA卡(pci)透传给GUEST机(利用VT-d)</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#性能验证"><span class="nav-number">4.</span> <span class="nav-text">性能验证</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#测试环境"><span class="nav-number">4.1.</span> <span class="nav-text">测试环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#read"><span class="nav-number">4.2.</span> <span class="nav-text">read</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#write"><span class="nav-number">4.3.</span> <span class="nav-text">write</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#randread"><span class="nav-number">4.4.</span> <span class="nav-text">randread</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#randwrite"><span class="nav-number">4.5.</span> <span class="nav-text">randwrite</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.6.</span> <span class="nav-text">总结</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

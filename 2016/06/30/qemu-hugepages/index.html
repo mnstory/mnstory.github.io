@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Qemu,Hugepages," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="原理虚拟内存简单说，没有虚拟内存的概念，那么COPY ON WRITE，SWAP等技术都不是必要的，但是系统的弹性和容量会大打折扣。对比物理内存，我们可以认为虚拟内存比物理内存多许多，这个优点依赖于一个重要实现手段叫做page fault，我们将进程“分配内存”和“访问内存”概念分开，分配了内存不访问，是可以不占物理内存的（未初始化未置零等），分配了内存访问，也不一定占用更多的物理内存（COPY">
+<meta name="keywords" content="Qemu,Hugepages">
+<meta property="og:type" content="article">
+<meta property="og:title" content="大页内存在虚拟化中的应用">
+<meta property="og:url" content="http://mnstory.net/2016/06/30/qemu-hugepages/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="原理虚拟内存简单说，没有虚拟内存的概念，那么COPY ON WRITE，SWAP等技术都不是必要的，但是系统的弹性和容量会大打折扣。对比物理内存，我们可以认为虚拟内存比物理内存多许多，这个优点依赖于一个重要实现手段叫做page fault，我们将进程“分配内存”和“访问内存”概念分开，分配了内存不访问，是可以不占物理内存的（未初始化未置零等），分配了内存访问，也不一定占用更多的物理内存（COPY">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2016/06/30/qemu-hugepages/01.virtual-physical-address-compare.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/30/qemu-hugepages/02.va2pa.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/30/qemu-hugepages/03.vpn-lookup.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/30/qemu-hugepages/04.cpu-chip.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/30/qemu-hugepages/05.vm-vpn-lookup.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/30/qemu-hugepages/06.vm-shadow-pte.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/30/qemu-hugepages/07.qemu-performance-hugepage.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/30/qemu-hugepages/07.qemu-performance-hugepage2.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/30/qemu-hugepages/07.qemu-performance-hugepage3.png">
+<meta property="og:image" content="http://mnstory.net/2016/06/30/qemu-hugepages/07.qemu-performance-hugepage4.png">
+<meta property="og:updated_time" content="2017-10-18T14:56:10.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="大页内存在虚拟化中的应用">
+<meta name="twitter:description" content="原理虚拟内存简单说，没有虚拟内存的概念，那么COPY ON WRITE，SWAP等技术都不是必要的，但是系统的弹性和容量会大打折扣。对比物理内存，我们可以认为虚拟内存比物理内存多许多，这个优点依赖于一个重要实现手段叫做page fault，我们将进程“分配内存”和“访问内存”概念分开，分配了内存不访问，是可以不占物理内存的（未初始化未置零等），分配了内存访问，也不一定占用更多的物理内存（COPY">
+<meta name="twitter:image" content="http://mnstory.net/2016/06/30/qemu-hugepages/01.virtual-physical-address-compare.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2016/06/30/qemu-hugepages/"/>
+
+
+
+
+
+  <title>大页内存在虚拟化中的应用 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/06/30/qemu-hugepages/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">大页内存在虚拟化中的应用</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-06-30T23:00:00+08:00">
+                2016-06-30
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h1><h2 id="虚拟内存"><a href="#虚拟内存" class="headerlink" title="虚拟内存"></a>虚拟内存</h2><p>简单说，没有虚拟内存的概念，那么COPY ON WRITE，SWAP等技术都不是必要的，但是系统的弹性和容量会大打折扣。<br>对比物理内存，我们可以认为虚拟内存比物理内存多许多，这个优点依赖于一个重要实现手段叫做page fault，我们将进程“分配内存”和“访问内存”概念分开，分配了内存不访问，是可以不占物理内存的（未初始化未置零等），分配了内存访问，也不一定占用更多的物理内存（COPY ON WRITE）。假设某一虚拟内存已经分配给进程A，当进程A去访问所在内存页时，可能出现：</p>
+<ol>
+<li>内存页已经存在于CPU Cache或物理内存，并且进程A有访问权限。这是正常情况。</li>
+<li>内存页已经存在于CPU Cache或物理内存，但是进程A还没有访问权限或者第一次访问前并没有实际载入，例如，进程A要访问libc.so的代码段，这段虚拟内存其实已经被其他进程加载到物理内存了，但是还没有赋给进程A访问权限，此时发生page fault，我们称之为minor page fault.</li>
+<li>内存页不存在于CPU Cache和物理内存。可能原因是内存已经被交换到交换分区，此时我们需要通过IO将内存页读入物理内存再给进程A访问，此过程我们称之为major page fault.<a id="more"></a>
+</li>
+</ol>
+<p>想要证明min_flt和maj_flt的发生，我们可以使用 /usr/bin/time -v CMD 来执行命令，例如，我们运行一个记事本，第一次运行的时候，会从磁盘载入共享库，所以会有Major (requiring I/O) page faults，第二次，我们先运行一个记事本程序，再使用/usr/bin/time –v运行记事本，由于使用到的共享库已经加载到内存了，我们会看到Major (requiring I/O) page faults会减少甚至为0。</p>
+<p>通过PS命令，我们可以查看进程的min_flt和maj_flt，用于判断是否有内存访问瓶颈：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">[root@oracle ~]# ps -eo min_flt,maj_flt,pid,%cpu,%mem,pagein,args  --sort=-min_flt</div><div class="line"> MINFL  MAJFL   PID %CPU %MEM PAGEIN COMMAND</div><div class="line">363908      0  2649 75.5  0.3      0 stress-ng --mlock 4 --metrics-brief</div><div class="line"> 15213    168  2423  0.3  0.2    168 ohasd.bin</div></pre></td></tr></table></figure></p>
+<p>用vmstat命令，查看swap项的si(swap in)和so(swap out)，如果si/so数字过大，表示系统整体存在内存瓶颈：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">[root@oracle ~] # vmstat 1</div><div class="line">procs -----------memory---------- ---swap-- -----io---- -system-- ----cpu----</div><div class="line"> r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa</div><div class="line">27  0     12 351440 11292 442848    0    0   386   202    1    1 57 27 16  0</div><div class="line">39  0     12 350620 11296 442436    0    30  536   216 275955 407329 39 30 32  0</div><div class="line">22  0     12 351192 11204 442644    2    0   516   548 259866 388894 36 29 34  1</div></pre></td></tr></table></figure></p>
+<p>swap分区用来交换内存，si表示swap in次数， so表示swap out次数，vm.swappiness参数可以设置swap的权重，swappiness值越小，表示越应该保留在内存，反之，越应该保留在交换分区，默认为60。</p>
+<h2 id="逻辑地址与物理地址"><a href="#逻辑地址与物理地址" class="headerlink" title="逻辑地址与物理地址"></a>逻辑地址与物理地址</h2><p>对进程而已，能操作的都是虚拟内存地址，我也称它为逻辑地址，程序要读取一个内存，要经历如下步骤：</p>
+<ol>
+<li><p>逻辑地址转换为线性地址<br> CPU将逻辑地址先送到MMU(Memory Management Unit)，这是一个辅助硬件，它根据当前的段选择符取得段基址，然后加上虚拟地址中的偏移，转换为线性地址。在64位系统中，线性地址使用48bit用于存放地址索引，从高位到低位分有PML4，PDP，PD，PT和最终偏移，如下表，参考<a href="http://wiki.osdev.org/Page_Tables#48-bit_virtual_address_space" target="_blank" rel="external">48-bit_virtual_address_space</a>：</p>
+ <table><tr><td>Level</td><td>Table</td><td>Range</td><td></td><td>Bits</td><td>Pages</td><td></td></tr><tr><td>0</td><td>(page)</td><td>0x1000</td><td>(4 KiB)</td><td>[11:0] 12 bits</td><td>0x1</td><td>(1)</td></tr><tr><td>1</td><td>PT</td><td>0x20 0000</td><td>(2 MiB)</td><td>[20:12] 9 bits</td><td>0x200</td><td>(512)</td></tr><tr><td>2</td><td>PD</td><td>0x4000 0000</td><td>(1 GiB)</td><td>[29:21] 9 bits</td><td>0x40000</td><td>(262144)</td></tr><tr><td>3</td><td>PDP</td><td>0x80 0000 0000</td><td>(512 GiB)</td><td>[38:30] 9 bits</td><td>0x800 0000</td><td>(134217728)</td></tr><tr><td>4</td><td>PML4</td><td>0x10000 0000 0000</td><td>(256 TiB)</td><td>[47:39] 9 bits</td><td>0x10 0000 0000</td><td>(68719476736)</td></tr></table>
+
+<p> 对比线性地址和物理地址的结构，尾巴都是一样，皆为一页内offset：<br> <img src="/2016/06/30/qemu-hugepages/01.virtual-physical-address-compare.png" alt="virtual-physical-address-compare"></p>
+</li>
+<li><p>MMU通过查找TLB 和PT查找，得到物理地址<br> 借用<a href="https://users.ece.cmu.edu/~jhoe/course/ece447/handouts/L21.pdf" target="_blank" rel="external">“18-447 Lecture 21: Virtual Memory: Page Tables and TLBs”</a>的图一张，说明VA到PA的转换流程：<br> <img src="/2016/06/30/qemu-hugepages/02.va2pa.png" alt="va2pa"><br> 这里TLB lookup是对每一节VPN(Virtual Page Number)都有lookup，最常见的就是64位地址下的PML4，PDP，PD，PT四节VPN，上一级找到下一级的PTA(Page Table Address)，然后载入下一级PT内容加上下一级VPN号(就是一个PT内偏移序号)，再获得下一级的PTA，如此往复，所以，只有VPN1的PTA是存储在CR3寄存器里的，因为它没有上级，其他的都是一级一级查到的。参考<a href="http://zacharski.org/files/courses/cs405/computerSystemsChapter9.pdf" target="_blank" rel="external">”Virtual Memory”</a><br> <img src="/2016/06/30/qemu-hugepages/03.vpn-lookup.png" alt="vpn-lookup"><br> 经过上面步骤，虚拟地址到物理地址转换完成，然后MMU还要负责从内存读取指定物理地址的数据，数据达到CPU前先缓存到L1 Cache里面，以便下次还要用，如下盗图很好诠释了CPU、MMU、Cache和Memory之间复杂的四角恋关系：<br> <img src="/2016/06/30/qemu-hugepages/04.cpu-chip.png" alt="cpu-chip"><br> 当要访问的数据，已经存在内存中，但是还没有分配给你，比如你是后启动的进程，需要加载共享代码libc.so，但是libc.so早被其他进程load进入内存，只是你还没有访问权限，此时发生minor page faults。</p>
+<p> 准确地说，完成一次内存数据读取，是五角恋，当数据不在Cache里面，而要在Memory里面查找，我们称此次访问为min fault，如果Memory里面也这不到，那很有可能是被交换到交换分区了，那还要去磁盘查找，我们称此次访问为max pagefault。</p>
+</li>
+</ol>
+<h2 id="虚拟机地址转换"><a href="#虚拟机地址转换" class="headerlink" title="虚拟机地址转换"></a>虚拟机地址转换</h2><p>前面介绍了物理机逻辑地址转换为物理地址的过程，这事挺复杂，不过，当系统运行在虚拟机内部时，事儿就更复杂了。<br>盗用<a href="http://vglab.cse.iitd.ac.in/~sbansal/csl862-virt/readings/p26-bhargava.pdf" target="_blank" rel="external">”Accelerating Two-Dimensional Page Walks for Virtualized Systems”</a>里的一张图，给大家感受一下，这事儿有多复杂（左边(a)是物理机从VA翻译到PA的流程，右边(b)是虚拟机VA到PA的流程）<br><img src="/2016/06/30/qemu-hugepages/05.vm-vpn-lookup.png" alt="vm-vpn-lookup"></p>
+<p>因为，物理机L4获取到的地址是PA，虚拟机L4获取的地址是GPA(Guest Physical Address)，GPA不能直接读数据，要转换为SPA(System Physical Address)才能读，所以，每一节VPN载入TP的时候，都多了GPA到SPA的步骤，而GPA到SPA是如何转换的？<br>一种方案是Shadow Paging技术，由Hypervisor维护一个由GVA到SPA的映射关系，如图（图片来源<a href="http://www.cs.rochester.edu/~sandhya/csc256/seminars/hedayati_vm_npt.pdf" target="_blank" rel="external">”Address Translation for Virtual Machines”</a>）：<br><img src="/2016/06/30/qemu-hugepages/06.vm-shadow-pte.png" alt="vm-shadow-pte"><br>看上去很美，一步到位，但是，这过程是由Hypervisor来完成，通过对Guest PT写保护，跳到软件实现的虚拟TLB来查找，效益大打折扣。<br>后来INTEL跳出来，说你们这个太LOW，你看我搞硬件搞的这么NB，再给你们搞个硬件版的GPA到SPA的映射，不就OK了？INTEL取名叫EPT(Extended Page Table)，AMD不甘示弱了，也搞了个类似的，叫NPT(Nested Page Table)。<br>于是，你看到了，如上上图，现在有了EPT技术，查表过程一下有了深度，从一维变成了Two-Dimensional，看上去，步骤是有点多。</p>
+<h2 id="大页如何提升性能"><a href="#大页如何提升性能" class="headerlink" title="大页如何提升性能"></a>大页如何提升性能</h2><p>大页的原理很简单，以64位地址为例，48bit的地址划分了PML4，PDP，PD，PT四节VPN和一节VPO，查表查到PT这个级别，就是4K一页，如果查到PD级别，就是4k<em>512=2M一页，如果查到PDP级别，就是2M</em>512=1G一页，所以，你只听说过2M或1G的大页，没有听说个16M的大页。<br>假设我们分配2M的页，那么查表查到PD级别，相当于减少了1/5的查表工作，速度是不是应该快点？其次，粒度变大了，TLB在相同容量下，不用switch out更多的表项，带来TLB Hit增加Miss减少，是不是也能提高性能？（不要小看TLB的Cache Miss哦，只要频率足够，它就可以成为瓶颈，而内存访问，基本贯穿了每条CPU指令）</p>
+<h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><h2 id="HOST机启动透明大页步骤"><a href="#HOST机启动透明大页步骤" class="headerlink" title="HOST机启动透明大页步骤"></a>HOST机启动透明大页步骤</h2><p>HOST机使用的是debain 7，查看当前是否开启透明大页，值为never表示未开启：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">host/~ # cat /sys/kernel/mm/transparent_hugepage/enabled </div><div class="line">always madvise [never]</div></pre></td></tr></table></figure></p>
+<p>其中AnonHugePages内存项的使用也为0：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">host/~ # grep AnonHugePages /proc/meminfo</div><div class="line">AnonHugePages:         0 kB</div></pre></td></tr></table></figure></p>
+<p>将transparent_hugepage的enabled设置为always，开启THP：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">host/~ # echo always &gt; /sys/kernel/mm/transparent_hugepage/enabled</div></pre></td></tr></table></figure></p>
+<p>下面这个defrag是用于回收碎片的，我测试的时候发现上面的enabled开启后，下面也会跟着变，不用单独设置/sys/kernel/mm/transparent_hugepage/defrag。<br>做一些耗内存的操作，可以看到AnonHugePages值有所变化，表示开启成功：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">host/~ # grep AnonHugePages /proc/meminfo</div><div class="line">AnonHugePages:    327680 kB</div></pre></td></tr></table></figure></p>
+<h2 id="GUEST机启动透明大页步骤"><a href="#GUEST机启动透明大页步骤" class="headerlink" title="GUEST机启动透明大页步骤"></a>GUEST机启动透明大页步骤</h2><p>为保证GUEST机测试的一致性，我们不使用类似HOST机的运行时开启方式，而是在启动参数里面开启或关闭，每次测试都重启GUEST系统，GUEST使用的是redhat6.4，默认都是开启THP的，如果想关闭，在启动参数里添加 transparent_hugepage=never 即可：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">guest/~ # cat /boot/grub/grub.conf </div><div class="line">default=0</div><div class="line">timeout=5</div><div class="line">splashimage=(hd0,0)/grub/splash.xpm.gz</div><div class="line">hiddenmenu</div><div class="line">title Red Hat Enterprise Linux (2.6.32-358.el6.x86_64)</div><div class="line">    root (hd0,0)</div><div class="line">    kernel /vmlinuz-2.6.32-358.el6.x86_64 ro root=/dev/mapper/vg_oracle-lv_root rd_NO_LUKS LANG=en_US.UTF-8 rd_LVM_LV=vg_oracle/lv_root rd_NO_MD rd_LVM_LV=vg_oracle/lv_swap SYSFONT=latarcyrheb-sun16 crashkernel=128M  KEYBOARDTYPE=pc KEYTABLE=us transparent_hugepage=never rd_NO_DM rhgb quiet</div><div class="line"><span class="meta">#</span><span class="bash">    kernel /vmlinuz-2.6.32-358.el6.x86_64 ro root=/dev/mapper/vg_oracle-lv_root rd_NO_LUKS LANG=en_US.UTF-8 rd_LVM_LV=vg_oracle/lv_root rd_NO_MD rd_LVM_LV=vg_oracle/lv_swap SYSFONT=latarcyrheb-sun16 crashkernel=128M  KEYBOARDTYPE=pc KEYTABLE=us rd_NO_DM rhgb quiet</span></div><div class="line">initrd /initramfs-2.6.32-358.el6.x86_64.img</div></pre></td></tr></table></figure></p>
+<h2 id="QEMU为GUEST机指定大页内存"><a href="#QEMU为GUEST机指定大页内存" class="headerlink" title="QEMU为GUEST机指定大页内存"></a>QEMU为GUEST机指定大页内存</h2><p>先查看下Host机大页内存当前状况，HugePages_Total为0表示并未开启：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">host/~ # grep Huge /proc/meminfo</div><div class="line">AnonHugePages:         0 kB</div><div class="line">HugePages_Total:       0</div><div class="line">HugePages_Free:        0</div><div class="line">HugePages_Rsvd:        0</div><div class="line">HugePages_Surp:        0</div><div class="line">Hugepagesize:       2048 kB</div></pre></td></tr></table></figure></p>
+<p>我们mount一个hugetlbfs先：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">host/~ # mkdir -p  /dev/hugepages</div><div class="line">host/~ # mount -t hugetlbfs hugetlbfs /dev/hugepages</div></pre></td></tr></table></figure></p>
+<p>这时候，使用df命令，可以看到mount的/dev/hugepages，mount参数是否指定大小不影响效果，例如你也可以这样：mount -t hugetlbfs hugetlbfs -o size=162282626k /dev/hugepages<br>（类似vhost_user之类的，可以指定默认页大小，也可以指定大页，如果使用默认页大小，将上述命令中的hugetlbfs修改为tmpfs即可）<br>有了hugetlbfs，还要指定系统可以使用多少大页内存，如上，我们的Hugepagesize使用默认的2048 kB，那么，假设虚拟设置的是16G内存，我们想为其指定16G内存，就需要8192块2048 kB页：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">host/~ # sysctl vm.nr_hugepages=8192</div><div class="line">vm.nr_hugepages = 8192</div></pre></td></tr></table></figure></p>
+<p>再看meminfo，HugePages_Total为8192，当前剩余量为HugePages_Free-HugePages_Rsvd=8192。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">host/~ # grep Huge /proc/meminfo</div><div class="line">AnonHugePages:         0 kB</div><div class="line">HugePages_Total:    8192</div><div class="line">HugePages_Free:     8192</div><div class="line">HugePages_Rsvd:        0</div><div class="line">HugePages_Surp:        0</div><div class="line">Hugepagesize:       2048 kB</div></pre></td></tr></table></figure></p>
+<p>虚拟机启动参数里，需要显示指定大页内存，加上类似如下参数：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">-object memory-backend-file,id=mem,size=16384M,mem-path=/dev/hugepages,share=on -numa node,memdev=mem -mem-prealloc</div></pre></td></tr></table></figure></p>
+<p>至于后面这个-mem-prealloc，如果添加，内存会提前分配，表现为启动QEMU后HugePages立即减少，Rsvd为0，(10240-2044)*2/1024 = 16。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">host/~ # grep Huge /proc/meminfo </div><div class="line">HugePages_Total:   10240</div><div class="line">HugePages_Free:     2044</div><div class="line">HugePages_Rsvd:        0</div></pre></td></tr></table></figure></p>
+<p>如果不添加，就是延迟分配，那么启动QEMU后会有些内存属于HugePages_Rsvd，并没有实际分配，(10240-(9747-7703))*2/1024 = 16。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">host/~ # grep Huge /proc/meminfo </div><div class="line">HugePages_Total:   10240</div><div class="line">HugePages_Free:     9747</div><div class="line">HugePages_Rsvd:     7703</div></pre></td></tr></table></figure></p>
+<h1 id="测试方法"><a href="#测试方法" class="headerlink" title="测试方法"></a>测试方法</h1><p>测试使用stress-ng工具（此工具请自行google），选择stressor为mlock，malloc，remap。<br>先写一个测试脚本跑在GUEST机里面，保证人工介入更少，测试工作顺利开展：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash">!/bin/bash</span></div><div class="line"><span class="meta">#</span><span class="bash"> hugepages effect <span class="built_in">test</span> script, write by mnstory.net@20160601</span></div><div class="line"> </div><div class="line">EXE=stress-ng</div><div class="line"> </div><div class="line">main()</div><div class="line">&#123;</div><div class="line">    if [ $# -lt 2 ]; then</div><div class="line">        echo "$0, \$hostenv=[no thp] \$qemuenv=[vh pvh hpvh hppvh]" 1&gt;&amp;2</div><div class="line">        return 1</div><div class="line">    fi</div><div class="line"> </div><div class="line">    local he="$1" #no thp</div><div class="line">    local qe="$2" #vh pvh hpvh hppvh</div><div class="line"> </div><div class="line">    local ge="no"</div><div class="line">    local mem_thp=$(cat /proc/meminfo | grep AnonHugePages | awk '&#123;print $2&#125;')</div><div class="line">    if [ $mem_thp -ne 0 ]; then</div><div class="line">        ge="thp"</div><div class="line">        echo "Guest THP on"</div><div class="line">    else</div><div class="line">        echo "Guest THP off"</div><div class="line">    fi</div><div class="line"> </div><div class="line">    local tag="$he-$qe-$ge"</div><div class="line">    local outstress="./stress.$tag"</div><div class="line">    local cpu_p=$(cat /proc/cpuinfo  | grep 'physical id' | sort | uniq | wc -l)</div><div class="line">    local cpu_c=$(cat /proc/cpuinfo  | grep 'core id' | sort | uniq | wc -l)</div><div class="line">    local cpu_i=$(cat /proc/cpuinfo  | grep 'model name'  | head -1 | awk -F: '&#123;print $2&#125;' | sed -e 's/\s//g')</div><div class="line">    local mem_t=$(cat /proc/meminfo | grep MemTotal | awk '&#123;print $2&#125;')</div><div class="line">    local numa_hit=$(numastat -n | grep Numa_Hit | awk '&#123;print $NF&#125;')</div><div class="line">    local numa_miss=$(numastat -n | grep Numa_Miss | awk '&#123;print $NF&#125;')</div><div class="line"> </div><div class="line">    for s in remap malloc mlock; do </div><div class="line">        for t in 60; do</div><div class="line">            for c in 1 4 8 16; do</div><div class="line">                # stress-ng --mlock 1 --timeout 2s --metrics-brief 2&gt;/dev/null | grep '] mlock' | awk -F] '&#123;print $2&#125;' </div><div class="line">                # mlock            21747      2.07      0.00      1.58     10519.09     13763.92</div><div class="line">                echo "$EXE --$s $c --timeout $&#123;t&#125;s --metrics-brief" </div><div class="line">                local numa_hit2=$(numastat -n | grep Numa_Hit | awk '&#123;print $NF&#125;')</div><div class="line">                local numa_miss2=$(numastat -n | grep Numa_Miss | awk '&#123;print $NF&#125;')</div><div class="line">                local record="$($EXE --$s $c --timeout $&#123;t&#125;s --metrics-brief 2&gt;/dev/null | grep "] $s" | awk -F] '&#123;print $2&#125;')"    </div><div class="line">                local numa_hit_diff=$(echo "$numa_hit2-$numa_hit" | bc -l)</div><div class="line">                local numa_miss_diff=$(echo "$numa_miss2-$numa_miss" | bc -l)</div><div class="line">                numa_hit=$numa_hit2</div><div class="line">                numa_miss=$numa_miss2</div><div class="line">                echo "$tag $he $qe $ge $c $cpu_p $cpu_c $cpu_i $mem_t $numa_hit_diff $numa_miss_diff $record" &gt;&gt; $outstress</div><div class="line">            done</div><div class="line">        done</div><div class="line">    done</div><div class="line">&#125;</div><div class="line"> </div><div class="line">main "$@"</div></pre></td></tr></table></figure></p>
+<p>脚本中需要两个参数，其中参数1，2我取如下值，表示：</p>
+<table><tr><td>no</td><td>Host或Guest保持系统默认，不开启透明大页</td></tr><tr><td>thp</td><td>Host或Guest开启透明大页内存(Transparent Huge Pages)</td></tr><tr><td>vh</td><td>Qemu为Guest指定vhost_user方式</td></tr><tr><td>pvh</td><td>Qemu为Guest指定预分配vhost_user方式</td></tr><tr><td>hpvh</td><td>Qemu为Guest指定大页vhost_user方式</td></tr><tr><td>hppvh</td><td>Qemu为Guest指定大页预分配vhost_user方式</td></tr></table>
+
+<h1 id="测试结论"><a href="#测试结论" class="headerlink" title="测试结论"></a>测试结论</h1><ol>
+<li>Host是否开启透明大页对GUEST无影响或者影响甚微。</li>
+<li>Guest是否开启透明大页对测试结果无影响或者影响甚微。</li>
+<li><p>QEMU是否为GUEST指定大页内存有影响，总的来说，最优选择是使用<b>大页延迟分配</b>。如下图为HOST不开启透明大页，<span class="hlb">QEMU为GUEST指定大页内存与否的测试效果，性能提升26%-32%</span>：<br> <img src="/2016/06/30/qemu-hugepages/07.qemu-performance-hugepage.png" alt="qemu-performance-hugepage"></p>
+ <table><tr><td>Stressor</td><td>耗时</td><td>QEMU是否为GUEST指定大页内存</td></tr><tr><td>Malloc</td><td>90%为user耗时</td><td><ol><li>指定大页情况下，是否延迟分配对效果影响明显，“预分配”比“延迟分配”,单线程压力差14%，多线程压力平均差36%，如图A2</li><li>不指定大页时，是否延迟分配对效果无影响</li></ol></td></tr><tr><td>Remap</td><td>88%为sys耗时</td><td><ol><li>指定大页效果比不指定效果好53%，如图B2</li></ol></td></tr><tr><td>Mlock</td><td>88%为sys耗时</td><td><ol><li>指定预分配大页情况下，如果Host机和Guest同时启用透明大页，效果相对差6%，也可能在误差范围内，如图C2</li></ol></td></tr></table>
+
+<p> <img src="/2016/06/30/qemu-hugepages/07.qemu-performance-hugepage2.png" alt="qemu-performance-hugepage2"><br> <span class="fcaption">Finger A2，预分配效果比延迟分配,单核情况差14%，多核情况平均差36%（测试图中Env项，例如no-hpvh-thp表示：主机使用默认配置不开启透明大页， Qemu为Guest指定大页vhost_user方式，Guest开启透明大页，参照表）</span></p>
+<p> <img src="/2016/06/30/qemu-hugepages/07.qemu-performance-hugepage3.png" alt="qemu-performance-hugepage3"><br> <span class="fcaption">Finger B2，指定大页效果比不指定效果好53%</span></p>
+<p> <img src="/2016/06/30/qemu-hugepages/07.qemu-performance-hugepage4.png" alt="qemu-performance-hugepage4"><br> <span class="fcaption">Finger C2，指定预分配大页情况下，如果Host机和Guest同时启用透明大页，效果相对差6%，也可能在误差范围内</span></p>
+<p> <strong>在GUEST为ORACLE场景下，开启大页后，内存密集型的测试性能提升也在30%左右，而且开启后消耗内存更稳定。</strong></p>
+</li>
+</ol>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ul>
+<li>Address Translation for Virtual Machines<br><a target="_blank" href="http://www.cs.rochester.edu/~sandhya/csc256/seminars/hedayati_vm_npt.pdf">http://www.cs.rochester.edu/~sandhya/csc256/seminars/hedayati_vm_npt.pdf</a></li>
+<li>Accelerating Two-Dimensional Page Walks for Virtualized Systems<br><a target="_blank" href="http://vglab.cse.iitd.ac.in/~sbansal/csl862-virt/readings/p26-bhargava.pdf">http://vglab.cse.iitd.ac.in/~sbansal/csl862-virt/readings/p26-bhargava.pdf</a></li>
+<li>Virtual Memory<br><a target="_blank" href="http://zacharski.org/files/courses/cs405/computerSystemsChapter9.pdf">http://zacharski.org/files/courses/cs405/computerSystemsChapter9.pdf</a></li>
+<li>Virtual Memory Manager<br><a target="_blank" href="https://www.ibm.com/support/knowledgecenter/ssw_aix_71/com.ibm.aix.osdevice/virt_mem_mgr.htm">https://www.ibm.com/support/knowledgecenter/ssw_aix_71/com.ibm.aix.osdevice/virt_mem_mgr.htm</a></li>
+<li>UNDERSTANDING PAGE FAULTS AND MEMORY SWAP-IN/OUTS: WHEN SHOULD YOU WORRY?<br><a target="_blank" href="http://blog.scoutapp.com/articles/2015/04/10/understanding-page-faults-and-memory-swap-in-outs-when-should-you-worry">http://blog.scoutapp.com/articles/2015/04/10/understanding-page-faults-and-memory-swap-in-outs-when-should-you-worry</a></li>
+<li>Best Practices for Paravirtualization Enhancements from Intel? Virtualization Technology: EPT and VT-d<br><a target="_blank" href="https://software.intel.com/en-us/articles/best-practices-for-paravirtualization-enhancements-from-intel-virtualization-technology-ept-and-vt-d">https://software.intel.com/en-us/articles/best-practices-for-paravirtualization-enhancements-from-intel-virtualization-technology-ept-and-vt-d</a></li>
+<li>KVM MMU Virtualization<br><a target="_blank" href="https://events.linuxfoundation.org/slides/2011/linuxcon-japan/lcj2011_guangrong.pdf">https://events.linuxfoundation.org/slides/2011/linuxcon-japan/lcj2011_guangrong.pdf</a></li>
+<li>18-447 Lecture 21: Virtual Memory: Page Tables and TLBs<br><a target="_blank" href="https://users.ece.cmu.edu/~jhoe/course/ece447/handouts/L21.pdf">https://users.ece.cmu.edu/~jhoe/course/ece447/handouts/L21.pdf</a></li>
+</ul>
+<p>下载 <a href="Accelerating Two-Dimensional PageWalks.pdf">Accelerating Two-Dimensional PageWalks.pdf</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Qemu/" rel="tag"># Qemu</a>
+          
+            <a href="/tags/Hugepages/" rel="tag"># Hugepages</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/06/13/storage-access-by-qemu/" rel="next" title="QEMU虚拟存储的几种访问形式">
+                <i class="fa fa-chevron-left"></i> QEMU虚拟存储的几种访问形式
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/07/02/use-log-as-monitor/" rel="prev" title="利用日志做监控">
+                利用日志做监控 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">31</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">53</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#原理"><span class="nav-number">1.</span> <span class="nav-text">原理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#虚拟内存"><span class="nav-number">1.1.</span> <span class="nav-text">虚拟内存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#逻辑地址与物理地址"><span class="nav-number">1.2.</span> <span class="nav-text">逻辑地址与物理地址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#虚拟机地址转换"><span class="nav-number">1.3.</span> <span class="nav-text">虚拟机地址转换</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#大页如何提升性能"><span class="nav-number">1.4.</span> <span class="nav-text">大页如何提升性能</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#配置"><span class="nav-number">2.</span> <span class="nav-text">配置</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#HOST机启动透明大页步骤"><span class="nav-number">2.1.</span> <span class="nav-text">HOST机启动透明大页步骤</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GUEST机启动透明大页步骤"><span class="nav-number">2.2.</span> <span class="nav-text">GUEST机启动透明大页步骤</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#QEMU为GUEST机指定大页内存"><span class="nav-number">2.3.</span> <span class="nav-text">QEMU为GUEST机指定大页内存</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#测试方法"><span class="nav-number">3.</span> <span class="nav-text">测试方法</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#测试结论"><span class="nav-number">4.</span> <span class="nav-text">测试结论</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>
