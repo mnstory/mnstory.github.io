@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="环境搭建," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="ovirt是redhat支持的QEMU管理UI，本次安装主要是想体验不同的管理软件。 主要根据文章 http://jensd.be/550/linux/install-ovirt-on-centos-7 来安装，安装结果基本能用，但是错误比较多。 安装软件本机节点IP是200.200.103.61，我设置本机的hostname为cent7。1[root@localhost ~]# echo -e">
+<meta name="keywords" content="环境搭建">
+<meta property="og:type" content="article">
+<meta property="og:title" content="oVirt安装体验（CentOS 7.2）">
+<meta property="og:url" content="http://mnstory.net/2016/05/23/ovirt-install-guide/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="ovirt是redhat支持的QEMU管理UI，本次安装主要是想体验不同的管理软件。 主要根据文章 http://jensd.be/550/linux/install-ovirt-on-centos-7 来安装，安装结果基本能用，但是错误比较多。 安装软件本机节点IP是200.200.103.61，我设置本机的hostname为cent7。1[root@localhost ~]# echo -e">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2016/05/23/ovirt-install-guide/image001.png">
+<meta property="og:image" content="http://mnstory.net/2016/05/23/ovirt-install-guide/image003.png">
+<meta property="og:image" content="http://mnstory.net/2016/05/23/ovirt-install-guide/image005.png">
+<meta property="og:image" content="http://mnstory.net/2016/05/23/ovirt-install-guide/image007.png">
+<meta property="og:image" content="http://mnstory.net/2016/05/23/ovirt-install-guide/image009.png">
+<meta property="og:image" content="http://mnstory.net/2016/05/23/ovirt-install-guide/image011.png">
+<meta property="og:image" content="http://mnstory.net/2016/05/23/ovirt-install-guide/image013.png">
+<meta property="og:image" content="http://mnstory.net/2016/05/23/ovirt-install-guide/image015.png">
+<meta property="og:updated_time" content="2017-11-01T14:20:42.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="oVirt安装体验（CentOS 7.2）">
+<meta name="twitter:description" content="ovirt是redhat支持的QEMU管理UI，本次安装主要是想体验不同的管理软件。 主要根据文章 http://jensd.be/550/linux/install-ovirt-on-centos-7 来安装，安装结果基本能用，但是错误比较多。 安装软件本机节点IP是200.200.103.61，我设置本机的hostname为cent7。1[root@localhost ~]# echo -e">
+<meta name="twitter:image" content="http://mnstory.net/2016/05/23/ovirt-install-guide/image001.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2016/05/23/ovirt-install-guide/"/>
+
+
+
+
+
+  <title>oVirt安装体验（CentOS 7.2） | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/05/23/ovirt-install-guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">oVirt安装体验（CentOS 7.2）</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-05-23T23:00:00+08:00">
+                2016-05-23
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>ovirt是redhat支持的QEMU管理UI，本次安装主要是想体验不同的管理软件。 主要根据文章 <a href="http://jensd.be/550/linux/install-ovirt-on-centos-7" target="_blank" rel="external">http://jensd.be/550/linux/install-ovirt-on-centos-7</a> 来安装，安装结果基本能用，但是错误比较多。</p>
+<h1 id="安装软件"><a href="#安装软件" class="headerlink" title="安装软件"></a>安装软件</h1><p>本机节点IP是200.200.103.61，我设置本机的hostname为cent7。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[root@localhost ~]# echo -e "200.200.103.61 cent7\n" &gt;&gt; /etc/hosts</div></pre></td></tr></table></figure></p>
+<p>然后安装软件<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">[root@localhost ~]# yum install http://resources.ovirt.org/pub/yum-repo/ovirt-release36.rpm</div><div class="line">[root@localhost vm]# wget http://mirrors.aliyun.com/centos/7.2.1511/isos/x86_64/CentOS-7-x86_64-Minimal-1511.iso</div><div class="line">[root@localhost ~]# yum -y install ovirt-engine</div></pre></td></tr></table></figure></p>
+<a id="more"></a>
+<p>根据提示配置软件<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div><div class="line">132</div><div class="line">133</div><div class="line">134</div><div class="line">135</div><div class="line">136</div><div class="line">137</div><div class="line">138</div><div class="line">139</div><div class="line">140</div><div class="line">141</div><div class="line">142</div><div class="line">143</div><div class="line">144</div><div class="line">145</div><div class="line">146</div><div class="line">147</div><div class="line">148</div><div class="line">149</div><div class="line">150</div><div class="line">151</div><div class="line">152</div><div class="line">153</div><div class="line">154</div><div class="line">155</div><div class="line">156</div><div class="line">157</div><div class="line">158</div><div class="line">159</div><div class="line">160</div><div class="line">161</div><div class="line">162</div><div class="line">163</div><div class="line">164</div><div class="line">165</div><div class="line">166</div><div class="line">167</div><div class="line">168</div><div class="line">169</div><div class="line">170</div><div class="line">171</div><div class="line">172</div><div class="line">173</div><div class="line">174</div><div class="line">175</div><div class="line">176</div><div class="line">177</div><div class="line">178</div><div class="line">179</div><div class="line">180</div><div class="line">181</div><div class="line">182</div><div class="line">183</div><div class="line">184</div><div class="line">185</div><div class="line">186</div><div class="line">187</div><div class="line">188</div><div class="line">189</div><div class="line">190</div><div class="line">191</div><div class="line">192</div><div class="line">193</div><div class="line">194</div><div class="line">195</div></pre></td><td class="code"><pre><div class="line">[root@localhost ~]# engine-setup</div><div class="line">[ INFO  ] Stage: Initializing</div><div class="line">[ INFO  ] Stage: Environment setup</div><div class="line">          Configuration files: ['/etc/ovirt-engine-setup.conf.d/10-packaging-jboss.conf', '/etc/ovirt-engine-setup.conf.d/10-packaging.conf']</div><div class="line">          Log file: /var/log/ovirt-engine/setup/ovirt-engine-setup-20160519144409-m14ol7.log</div><div class="line">          Version: otopi-1.4.1 (otopi-1.4.1-1.el7.centos)</div><div class="line">[ INFO  ] Stage: Environment packages setup</div><div class="line">[ INFO  ] Yum Downloading: base/7/x86_64 (0%)</div><div class="line">[ INFO  ] Stage: Programs detection</div><div class="line">[ INFO  ] Stage: Environment setup</div><div class="line">[ INFO  ] Stage: Environment customization</div><div class="line">         </div><div class="line">          --== PRODUCT OPTIONS ==--</div><div class="line">         </div><div class="line">          Configure Engine on this host (Yes, No) [Yes]: </div><div class="line">          Configure VM Console Proxy on this host (Yes, No) [Yes]: </div><div class="line">          Configure WebSocket Proxy on this host (Yes, No) [Yes]: </div><div class="line">         </div><div class="line">          --== PACKAGES ==--</div><div class="line">         </div><div class="line">[ INFO  ] Checking for product updates...</div><div class="line">[ INFO  ] No product updates found</div><div class="line">         </div><div class="line">          --== ALL IN ONE CONFIGURATION ==--</div><div class="line">         </div><div class="line">         </div><div class="line">          --== NETWORK CONFIGURATION ==--</div><div class="line">         </div><div class="line">          Host fully qualified DNS name of this server [localhost.localdomain]: cent7</div><div class="line">[WARNING] Host name cent7 has no domain suffix</div><div class="line">[WARNING] Failed to resolve cent7 using DNS, it can be resolved only locally</div><div class="line">          Setup can automatically configure the firewall on this system.</div><div class="line">          Note: automatic configuration of the firewall may overwrite current settings.</div><div class="line">          Do you want Setup to configure the firewall? (Yes, No) [Yes]: no</div><div class="line">[WARNING] Host name cent7 has no domain suffix</div><div class="line">[WARNING] Failed to resolve cent7 using DNS, it can be resolved only locally</div><div class="line">[WARNING] Host name cent7 has no domain suffix</div><div class="line">[WARNING] Failed to resolve cent7 using DNS, it can be resolved only locally</div><div class="line">         </div><div class="line">          --== DATABASE CONFIGURATION ==--</div><div class="line">         </div><div class="line">          Where is the Engine database located? (Local, Remote) [Local]: </div><div class="line">          Setup can configure the local postgresql server automatically for the engine to run. This may conflict with existing applications.</div><div class="line">          Would you like Setup to automatically configure postgresql and create Engine database, or prefer to perform that manually? (Automatic, Manual) [Automatic]: </div><div class="line">         </div><div class="line">          --== OVIRT ENGINE CONFIGURATION ==--</div><div class="line">         </div><div class="line">          Application mode (Virt, Gluster, Both) [Both]: </div><div class="line">          Engine admin password: </div><div class="line">          Confirm engine admin password: </div><div class="line">[WARNING] Password is weak: WAY 过短</div><div class="line">          Use weak password? (Yes, No) [No]: yes</div><div class="line">         </div><div class="line">          --== STORAGE CONFIGURATION ==--</div><div class="line">         </div><div class="line">          Default SAN wipe after delete (Yes, No) [No]: </div><div class="line">         </div><div class="line">          --== PKI CONFIGURATION ==--</div><div class="line">         </div><div class="line">          Organization name for certificate [Test]: c^H^H</div><div class="line">         </div><div class="line">          --== APACHE CONFIGURATION ==--</div><div class="line">         </div><div class="line">          Setup can configure apache to use SSL using a certificate issued from the internal CA.</div><div class="line">          Do you wish Setup to configure that, or prefer to perform that manually? (Automatic, Manual) [Automatic]: </div><div class="line">          Setup can configure the default page of the web server to present the application home page. This may conflict with existing applications.</div><div class="line">          Do you wish to set the application as the default page of the web server? (Yes, No) [Yes]: </div><div class="line">         </div><div class="line">          --== SYSTEM CONFIGURATION ==--</div><div class="line">         </div><div class="line">          Configure an NFS share on this server to be used as an ISO Domain? (Yes, No) [Yes]: </div><div class="line">          Local ISO domain path [/var/lib/exports/iso]: </div><div class="line">         </div><div class="line">          Please provide the ACL for the Local ISO domain.</div><div class="line">          See the exports(5) manpage for the format.</div><div class="line">          Examples:</div><div class="line">          - To allow access for host1, host2 and host3, input: host1(rw) host2(rw) host3(rw)</div><div class="line">          - To allow access to the entire Internet, input: *(rw)</div><div class="line">         </div><div class="line">          For more information, see: http://www.ovirt.org/Troubleshooting_NFS_Storage_Issues</div><div class="line">         </div><div class="line">          Local ISO domain ACL: *()^H</div><div class="line">          Local ISO domain name [ISO_DOMAIN]: sol</div><div class="line">         </div><div class="line">          --== MISC CONFIGURATION ==--</div><div class="line">         </div><div class="line">         </div><div class="line">          --== END OF CONFIGURATION ==--</div><div class="line">         </div><div class="line">[ INFO  ] Stage: Setup validation</div><div class="line">[WARNING] Cannot validate host name settings, reason: resolved host does not match any of the local addresses</div><div class="line">         </div><div class="line">          --== CONFIGURATION PREVIEW ==--</div><div class="line">         </div><div class="line">          Application mode                        : both</div><div class="line">          Default SAN wipe after delete           : False</div><div class="line">          Update Firewall                         : False</div><div class="line">          Host FQDN                               : cent7</div><div class="line">          Engine database secured connection      : False</div><div class="line">          Engine database host                    : localhost</div><div class="line">          Engine database user name               : engine</div><div class="line">          Engine database name                    : engine</div><div class="line">          Engine database port                    : 5432</div><div class="line">          Engine database host name validation    : False</div><div class="line">          Engine installation                     : True</div><div class="line">          NFS setup                               : True</div><div class="line">          PKI organization                        : c</div><div class="line">          NFS export ACL                          : *()</div><div class="line">          NFS mount point                         : /var/lib/exports/iso</div><div class="line">          Configure local Engine database         : True</div><div class="line">          Set application as default page         : True</div><div class="line">          Configure Apache SSL                    : True</div><div class="line">          Configure VMConsole Proxy               : True</div><div class="line">          Engine Host FQDN                        : cent7</div><div class="line">          Configure WebSocket Proxy               : True</div><div class="line">         </div><div class="line">          Please confirm installation settings (OK, Cancel) [OK]: </div><div class="line">[ INFO  ] Stage: Transaction setup</div><div class="line">[ INFO  ] Stopping engine service</div><div class="line">[ INFO  ] Stopping ovirt-fence-kdump-listener service</div><div class="line">[ INFO  ] Stopping websocket-proxy service</div><div class="line">[ INFO  ] Stage: Misc configuration</div><div class="line">[ INFO  ] Stage: Package installation</div><div class="line">[ INFO  ] Stage: Misc configuration</div><div class="line">[ INFO  ] Initializing PostgreSQL</div><div class="line">[ INFO  ] Creating PostgreSQL 'engine' database</div><div class="line">[ INFO  ] Configuring PostgreSQL</div><div class="line">[ INFO  ] Creating/refreshing Engine database schema</div><div class="line">[ INFO  ] Creating/refreshing Engine 'internal' domain database schema</div><div class="line">[ INFO  ] Upgrading CA</div><div class="line">[ INFO  ] Creating CA</div><div class="line">[ INFO  ] Setting up ovirt-vmconsole proxy helper PKI artifacts</div><div class="line">[ INFO  ] Setting up ovirt-vmconsole SSH PKI artifacts</div><div class="line">[ INFO  ] Configuring WebSocket Proxy</div><div class="line">[ INFO  ] Generating post install configuration file '/etc/ovirt-engine-setup.conf.d/20-setup-ovirt-post.conf'</div><div class="line">[ INFO  ] Stage: Transaction commit</div><div class="line">[ INFO  ] Stage: Closing up</div><div class="line">[ INFO  ] Restarting nfs services</div><div class="line">[WARNING] Unable to start NFS service or its dependencies: Failed to start service 'nfs-server' Please check their configuration and manually restart</div><div class="line">         </div><div class="line">          --== SUMMARY ==--</div><div class="line">         </div><div class="line">[ ERROR ] Could not refresh NFS exports (1: [u'exportfs: /etc/exports.d/ovirt-engine-iso-domain.exports:1: syntax error: bad option list'])</div><div class="line">          SSH fingerprint: a5:69:f1:ea:7f:6d:27:01:93:26:89:a4:66:86:de:b6</div><div class="line">          Internal CA 8D:60:E6:43:F3:D0:E7:9E:D1:B2:0E:92:F7:44:32:7E:17:B8:71:EA</div><div class="line">          Note! If you want to gather statistical information you can install Reports and/or DWH:</div><div class="line">              http://www.ovirt.org/Ovirt_DWH</div><div class="line">              http://www.ovirt.org/Ovirt_Reports</div><div class="line">          Web access is enabled at:</div><div class="line">              http://cent7:80/ovirt-engine</div><div class="line">              https://cent7:443/ovirt-engine</div><div class="line">          Please use the user 'admin@internal' and password specified in order to login</div><div class="line">          In order to configure firewalld, copy the files from</div><div class="line">              /etc/ovirt-engine/firewalld to /etc/firewalld/services</div><div class="line">              and execute the following commands:</div><div class="line">              firewall-cmd --permanent --add-service ovirt-postgres</div><div class="line">              firewall-cmd --permanent --add-service ovirt-https</div><div class="line">              firewall-cmd --permanent --add-service ovirt-fence-kdump-listener</div><div class="line">              firewall-cmd --permanent --add-service ovirt-websocket-proxy</div><div class="line">              firewall-cmd --permanent --add-service ovirt-nfs</div><div class="line">              firewall-cmd --permanent --add-service ovirt-http</div><div class="line">              firewall-cmd --permanent --add-service ovirt-vmconsole-proxy</div><div class="line">              firewall-cmd --reload</div><div class="line">          The following network ports should be opened:</div><div class="line">              tcp:111</div><div class="line">              tcp:2049</div><div class="line">              tcp:2222</div><div class="line">              tcp:32803</div><div class="line">              tcp:443</div><div class="line">              tcp:5432</div><div class="line">              tcp:6100</div><div class="line">              tcp:662</div><div class="line">              tcp:80</div><div class="line">              tcp:875</div><div class="line">              tcp:892</div><div class="line">              udp:111</div><div class="line">              udp:32769</div><div class="line">              udp:662</div><div class="line">              udp:7410</div><div class="line">              udp:875</div><div class="line">              udp:892</div><div class="line">          An example of the required configuration for iptables can be found at:</div><div class="line">              /etc/ovirt-engine/iptables.example</div><div class="line">         </div><div class="line">          --== END OF SUMMARY ==--</div><div class="line">         </div><div class="line">[ INFO  ] Starting engine service</div><div class="line">[ INFO  ] Restarting httpd</div><div class="line">[ INFO  ] Restarting ovirt-vmconsole proxy service</div><div class="line">[ INFO  ] Stage: Clean up</div><div class="line">          Log file is located at /var/log/ovirt-engine/setup/ovirt-engine-setup-20160519144409-m14ol7.log</div><div class="line">[ INFO  ] Generating answer file '/var/lib/ovirt-engine/setup/answers/20160519150418-setup.conf'</div><div class="line">[ INFO  ] Stage: Pre-termination</div><div class="line">[ INFO  ] Stage: Termination</div><div class="line">[ INFO  ] Execution of setup completed successfully</div></pre></td></tr></table></figure></p>
+<p>我配置的时候，我的输入中断不支持回退，所以下面参数配置时输入错误，导致NFS启动不了：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">[root@localhost vm]# cat /etc/exports.d/ovirt-engine-iso-domain.exports</div><div class="line">/var/lib/exports/iso	*()</div></pre></td></tr></table></figure></p>
+<p>修改一下：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">[root@localhost vm]# vi /etc/exports.d/ovirt-engine-iso-domain.exports</div><div class="line">[root@localhost vm]# cat /etc/exports.d/ovirt-engine-iso-domain.exports</div><div class="line">/var/lib/exports/iso	*(rw)</div></pre></td></tr></table></figure></p>
+<p>再启动NFS：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">[root@localhost vm]# systemctl list-units | grep nfs</div><div class="line">  proc-fs-nfsd.mount                                                                       loaded active mounted   NFSD configuration filesystem</div><div class="line">  var-lib-nfs-rpc_pipefs.mount                                                             loaded active mounted   RPC Pipe File System</div><div class="line">  nfs-config.service                                                                       loaded active exited    Preprocess NFS configuration</div><div class="line">● nfs-server.service                                                                       loaded failed failed    NFS server and services</div><div class="line">  nfs-client.target                                                                        loaded active active    NFS client services</div><div class="line">[root@localhost vm]# systemctl restart nfs-server.service</div><div class="line">[root@localhost vm]# systemctl status nfs-server.service</div><div class="line">● nfs-server.service - NFS server and services</div><div class="line">   Loaded: loaded (/usr/lib/systemd/system/nfs-server.service; enabled; vendor preset: disabled)</div><div class="line">   Active: active (exited) since 四 2016-05-19 15:07:08 CST; 6s ago</div><div class="line">  Process: 28584 ExecStart=/usr/sbin/rpc.nfsd $RPCNFSDARGS (code=exited, status=0/SUCCESS)</div><div class="line">  Process: 28581 ExecStartPre=/usr/sbin/exportfs -r (code=exited, status=0/SUCCESS)</div><div class="line"> Main PID: 28584 (code=exited, status=0/SUCCESS)</div><div class="line">   CGroup: /system.slice/nfs-server.service</div><div class="line"></div><div class="line">5月 19 15:07:08 localhost.localdomain systemd[1]: Starting NFS server and services...</div><div class="line">5月 19 15:07:08 localhost.localdomain systemd[1]: Started NFS server and services.</div></pre></td></tr></table></figure></p>
+<h1 id="WEBUI"><a href="#WEBUI" class="headerlink" title="WEBUI"></a>WEBUI</h1><p>按照上面安装完成，可以访问WEBUI：<a href="http://cent7/ovirt-engine/" target="_blank" rel="external">http://cent7/ovirt-engine/</a><br>用户名：admin<br>密&nbsp; 码：engine-setup时设置的密码</p>
+<h2 id="添加主机"><a href="#添加主机" class="headerlink" title="添加主机"></a>添加主机</h2><p>由于只有一台主机，主机又是管理机器又是实际做任务的机器，所以先把本机加入集群，进入管理页面后，左树依次展开找到“主机”，然后“新建”，填入本机参数（我的防火墙禁止了的，所以就不自动配置防火墙了）。<br><img src="/2016/05/23/ovirt-install-guide/image001.png" alt="image001"></p>
+<p>我的安装完后，失败了，状态一列显示：Install Failed，在点击“激活”变成了No Operational，点击“网络接口”/“设立主机网络”,为其分配网络后，状态变为UP。<br><img src="/2016/05/23/ovirt-install-guide/image003.png" alt="image003"></p>
+<p><img src="/2016/05/23/ovirt-install-guide/image005.png" alt="image005"></p>
+<h2 id="添加存储"><a href="#添加存储" class="headerlink" title="添加存储"></a>添加存储</h2><p>没有额外的存储，简单起见，用本地目录做NFS：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">[root@cent7 ~]# mkdir -p /srv/ovirt/&#123;iso,export,sata,ssd&#125;</div><div class="line">[root@cent7 ~]# cat /etc/exports</div><div class="line">/srv/ovirt/iso          cent7(rw,sync,no_subtree_check,all_squash,anonuid=36,anongid=36)</div><div class="line">/srv/ovirt/sata         cent7(rw,sync,no_subtree_check,all_squash,anonuid=36,anongid=36)</div><div class="line">/srv/ovirt/ssd          cent7(rw,sync,no_subtree_check,all_squash,anonuid=36,anongid=36)</div><div class="line">/srv/ovirt/export       cent7(rw,sync,no_subtree_check,all_squash,anonuid=36,anongid=36)</div><div class="line"></div><div class="line">[root@cent7 ~]# showmount -e</div><div class="line">Export list for cent7:</div><div class="line">/var/lib/exports/iso *</div><div class="line">/srv/ovirt/export    cent7</div><div class="line">/srv/ovirt/ssd       cent7</div><div class="line">/srv/ovirt/sata      cent7</div><div class="line">/srv/ovirt/iso       cent7</div><div class="line"></div><div class="line">chown -R vdsm:kvm /srv/ovirt/</div><div class="line">chmod -R 770 /srv/ovirt/</div><div class="line">systemctl start &#123;nfs-server,nfs-lock,nfs-idmap&#125;</div><div class="line">systemctl enable &#123;nfs-server,nfs-lock,nfs-idmap&#125;</div></pre></td></tr></table></figure></p>
+<p><img src="/2016/05/23/ovirt-install-guide/image007.png" alt="image007"></p>
+<p><img src="/2016/05/23/ovirt-install-guide/image009.png" alt="image009"></p>
+<h2 id="上传ISO镜像"><a href="#上传ISO镜像" class="headerlink" title="上传ISO镜像"></a>上传ISO镜像</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">[root@cent7 ~]# engine-iso-uploader list</div><div class="line">Please provide the REST API password for the admin@internal oVirt Engine user (CTRL+D to abort): </div><div class="line">ERROR: Problem connecting to the REST API at https://cent7:443/api</div><div class="line">[ERROR]::oVirt API connection failure, (56, 'Received HTTP code 502 from proxy after CONNECT')</div></pre></td></tr></table></figure>
+<p>我的环境安装后有问题，不过，可以我发现可以将ISO直接MOVE到/srv/ovirt/iso下面的UID/images/UID子目录下面，前端就能看见：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">[root@cent7 iso]# tree /srv/ovirt/iso/</div><div class="line">/srv/ovirt/iso/</div><div class="line">├── 910d77fa-a054-43d4-bad6-12b2e19b2574</div><div class="line">│   ├── dom_md</div><div class="line">│   │   ├── ids</div><div class="line">│   │   ├── inbox</div><div class="line">│   │   ├── leases</div><div class="line">│   │   ├── metadata</div><div class="line">│   │   └── outbox</div><div class="line">│   └── images</div><div class="line">│       └── 11111111-1111-1111-1111-111111111111</div><div class="line">│           ├── CentOS-7-x86_64-Minimal-1511.iso</div><div class="line">│           └── WINXP.iso</div><div class="line">└── __DIRECT_IO_TEST__</div><div class="line"></div><div class="line">4 directories, 8 files</div></pre></td></tr></table></figure></p>
+<p>此时刷新页面就可以看到上传的ISO了：<br><img src="/2016/05/23/ovirt-install-guide/image011.png" alt="image011"></p>
+<h2 id="新建虚拟机"><a href="#新建虚拟机" class="headerlink" title="新建虚拟机"></a>新建虚拟机</h2><p><img src="/2016/05/23/ovirt-install-guide/image013.png" alt="image013"></p>
+<p><img src="/2016/05/23/ovirt-install-guide/image015.png" alt="image015"></p>
+<p>虚拟机建起来，本人的环境VNC失效，没有看到图形界面。但是基本的UI功能体验了一遍，功能不多，比我们的软件做的差。</p>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ol>
+<li>Install oVirt on CentOS 7 <a target="_blank" href="http://jensd.be/550/linux/install-ovirt-on-centos-7">http://jensd.be/550/linux/install-ovirt-on-centos-7</a></li>
+<li>小日本的，参照他的图解决了status不为up的问题 <a target="_blank" href="http://qiita.com/ine1127/items/942ddd57b514f10e5127">http://qiita.com/ine1127/items/942ddd57b514f10e5127</a></li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/环境搭建/" rel="tag"># 环境搭建</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/05/22/first-look-at-office-web-addon/" rel="next" title="自制Office Web插件">
+                <i class="fa fa-chevron-left"></i> 自制Office Web插件
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/06/13/storage-access-by-qemu/" rel="prev" title="QEMU虚拟存储的几种访问形式">
+                QEMU虚拟存储的几种访问形式 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">33</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">50</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#安装软件"><span class="nav-number">1.</span> <span class="nav-text">安装软件</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#WEBUI"><span class="nav-number">2.</span> <span class="nav-text">WEBUI</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#添加主机"><span class="nav-number">2.1.</span> <span class="nav-text">添加主机</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#添加存储"><span class="nav-number">2.2.</span> <span class="nav-text">添加存储</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#上传ISO镜像"><span class="nav-number">2.3.</span> <span class="nav-text">上传ISO镜像</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#新建虚拟机"><span class="nav-number">2.4.</span> <span class="nav-text">新建虚拟机</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

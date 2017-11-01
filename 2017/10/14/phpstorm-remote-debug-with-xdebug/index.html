@@ -53,7 +53,7 @@
 <link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="PHPStorm,PHP,XDebug,Debug," />
+  <meta name="keywords" content="PHP,XDebug,PHPStorm,Debug," />
 
 
 
@@ -70,7 +70,7 @@
 
 
 <meta name="description" content="PHPStorm是一款非常强大的PHP IDE，一般来说，我们的PHP程序是运行在服务器端(服务器端一般是Linux)，编辑在本地(一般是Windows)，这样的开发模式，最麻烦的，就是写好代码，可能要编译，要上传，要重启，要调试。好在，这些，PHPStorm都考虑到了。自动上传，建议使用PHPStorm的Deployment功能，只要映射好路径，一次配置，终身受益。现在，我们单说说，如何远程调试">
-<meta name="keywords" content="PHPStorm,PHP,XDebug,Debug">
+<meta name="keywords" content="PHP,XDebug,PHPStorm,Debug">
 <meta property="og:type" content="article">
 <meta property="og:title" content="使用XDebug加PHPStorm远程调试PHP">
 <meta property="og:url" content="http://mnstory.net/2017/10/14/phpstorm-remote-debug-with-xdebug/index.html">
@@ -347,14 +347,14 @@ inst=$build/php-5.6.15/environment/build
 <ul>
 <li>下载<br>  编译xdebug前，要先下载xdebug源码，一般的方法是，将phpinfo()输出的网页，copy到 <a href="https://xdebug.org/wizard.php，其会给出对应版本的xdebug下载链接。" target="_blank" rel="external">https://xdebug.org/wizard.php，其会给出对应版本的xdebug下载链接。</a></li>
 <li><p>编译<br>  进入xdebug源码目录执行：</p>
-  <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">[compiler xdebug]# $inst/php5/bin/phpize</div><div class="line">Configuring for:</div><div class="line">PHP Api Version:         20131106</div><div class="line">Zend Module Api No:      20131226</div><div class="line">Zend Extension Api No:   220131226</div><div class="line">    </div><div class="line">[compiler xdebug]# ./configure --with-php-config=$inst/php5/bin/php-config</div><div class="line">[compiler xdebug]# make &amp;&amp; make install</div><div class="line">[compiler xdebug]# ls </div><div class="line"><span class="meta">$</span>inst/php5/lib/php/extensions/no-debug-non-zts-20131226/xdebug.so</div></pre></td></tr></table></figure>
+  <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">[compiler xdebug]# $inst/php5/bin/phpize</div><div class="line">Configuring for:</div><div class="line">PHP Api Version:         20131106</div><div class="line">Zend Module Api No:      20131226</div><div class="line">Zend Extension Api No:   220131226</div><div class="line">    </div><div class="line">[compiler xdebug]# ./configure --with-php-config=$inst/php5/bin/php-config</div><div class="line">[compiler xdebug]# make &amp;&amp; make install</div><div class="line">[compiler xdebug]# ls </div><div class="line"><span class="meta">$</span><span class="bash">inst/php5/lib/php/extensions/no-debug-non-zts-20131226/xdebug.so</span></div></pre></td></tr></table></figure>
 </li>
 <li><p>安装</p>
   <!-- 
   phproot=/home/fantom/party/apache/php5
   -->
 <p>  找到运行环境的php安装根目录，假设为$phproot，将xdebug.so放到目标机的 $phproot/lib/php/extensions 目录。把下面的信息添加到 $phproot/lib/php.ini</p>
-  <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">zend_extension = $phproot/lib/php/extensions/xdebug.so # 这个$phproot记得替换成你的路径</div><div class="line">[xdebug]</div><div class="line">xdebug.idekey = "PHPSTORM" #因为DBGp调试代理是可以做调试分发的，所以，定义一个IDEKEY，目的是让调试器知道，是不是发给自己的请求</div><div class="line">xdebug.remote_enable = 1   # 设置为1的时候，会先参数链接到remote_host和remote_port指定的调试器端口，如果连接不上，就继续执行，类似设置了0</div><div class="line"><span class="meta">#</span>xdebug.remote_mode = "req" # 有两个值，"req"(默认)表示一旦脚本开始执行，Xdebug就将尝试连接到调试客户端；"jit"当错误发生时，才尝试连接到调试客户端</div><div class="line"><span class="meta">#</span>xdebug.remote_handler = "dbgp" # 也就是调试走哪种协议，有老的PHP3协议，也有GDB协议，DBGP是当前的默认协议，也是当前主流支持的协议</div><div class="line">xdebug.remote_connect_back = 0 # 如果为1，xdebug会通过$_SERVER[‘REMOTE_ADDR’]变量，向发起HTTP请求的客户端发起链接，和remote_host功能类似，但是优先级比remote_host高，所以，设置了这个选项就会忽略remote_host，由于我的运行时服务器不能主动链接IDE所在PC，所以不能开启自动回连模式(内网访问外网的网页，也不能开启)</div><div class="line"><span class="meta">#</span>xdebug.remote_host = "localhost" #默认当然是本机了</div><div class="line">xdebug.remote_port = 9909      # 默认端口是9000，由于担心服务器端口冲突，我修改为9909，建议你没有端口冲突时不修改</div><div class="line"><span class="meta">#</span>xdebug.remote_autostart = 0   # 这个为1，会忽略COOKIE或者POST/GET中带的XDEBUG_SESSION参数，不管有没有，都会启动调试，所以，还是设置为0比较好，默认0</div></pre></td></tr></table></figure>
+  <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">zend_extension = $phproot/lib/php/extensions/xdebug.so # 这个$phproot记得替换成你的路径</div><div class="line">[xdebug]</div><div class="line">xdebug.idekey = "PHPSTORM" #因为DBGp调试代理是可以做调试分发的，所以，定义一个IDEKEY，目的是让调试器知道，是不是发给自己的请求</div><div class="line">xdebug.remote_enable = 1   # 设置为1的时候，会先参数链接到remote_host和remote_port指定的调试器端口，如果连接不上，就继续执行，类似设置了0</div><div class="line"><span class="meta">#</span><span class="bash">xdebug.remote_mode = <span class="string">"req"</span> <span class="comment"># 有两个值，"req"(默认)表示一旦脚本开始执行，Xdebug就将尝试连接到调试客户端；"jit"当错误发生时，才尝试连接到调试客户端</span></span></div><div class="line"><span class="meta">#</span><span class="bash">xdebug.remote_handler = <span class="string">"dbgp"</span> <span class="comment"># 也就是调试走哪种协议，有老的PHP3协议，也有GDB协议，DBGP是当前的默认协议，也是当前主流支持的协议</span></span></div><div class="line">xdebug.remote_connect_back = 0 # 如果为1，xdebug会通过$_SERVER[‘REMOTE_ADDR’]变量，向发起HTTP请求的客户端发起链接，和remote_host功能类似，但是优先级比remote_host高，所以，设置了这个选项就会忽略remote_host，由于我的运行时服务器不能主动链接IDE所在PC，所以不能开启自动回连模式(内网访问外网的网页，也不能开启)</div><div class="line"><span class="meta">#</span><span class="bash">xdebug.remote_host = <span class="string">"localhost"</span> <span class="comment">#默认当然是本机了</span></span></div><div class="line">xdebug.remote_port = 9909      # 默认端口是9000，由于担心服务器端口冲突，我修改为9909，建议你没有端口冲突时不修改</div><div class="line"><span class="meta">#</span><span class="bash">xdebug.remote_autostart = 0   <span class="comment"># 这个为1，会忽略COOKIE或者POST/GET中带的XDEBUG_SESSION参数，不管有没有，都会启动调试，所以，还是设置为0比较好，默认0</span></span></div></pre></td></tr></table></figure>
   <!--
   zend_extension = /home/fantom/party/apache/php5/lib/php/extensions/xdebug.so
   [xdebug]
@@ -417,11 +417,11 @@ inst=$build/php-5.6.15/environment/build
       
         <div class="post-tags">
           
-            <a href="/tags/PHPStorm/" rel="tag"># PHPStorm</a>
-          
             <a href="/tags/PHP/" rel="tag"># PHP</a>
           
             <a href="/tags/XDebug/" rel="tag"># XDebug</a>
+          
+            <a href="/tags/PHPStorm/" rel="tag"># PHPStorm</a>
           
             <a href="/tags/Debug/" rel="tag"># Debug</a>
           
@@ -524,7 +524,7 @@ inst=$build/php-5.6.15/environment/build
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">31</span>
+                <span class="site-state-item-count">33</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -537,7 +537,7 @@ inst=$build/php-5.6.15/environment/build
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">53</span>
+                <span class="site-state-item-count">50</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>

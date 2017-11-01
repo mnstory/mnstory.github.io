@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="插件,Office," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="写文章还是WORD比较适合，但是发布到BLOG网站却是HTML，每次转换格式都是件麻烦的事情，于是写了个简单的转换插件，能自动将部分内容按BLOG格式转换，减少人为参与。 Office的WEB插件非常简单，就是简单的js和html即可，工程名字取名为CleanHtmlExport，于是先写入口配置文件CleanHtmlExport.xml：12345678910111213141516171819">
+<meta name="keywords" content="插件,Office">
+<meta property="og:type" content="article">
+<meta property="og:title" content="自制Office Web插件">
+<meta property="og:url" content="http://mnstory.net/2016/05/22/first-look-at-office-web-addon/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="写文章还是WORD比较适合，但是发布到BLOG网站却是HTML，每次转换格式都是件麻烦的事情，于是写了个简单的转换插件，能自动将部分内容按BLOG格式转换，减少人为参与。 Office的WEB插件非常简单，就是简单的js和html即可，工程名字取名为CleanHtmlExport，于是先写入口配置文件CleanHtmlExport.xml：12345678910111213141516171819">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2016/05/22/first-look-at-office-web-addon/image001.png">
+<meta property="og:image" content="http://mnstory.net/2016/05/22/first-look-at-office-web-addon/image003.png">
+<meta property="og:image" content="http://mnstory.net/2016/05/22/first-look-at-office-web-addon/image005.png">
+<meta property="og:updated_time" content="2017-11-01T15:41:04.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="自制Office Web插件">
+<meta name="twitter:description" content="写文章还是WORD比较适合，但是发布到BLOG网站却是HTML，每次转换格式都是件麻烦的事情，于是写了个简单的转换插件，能自动将部分内容按BLOG格式转换，减少人为参与。 Office的WEB插件非常简单，就是简单的js和html即可，工程名字取名为CleanHtmlExport，于是先写入口配置文件CleanHtmlExport.xml：12345678910111213141516171819">
+<meta name="twitter:image" content="http://mnstory.net/2016/05/22/first-look-at-office-web-addon/image001.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2016/05/22/first-look-at-office-web-addon/"/>
+
+
+
+
+
+  <title>自制Office Web插件 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/05/22/first-look-at-office-web-addon/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">自制Office Web插件</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-05-22T23:00:00+08:00">
+                2016-05-22
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>写文章还是WORD比较适合，但是发布到BLOG网站却是HTML，每次转换格式都是件麻烦的事情，于是写了个简单的转换插件，能自动将部分内容按BLOG格式转换，减少人为参与。</p>
+<p>Office的WEB插件非常简单，就是简单的js和html即可，工程名字取名为CleanHtmlExport，于是先写入口配置文件CleanHtmlExport.xml：<br><figure class="highlight xml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">&lt;?xml version="1.0" encoding="utf-8"?&gt;</div><div class="line"><span class="tag">&lt;<span class="name">OfficeApp</span> <span class="attr">xmlns</span>=<span class="string">"http://schemas.microsoft.com/office/appforoffice/1.1"</span> </span></div><div class="line"><span class="tag">    <span class="attr">xmlns:xsi</span>=<span class="string">"http://www.w3.org/2001/XMLSchema-instance"</span> </span></div><div class="line"><span class="tag">    <span class="attr">xsi:type</span>=<span class="string">"TaskPaneApp"</span>&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">Id</span>&gt;</span>08afd7fe-1631-42f4-84f1-5ba51e2d435a<span class="tag">&lt;/<span class="name">Id</span>&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">Version</span>&gt;</span>1.0<span class="tag">&lt;/<span class="name">Version</span>&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">ProviderName</span>&gt;</span>mnstory.net<span class="tag">&lt;/<span class="name">ProviderName</span>&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">DefaultLocale</span>&gt;</span>zh-CN<span class="tag">&lt;/<span class="name">DefaultLocale</span>&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">DisplayName</span> <span class="attr">DefaultValue</span>=<span class="string">"Clean Html Export"</span>/&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">Description</span> <span class="attr">DefaultValue</span>=<span class="string">"Export contents as Html format which fit my blog"</span>/&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">IconUrl</span> <span class="attr">DefaultValue</span>=</span></div><div class="line"><span class="tag">    "<span class="attr">http:</span>//<span class="attr">officeimg.vo.msecnd.net</span>/<span class="attr">_layouts</span>/<span class="attr">images</span>/<span class="attr">general</span>/<span class="attr">office_logo.jpg</span>"/&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">Hosts</span>&gt;</span></div><div class="line">    <span class="tag">&lt;<span class="name">Host</span> <span class="attr">Name</span>=<span class="string">"Document"</span>/&gt;</span></div><div class="line">    <span class="tag">&lt;<span class="name">Host</span> <span class="attr">Name</span>=<span class="string">"Workbook"</span>/&gt;</span></div><div class="line">  <span class="tag">&lt;/<span class="name">Hosts</span>&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">DefaultSettings</span>&gt;</span></div><div class="line">    <span class="tag">&lt;<span class="name">SourceLocation</span> <span class="attr">DefaultValue</span>=<span class="string">"\\mypc\CleanHtmlExport\export.html"</span>/&gt;</span></div><div class="line">  <span class="tag">&lt;/<span class="name">DefaultSettings</span>&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">Permissions</span>&gt;</span>ReadWriteDocument<span class="tag">&lt;/<span class="name">Permissions</span>&gt;</span></div><div class="line"><span class="tag">&lt;/<span class="name">OfficeApp</span>&gt;</span></div></pre></td></tr></table></figure></p>
+<a id="more"></a>
+<p>其中最重要的一条就是SourceLocation用于指定了入口html，这里的位置选择网络位置，例如我的是共享本地目录。 入口html就是普通的html，唯一需要的是引入office的辅助脚本：<a href="https://appsforoffice.microsoft.com/lib/1/hosted/office.js" target="_blank" rel="external">https://appsforoffice.microsoft.com/lib/1/hosted/office.js</a><br>JS的入口函数是：<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">office.initialize = <span class="function"><span class="keyword">function</span> (<span class="params">reason</span>) </span>&#123;</div><div class="line">    $(<span class="built_in">document</span>).ready(<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</div><div class="line">        <span class="comment">// Use this to check whether the API is supported in the Word client.</span></div><div class="line">        <span class="keyword">if</span> (Office.context.requirements.isSetSupported(<span class="string">'WordApi'</span>, <span class="number">1.1</span>)) &#123;</div><div class="line">            这里加入你的代码</div><div class="line">        &#125; <span class="keyword">else</span> &#123;</div><div class="line">            notice(<span class="string">'warning'</span>, <span class="string">'This code requires Word 2016 or greater.'</span>);</div><div class="line">        &#125;</div><div class="line">    &#125;);</div><div class="line">&#125;;</div></pre></td></tr></table></figure></p>
+<p>具体office提供API可以参考：<a href="https://dev.office.com/reference/add-ins/word/document" target="_blank" rel="external">https://dev.office.com/reference/add-ins/word/document</a><br>代码写好后，需要加载插件，我用的是office 2016，在“文件/选项/信任中心/受信任的加载目录”里面添加共享程序所在的共享路径：<br><img src="/2016/05/22/first-look-at-office-web-addon/image001.png" alt="image001"><br>然后在“插入“选项卡的“我的加载项”中，插入扫描到的加载项，例如我的就是Clean Html Export：<br><img src="/2016/05/22/first-look-at-office-web-addon/image003.png" alt="image003"><br>接下来，你就可以使用功能了：<br><img src="/2016/05/22/first-look-at-office-web-addon/image005.png" alt="image005"></p>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ol>
+<li>Document object (JavaScript API for Word) <a href="http://dev.office.com/docs/add-ins/word/word-add-ins-programming-overview" target="_blank" rel="external">http://dev.office.com/docs/add-ins/word/word-add-ins-programming-overview</a></li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/插件/" rel="tag"># 插件</a>
+          
+            <a href="/tags/Office/" rel="tag"># Office</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/05/23/ovirt-install-guide/" rel="prev" title="oVirt安装体验（CentOS 7.2）">
+                oVirt安装体验（CentOS 7.2） <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">33</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">50</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#参考资料"><span class="nav-number">1.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>
