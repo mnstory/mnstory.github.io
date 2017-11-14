@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="ElasticSearch,性能优化," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="假设一次查询某表，query的时候term里有两个主要字段，rule_minor_type和rule_major_type，这两个字段取值不同，表示不同类型的数据，例如，我们取一组值，叫做风险数据，风险数据相对于原表来说，数据量要小很多（原表可能是1一条数据，而风险数据只有1百万条）。 我们想要验证，提前将这部分风险数据分到单独的表，能否加快查询速度，如果可以，可以加快多少？">
+<meta name="keywords" content="ElasticSearch,性能优化">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Elasticsearch 数据分表性能验证">
+<meta property="og:url" content="http://mnstory.net/2017/10/17/elasticsearch-split-index-performance/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="假设一次查询某表，query的时候term里有两个主要字段，rule_minor_type和rule_major_type，这两个字段取值不同，表示不同类型的数据，例如，我们取一组值，叫做风险数据，风险数据相对于原表来说，数据量要小很多（原表可能是1一条数据，而风险数据只有1百万条）。 我们想要验证，提前将这部分风险数据分到单独的表，能否加快查询速度，如果可以，可以加快多少？">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2017/10/17/elasticsearch-split-index-performance/cerebro.png">
+<meta property="og:image" content="http://mnstory.net/2017/10/17/elasticsearch-split-index-performance/result-chart.png">
+<meta property="og:updated_time" content="2017-11-14T14:29:36.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Elasticsearch 数据分表性能验证">
+<meta name="twitter:description" content="假设一次查询某表，query的时候term里有两个主要字段，rule_minor_type和rule_major_type，这两个字段取值不同，表示不同类型的数据，例如，我们取一组值，叫做风险数据，风险数据相对于原表来说，数据量要小很多（原表可能是1一条数据，而风险数据只有1百万条）。 我们想要验证，提前将这部分风险数据分到单独的表，能否加快查询速度，如果可以，可以加快多少？">
+<meta name="twitter:image" content="http://mnstory.net/2017/10/17/elasticsearch-split-index-performance/cerebro.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2017/10/17/elasticsearch-split-index-performance/"/>
+
+
+
+
+
+  <title>Elasticsearch 数据分表性能验证 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/10/17/elasticsearch-split-index-performance/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">Elasticsearch 数据分表性能验证</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-17T13:00:00+00:00">
+                2017-10-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>假设一次查询某表，query的时候term里有两个主要字段，rule_minor_type和rule_major_type，这两个字段取值不同，表示不同类型的数据，例如，我们取一组值，叫做风险数据，风险数据相对于原表来说，数据量要小很多（原表可能是1一条数据，而风险数据只有1百万条）。</p>
+<p>我们想要验证，提前将这部分风险数据分到单独的表，能否加快查询速度，如果可以，可以加快多少？<br><a id="more"></a><br>要做上面的验证，主要使用的API是reindex API，API用法请参考<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-reindex.html" target="_blank" rel="external">官网</a>，你可以用curl来发送RESTFul API请求，但是命令行操作起来不太方便，我们之前介绍过Elasticsearch plugin <a href="https://mnstory.net/2017/09/27/install-elasticsearch-and-plugins/">cerebro的安装</a>，今天我们用cerebro来发送API请求，因为我的Elasticsearch是配置在其他机器的，之前也没有开远程访问和cors支持，需要按照上面文章所说，开启cors支持，然后浏览cerebro所在主机的9000端口，输入Elasticsearch服务器的访问地址，打开REST窗口即可使用：<br><img src="/2017/10/17/elasticsearch-split-index-performance/cerebro.png" alt="cerebro"><br><!--
+c=/home/fantom/party/elasticsearch/config/elasticsearch.yml; 
+grep -v "^#" $c | grep http.cors.enabled; 
+if [ $? -ne 0 ]; then 
+    echo "http.cors.enabled: true\nhttp.cors.allow-origin: \"*\"\nnetwork.host: 0.0.0.0" >> $c; 
+    psp -k "java .*elasticsearch"; 
+fi
+--></p>
+<h1 id="原查询"><a href="#原查询" class="headerlink" title="原查询"></a>原查询</h1><p>原来查询7天数据，条件如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div></pre></td><td class="code"><pre><div class="line">GET </div><div class="line">test-2017-09-21,test-2017-09-22,test-2017-09-23,test-2017-09-24,test-2017-09-25,test-2017-09-26,test-2017-09-27/_search</div><div class="line">&#123;</div><div class="line">  &quot;query&quot;: &#123;</div><div class="line">    &quot;constant_score&quot;: &#123;</div><div class="line">      &quot;filter&quot;: &#123;</div><div class="line">        &quot;bool&quot;: &#123;</div><div class="line">          &quot;must&quot;: [</div><div class="line">            &#123;</div><div class="line">              &quot;range&quot;: &#123;</div><div class="line">                &quot;record_time&quot;: &#123;</div><div class="line">                  &quot;gte&quot;: 1505923200,</div><div class="line">                  &quot;lte&quot;: 1506527999</div><div class="line">                &#125;</div><div class="line">              &#125;</div><div class="line">            &#125;,</div><div class="line">            &#123;</div><div class="line">              &quot;term&quot;: &#123;</div><div class="line">                &quot;rule_minor_type&quot;: 40</div><div class="line">              &#125;</div><div class="line">            &#125;,</div><div class="line">            &#123;</div><div class="line">              &quot;term&quot;: &#123;</div><div class="line">                &quot;rule_major_type&quot;: 1</div><div class="line">              &#125;</div><div class="line">            &#125;,</div><div class="line">            &#123;</div><div class="line">              &quot;term&quot;: &#123;</div><div class="line">                &quot;exclude_type&quot;: 0</div><div class="line">              &#125;</div><div class="line">            &#125;,</div><div class="line">          ]</div><div class="line">        &#125;</div><div class="line">      &#125;</div><div class="line">    &#125;</div><div class="line">  &#125;,</div><div class="line">  &quot;aggs&quot;: &#123;</div><div class="line">    &quot;total_count&quot;: &#123;</div><div class="line">      &quot;cardinality&quot;: &#123;</div><div class="line">        &quot;script&quot;: &#123;</div><div class="line">          &quot;inline&quot;: &quot;doc[&apos;src_ip&apos;].value + &apos;|&apos; + doc[&apos;src_branch_id&apos;].value&quot;,</div><div class="line">          &quot;lang&quot;: &quot;painless&quot;</div><div class="line">        &#125;,</div><div class="line">        &quot;precision_threshold&quot;: 5000</div><div class="line">      &#125;</div><div class="line">    &#125;</div><div class="line">  &#125;,</div><div class="line">  &quot;size&quot;: 0</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>返回结果为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">  &quot;took&quot;: 663,</div><div class="line">  &quot;timed_out&quot;: false,</div><div class="line">  &quot;_shards&quot;: &#123;</div><div class="line">    &quot;total&quot;: 7,</div><div class="line">    &quot;successful&quot;: 7,</div><div class="line">    &quot;failed&quot;: 0</div><div class="line">  &#125;,</div><div class="line">  &quot;hits&quot;: &#123;</div><div class="line">    &quot;total&quot;: 2826534,</div><div class="line">    &quot;max_score&quot;: 0,</div><div class="line">    &quot;hits&quot;: [</div><div class="line"></div><div class="line">    ]</div><div class="line">  &#125;,</div><div class="line">  &quot;aggregations&quot;: &#123;</div><div class="line">    &quot;total_count&quot;: &#123;</div><div class="line">      &quot;value&quot;: 4688</div><div class="line">    &#125;</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>这个耗时并不准确，因为有Cache。</p>
+<p>我们先看看，这几张表的总数据量是多少：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">GET</div><div class="line">test-2017-09-21,test-2017-09-22,test-2017-09-23,test-2017-09-24,test-2017-09-25,test-2017-09-26,test-2017-09-27/_search</div><div class="line">&#123;</div><div class="line">    &quot;query&quot;: &#123;</div><div class="line">        &quot;match_all&quot;: &#123;&#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>返回结果为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">  &quot;took&quot;: 637,</div><div class="line">  &quot;timed_out&quot;: false,</div><div class="line">  &quot;_shards&quot;: &#123;</div><div class="line">    &quot;total&quot;: 7,</div><div class="line">    &quot;successful&quot;: 7,</div><div class="line">    &quot;failed&quot;: 0</div><div class="line">  &#125;,</div><div class="line">  &quot;hits&quot;: &#123;</div><div class="line">    &quot;total&quot;: 608212533,</div><div class="line">    &quot;max_score&quot;: 1,</div><div class="line">    &quot;hits&quot;:</div><div class="line">    ...</div></pre></td></tr></table></figure></p>
+<p>好了，原本是，6亿条(608212533)总数据，风险数据为280万条(2826534)。</p>
+<h1 id="重建索引"><a href="#重建索引" class="headerlink" title="重建索引"></a>重建索引</h1><p>重建索引的时候，我们一个索引一个索引的来，可以先看看，某个索引下的风险数据有多少条：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">GET</div><div class="line">test-2017-09-22/_search</div><div class="line">&#123;</div><div class="line">  &quot;query&quot;: &#123;</div><div class="line">    &quot;bool&quot;: &#123;</div><div class="line">      &quot;must&quot;: [</div><div class="line">        &#123;</div><div class="line">          &quot;term&quot;: &#123;</div><div class="line">            &quot;rule_minor_type&quot;: 40</div><div class="line">          &#125;</div><div class="line">        &#125;,</div><div class="line">        &#123;</div><div class="line">          &quot;term&quot;: &#123;</div><div class="line">            &quot;rule_major_type&quot;: 1</div><div class="line">          &#125;</div><div class="line">        &#125;</div><div class="line">      ]</div><div class="line">    &#125;</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>返回结果为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">  &quot;took&quot;: 152,</div><div class="line">  &quot;timed_out&quot;: false,</div><div class="line">  &quot;_shards&quot;: &#123;</div><div class="line">    &quot;total&quot;: 1,</div><div class="line">    &quot;successful&quot;: 1,</div><div class="line">    &quot;failed&quot;: 0</div><div class="line">  &#125;,</div><div class="line">  &quot;hits&quot;: &#123;</div><div class="line">    &quot;total&quot;: 381551,</div><div class="line">    &quot;max_score&quot;: 2,</div><div class="line">    &quot;hits&quot;: [</div><div class="line">      &#123;</div><div class="line">        &quot;_index&quot;: &quot;test-2017-09-22&quot;,</div><div class="line">        ...</div></pre></td></tr></table></figure></p>
+<p>可以看出，这个一个索引下的风险数据为38万条(381551)，有了这个数据，重建索引完成后，可以对照一下，是否条数一至，以检测索引创建是否正确。</p>
+<p>调用reindex之前，我们可以先创建索引，并设置索引的参数，例如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">PUT</div><div class="line">test-104-2017-11-11</div><div class="line">&#123;</div><div class="line">  &quot;mappings&quot;: &#123;</div><div class="line">    &quot;access&quot;: &#123;</div><div class="line">      &quot;include_in_all&quot;: false</div><div class="line">    &#125;</div><div class="line">  &#125;,</div><div class="line">  &quot;settings&quot;: &#123;</div><div class="line">    &quot;index&quot;: &#123;</div><div class="line">      &quot;refresh_interval&quot;: &quot;60s&quot;,</div><div class="line">      &quot;number_of_shards&quot;: &quot;1&quot;,</div><div class="line">      &quot;store&quot;: &#123;</div><div class="line">        &quot;type&quot;: &quot;mmapfs&quot;</div><div class="line">      &#125;,</div><div class="line">      &quot;number_of_replicas&quot;: &quot;0&quot;</div><div class="line">    &#125;</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>因为之前注册过test-*的模板，此时创建一个新index，自动会根据index名称，匹配上模板。当然，如果没有修改设置的需求，这个步骤可以不用，直接针对原索引做filter重建：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line">POST </div><div class="line">_reindex</div><div class="line">&#123;</div><div class="line">  &quot;source&quot;: &#123;</div><div class="line">    &quot;index&quot;: &quot;test-2017-09-27&quot;,</div><div class="line">    &quot;query&quot;: &#123;</div><div class="line">      &quot;bool&quot;: &#123;</div><div class="line">        &quot;must&quot;: [</div><div class="line">          &#123;</div><div class="line">            &quot;term&quot;: &#123;</div><div class="line">              &quot;rule_minor_type&quot;: 40</div><div class="line">            &#125;</div><div class="line">          &#125;,</div><div class="line">          &#123;</div><div class="line">            &quot;term&quot;: &#123;</div><div class="line">              &quot;rule_major_type&quot;: 1</div><div class="line">            &#125;</div><div class="line">          &#125;</div><div class="line">        ]</div><div class="line">      &#125;</div><div class="line">    &#125;</div><div class="line">  &#125;,</div><div class="line">  &quot;dest&quot;: &#123;</div><div class="line">    &quot;index&quot;: &quot;test-104-2017-09-27&quot;</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>返回结果为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">  &quot;took&quot;: 410,</div><div class="line">  &quot;timed_out&quot;: false,</div><div class="line">  &quot;total&quot;: 1250,</div><div class="line">  &quot;updated&quot;: 0,</div><div class="line">  &quot;created&quot;: 1250,</div><div class="line">  &quot;deleted&quot;: 0,</div><div class="line">  &quot;batches&quot;: 2,</div><div class="line">  &quot;version_conflicts&quot;: 0,</div><div class="line">  &quot;noops&quot;: 0,</div><div class="line">  &quot;retries&quot;: &#123;</div><div class="line">    &quot;bulk&quot;: 0,</div><div class="line">    &quot;search&quot;: 0</div><div class="line">  &#125;,</div><div class="line">  &quot;throttled_millis&quot;: 0,</div><div class="line">  &quot;requests_per_second&quot;: -1,</div><div class="line">  &quot;throttled_until_millis&quot;: 0,</div><div class="line">  &quot;failures&quot;: [</div><div class="line"></div><div class="line">  ]</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>如此重复，将不同日期的索引全部 reindex：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"># curl http://127.0.0.1:9200/_cat/indices?v 2&gt;/dev/null | grep &quot;test-.*2017-09-2[1-7]&quot; | sort -k 3</div><div class="line">green  open   test-104-2017-09-22      b_9xSxHgTNO49t4Rjn62Pw   1   0     381551            0    138.6mb        138.6mb</div><div class="line">green  open   test-104-2017-09-23      tOopBSYdTYGyv9BdsuITrA   1   0      32800            0     12.6mb         12.6mb</div><div class="line">green  open   test-104-2017-09-24      2_WMS_qwQ0qKWKTiN80xig   1   0     939358            0      335mb          335mb</div><div class="line">green  open   test-104-2017-09-25      04DGhnIKSAKteI1wGX4KXg   1   0     836475            0    299.8mb        299.8mb</div><div class="line">green  open   test-104-2017-09-26      UqWD6MSFS_ytTUm69JYKHA   1   0     635100            0    228.3mb        228.3mb</div><div class="line">green  open   test-104-2017-09-27      8lADVH3NTMmZ28Qq-xq75w   1   0       1250            0    521.3kb        521.3kb</div><div class="line">green  open   test-2017-09-21          oUN09yl7SGq-Gv9C71ZtsQ   1   0     178000            0     63.9mb         63.9mb</div><div class="line">green  open   test-2017-09-22          lwTULw_YSiSsY6MtVM4p_A   1   0   80708969            0     26.9gb         26.9gb</div><div class="line">green  open   test-2017-09-23          g60GbCCcT1mqY6AhTBM6zQ   1   0    6098400            0      1.9gb          1.9gb</div><div class="line">green  open   test-2017-09-24          wV-Jr-UaSYGpiBj-BJPbVw   1   0  208154658            0     70.4gb         70.4gb</div><div class="line">green  open   test-2017-09-25          SMaa0TDASJeDd_nESROOjQ   1   0  176896598            0     60.3gb         60.3gb</div><div class="line">green  open   test-2017-09-26          C3pWVq2CTuiF1UnV-wjcSw   1   0  136174658            0     45.1gb         45.1gb</div><div class="line">green  open   test-2017-09-27          4GojoCCHTC6wbDxFbog7cw   1   0       1250            0    565.9kb        565.9kb</div></pre></td></tr></table></figure></p>
+<h1 id="新查询"><a href="#新查询" class="headerlink" title="新查询"></a>新查询</h1><p>从新创建的风险表查询数据：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div></pre></td><td class="code"><pre><div class="line">GET </div><div class="line">test-104-2017-09-22,test-104-2017-09-23,test-104-2017-09-24,test-104-2017-09-25,test-104-2017-09-26,test-104-2017-09-27/_search</div><div class="line">&#123;</div><div class="line">  &quot;query&quot;: &#123;</div><div class="line">    &quot;constant_score&quot;: &#123;</div><div class="line">      &quot;filter&quot;: &#123;</div><div class="line">        &quot;bool&quot;: &#123;</div><div class="line">          &quot;must&quot;: [</div><div class="line">            &#123;</div><div class="line">              &quot;range&quot;: &#123;</div><div class="line">                &quot;record_time&quot;: &#123;</div><div class="line">                  &quot;gte&quot;: 1505923200,</div><div class="line">                  &quot;lte&quot;: 1506527999</div><div class="line">                &#125;</div><div class="line">              &#125;</div><div class="line">            &#125;,</div><div class="line">            &#123;</div><div class="line">              &quot;term&quot;: &#123;</div><div class="line">                &quot;exclude_type&quot;: 0</div><div class="line">              &#125;</div><div class="line">            &#125;,</div><div class="line">          ]</div><div class="line">        &#125;</div><div class="line">      &#125;</div><div class="line">    &#125;</div><div class="line">  &#125;,</div><div class="line">  &quot;aggs&quot;: &#123;</div><div class="line">    &quot;total_count&quot;: &#123;</div><div class="line">      &quot;cardinality&quot;: &#123;</div><div class="line">        &quot;script&quot;: &#123;</div><div class="line">          &quot;inline&quot;: &quot;doc[&apos;src_ip&apos;].value + &apos;|&apos; + doc[&apos;src_branch_id&apos;].value&quot;,</div><div class="line">          &quot;lang&quot;: &quot;painless&quot;</div><div class="line">        &#125;,</div><div class="line">        &quot;precision_threshold&quot;: 5000</div><div class="line">      &#125;</div><div class="line">    &#125;</div><div class="line">  &#125;,</div><div class="line">  &quot;size&quot;: 0</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>返回结果为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">  &quot;took&quot;: 577,</div><div class="line">  &quot;timed_out&quot;: false,</div><div class="line">  &quot;_shards&quot;: &#123;</div><div class="line">    &quot;total&quot;: 6,</div><div class="line">    &quot;successful&quot;: 6,</div><div class="line">    &quot;failed&quot;: 0</div><div class="line">  &#125;,</div><div class="line">  &quot;hits&quot;: &#123;</div><div class="line">    &quot;total&quot;: 2826534,</div><div class="line">    &quot;max_score&quot;: 0,</div><div class="line">    &quot;hits&quot;: [</div><div class="line"></div><div class="line">    ]</div><div class="line">  &#125;,</div><div class="line">  &quot;aggregations&quot;: &#123;</div><div class="line">    &quot;total_count&quot;: &#123;</div><div class="line">      &quot;value&quot;: 4688</div><div class="line">    &#125;</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h1 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h1><p>如果磁盘数据读取量不大，查询结果差异不大，反之，由于首次查询需要载入打量磁盘数据，所以首次查询差异明显：<br><img src="/2017/10/17/elasticsearch-split-index-performance/result-chart.png" alt="result-chart"></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/ElasticSearch/" rel="tag"># ElasticSearch</a>
+          
+            <a href="/tags/性能优化/" rel="tag"># 性能优化</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/10/16/use-opcache-to-accelerate-php/" rel="next" title="使用OPCache加速PHP字节码翻译">
+                <i class="fa fa-chevron-left"></i> 使用OPCache加速PHP字节码翻译
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/10/19/tmux/" rel="prev" title="TMux 安装">
+                TMux 安装 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">39</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">55</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#原查询"><span class="nav-number">1.</span> <span class="nav-text">原查询</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#重建索引"><span class="nav-number">2.</span> <span class="nav-text">重建索引</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#新查询"><span class="nav-number">3.</span> <span class="nav-text">新查询</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#结论"><span class="nav-number">4.</span> <span class="nav-text">结论</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

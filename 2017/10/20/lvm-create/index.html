@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="LVM,Striped," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="LVM的概念很简单，先要将物理卷加入LVM，并创建一个vg来管理物理卷，然后在vg上分逻辑分区叫lv，然后在逻辑分区上创建文件系统。 现状一般是先将创建，再讲缩减，由于实际项目原因，我反过来了，先将缩减，再讲创建，接上篇，我们的磁盘信息如下：12345678910111213141516host ~ # lsblk NAME          MAJ:MIN RM   SIZE RO TYPE M">
+<meta name="keywords" content="LVM,Striped">
+<meta property="og:type" content="article">
+<meta property="og:title" content="创建LVM条带">
+<meta property="og:url" content="http://mnstory.net/2017/10/20/lvm-create/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="LVM的概念很简单，先要将物理卷加入LVM，并创建一个vg来管理物理卷，然后在vg上分逻辑分区叫lv，然后在逻辑分区上创建文件系统。 现状一般是先将创建，再讲缩减，由于实际项目原因，我反过来了，先将缩减，再讲创建，接上篇，我们的磁盘信息如下：12345678910111213141516host ~ # lsblk NAME          MAJ:MIN RM   SIZE RO TYPE M">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2017/10/20/lvm-create/8k.png">
+<meta property="og:image" content="http://mnstory.net/2017/10/20/lvm-create/1M.png">
+<meta property="og:updated_time" content="2017-11-14T14:16:05.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="创建LVM条带">
+<meta name="twitter:description" content="LVM的概念很简单，先要将物理卷加入LVM，并创建一个vg来管理物理卷，然后在vg上分逻辑分区叫lv，然后在逻辑分区上创建文件系统。 现状一般是先将创建，再讲缩减，由于实际项目原因，我反过来了，先将缩减，再讲创建，接上篇，我们的磁盘信息如下：12345678910111213141516host ~ # lsblk NAME          MAJ:MIN RM   SIZE RO TYPE M">
+<meta name="twitter:image" content="http://mnstory.net/2017/10/20/lvm-create/8k.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2017/10/20/lvm-create/"/>
+
+
+
+
+
+  <title>创建LVM条带 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/10/20/lvm-create/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">创建LVM条带</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-20T15:00:00+00:00">
+                2017-10-20
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>LVM的概念很简单，先要将物理卷加入LVM，并创建一个vg来管理物理卷，然后在vg上分逻辑分区叫lv，然后在逻辑分区上创建文件系统。</p>
+<h1 id="现状"><a href="#现状" class="headerlink" title="现状"></a>现状</h1><p>一般是先将创建，再讲缩减，由于实际项目原因，我反过来了，先将缩减，再讲创建，接上篇，我们的磁盘信息如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">host ~ # lsblk </div><div class="line">NAME          MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT</div><div class="line">sda             8:0    0 119.2G  0 disk </div><div class="line">|-sda1          8:1    0   500M  0 part /boot</div><div class="line">|-sda2          8:2    0    50G  0 part /home/myvg</div><div class="line">|-sda3          8:3    0    25G  0 part /</div><div class="line">|-sda4          8:4    0     1K  0 part </div><div class="line">|-sda5          8:5    0    20G  0 part /home/myvg/var/logs</div><div class="line">|-sda6          8:6    0    10G  0 part /home/myvg/var/tmp</div><div class="line">|-sda7          8:7    0   9.9G  0 part /ac</div><div class="line">`-sda8          8:8    0   3.9G  0 part </div><div class="line">sdb             8:16   0 931.5G  0 disk </div><div class="line">sdc             8:32   0   1.8T  0 disk </div><div class="line">sdd             8:48   0   3.7T  0 disk </div><div class="line">`-myvg-data 253:0    0     3T  0 lvm  /data</div><div class="line">sde             8:64   0   1.8T  0 disk</div></pre></td></tr></table></figure></p>
+<a id="more"></a>
+<p>sda是系统盘，sdb sdc sde三块磁盘空着，没有使用，而sdd是做成了一个LVM分区。</p>
+<p>现在，我们准备将sdb, sdc, sde三块盘做成一个新的LVM分区，并做成条带化(striped)。</p>
+<h1 id="创建"><a href="#创建" class="headerlink" title="创建"></a>创建</h1><h2 id="pvcreate创建物理卷"><a href="#pvcreate创建物理卷" class="headerlink" title="pvcreate创建物理卷"></a>pvcreate创建物理卷</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">host ~ # pvcreate /dev/sdb /dev/sdc /dev/sde</div><div class="line">  Physical volume &quot;/dev/sdb&quot; successfully created</div><div class="line">  Physical volume &quot;/dev/sdc&quot; successfully created</div><div class="line">  Physical volume &quot;/dev/sde&quot; successfully created</div></pre></td></tr></table></figure>
+<p>创建完后，用pvdisplay就可以看到这几块盘的信息。</p>
+<h2 id="vgcreate创建卷组"><a href="#vgcreate创建卷组" class="headerlink" title="vgcreate创建卷组"></a>vgcreate创建卷组</h2><p>现在将几个PV一起组建一个新的VG，VG名字叫做data2：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">host ~ # vgcreate data2 /dev/sdb /dev/sdc /dev/sde</div><div class="line">  Volume group &quot;data2&quot; successfully created</div></pre></td></tr></table></figure></p>
+<h2 id="lvcreate创建逻辑分区"><a href="#lvcreate创建逻辑分区" class="headerlink" title="lvcreate创建逻辑分区"></a>lvcreate创建逻辑分区</h2><p>接下来，创建逻辑分区，逻辑分区采用条带，底层使用3个PV，创建3T的卷。</p>
+<p>type参数，目前支持很多种类型，包括raid，thin等，我们测试条带使用striped参数，参数解释：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">--type SegmentType</div><div class="line">      Creates a logical volume with the specified segment type.  Supported types are: cache, cache-pool, error, linear, mirror, raid1, raid4, raid5_la, raid5_ls (= raid5), raid5_ra, raid5_rs, raid6_nc,  raid6_nr,  raid6_zr  (=  raid6),  raid10,  snapshot,</div><div class="line">      striped,  thin,  thin-pool  or  zero. </div><div class="line">-I, --stripesize StripeSize</div><div class="line">      Gives the number of kilobytes for the granularity of the stripes.</div><div class="line">      StripeSize must be 2^n (n = 2 to 9) for metadata in LVM1 format.  For metadata in LVM2 format, the stripe size may be a larger power of 2 but must not exceed the physical extent size.</div><div class="line">-i, --stripes Stripes</div><div class="line">      Gives  the  number of stripes.  This is equal to the number of physical volumes to scatter the logical volume.  When creating a RAID 4/5/6 logical volume, the extra devices which are necessary for parity are internally accounted for.  Specifying -i3</div><div class="line">      would use 3 devices for striped logical volumes, 4 devices for RAID 4/5, and 5 devices for RAID 6.  Alternatively, RAID 4/5/6 will stripe across all PVs in the volume group or all of the PVs specified if the -i argument is omitted.</div></pre></td></tr></table></figure></p>
+<p>因为sdb的大小只有931.5G，不到1T，平均分布不下3个1T，所以创建失败：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">host ~ # lvcreate -L 3T -i 3 -I 64 --type striped data2</div><div class="line">  Insufficient suitable allocatable extents for logical volume lvol0: 71031 more required</div></pre></td></tr></table></figure></p>
+<p>缩小一下，创建2.7T的卷：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">host ~ # lvcreate -L 2.7T -i 3 -I 64 --type striped data2</div><div class="line">  Rounding up size to full physical extent 2.70 TiB</div><div class="line">  Rounding size (707789 extents) up to stripe boundary size (707790 extents).</div><div class="line">  Logical volume &quot;lvol0&quot; created.</div></pre></td></tr></table></figure></p>
+<p>查看一下创建好的lv，这里显示了两个，第一个是之前创建的，非条带类型，我们只需要看 /dev/data2/lvol0 接口，第一个/dev/myvg/data可以用来对比看下有什么不同：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div></pre></td><td class="code"><pre><div class="line">host ~ # lvdisplay -m</div><div class="line">  --- Logical volume ---</div><div class="line">  LV Path                /dev/myvg/data</div><div class="line">  LV Name                data</div><div class="line">  VG Name                myvg</div><div class="line">  LV UUID                4YcW3O-NbZD-3zrR-olkO-CFQ9-xcJz-0vzYEZ</div><div class="line">  LV Write Access        read/write</div><div class="line">  LV Creation host, time localhost.localdomain, 2017-08-09 14:32:48 +0800</div><div class="line">  LV Status              available</div><div class="line">  # open                 1</div><div class="line">  LV Size                3.00 TiB</div><div class="line">  Current LE             786432</div><div class="line">  Segments               1</div><div class="line">  Allocation             inherit</div><div class="line">  Read ahead sectors     auto</div><div class="line">  - currently set to     256</div><div class="line">  Block device           253:0</div><div class="line">   </div><div class="line">  --- Segments ---</div><div class="line">  Logical extents 0 to 786431:</div><div class="line">    Type		linear</div><div class="line">    Physical volume	/dev/sdd</div><div class="line">    Physical extents	0 to 786431</div><div class="line">   </div><div class="line">   </div><div class="line">  --- Logical volume ---</div><div class="line">  LV Path                /dev/data2/lvol0</div><div class="line">  LV Name                lvol0</div><div class="line">  VG Name                data2</div><div class="line">  LV UUID                dobaVd-v9Fo-CS1l-t3Zf-YkJy-HCiz-7K8Oi1</div><div class="line">  LV Write Access        read/write</div><div class="line">  LV Creation host, time localhost.localdomain, 2017-11-16 12:07:01 +0800</div><div class="line">  LV Status              available</div><div class="line">  # open                 0</div><div class="line">  LV Size                2.70 TiB</div><div class="line">  Current LE             707790</div><div class="line">  Segments               1</div><div class="line">  Allocation             inherit</div><div class="line">  Read ahead sectors     auto</div><div class="line">  - currently set to     768</div><div class="line">  Block device           253:1</div><div class="line">   </div><div class="line">  --- Segments ---</div><div class="line">  Logical extents 0 to 707789:</div><div class="line">    Type		striped</div><div class="line">    Stripes		3</div><div class="line">    Stripe size		64.00 KiB</div><div class="line">    Stripe 0:</div><div class="line">      Physical volume	/dev/sdb</div><div class="line">      Physical extents	0 to 235929</div><div class="line">    Stripe 1:</div><div class="line">      Physical volume	/dev/sdc</div><div class="line">      Physical extents	0 to 235929</div><div class="line">    Stripe 2:</div><div class="line">      Physical volume	/dev/sde</div><div class="line">      Physical extents	0 to 235929</div></pre></td></tr></table></figure></p>
+<h2 id="mke2fs创建文件系统"><a href="#mke2fs创建文件系统" class="headerlink" title="mke2fs创建文件系统"></a>mke2fs创建文件系统</h2><p>创建文件系统，关闭惰性初始化：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line">host ~ # mke2fs -t ext4 -E lazy_itable_init=0,lazy_journal_init=0 /dev/data2/lvol0</div><div class="line">mke2fs 1.42.9 (28-Dec-2013)</div><div class="line">Filesystem label=</div><div class="line">OS type: Linux</div><div class="line">Block size=4096 (log=2)</div><div class="line">Fragment size=4096 (log=2)</div><div class="line">Stride=16 blocks, Stripe width=48 blocks</div><div class="line">181198848 inodes, 724776960 blocks</div><div class="line">36238848 blocks (5.00%) reserved for the super user</div><div class="line">First data block=0</div><div class="line">Maximum filesystem blocks=2873098240</div><div class="line">22119 block groups</div><div class="line">32768 blocks per group, 32768 fragments per group</div><div class="line">8192 inodes per group</div><div class="line">Superblock backups stored on blocks: </div><div class="line">        32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208, </div><div class="line">        4096000, 7962624, 11239424, 20480000, 23887872, 71663616, 78675968, </div><div class="line">        102400000, 214990848, 512000000, 550731776, 644972544</div><div class="line"></div><div class="line">Allocating group tables: done                            </div><div class="line">Writing inode tables: done                            </div><div class="line">Creating journal (32768 blocks): done</div><div class="line">Writing superblocks and filesystem accounting information: done</div></pre></td></tr></table></figure></p>
+<h2 id="挂载分区"><a href="#挂载分区" class="headerlink" title="挂载分区"></a>挂载分区</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">host ~ # mkdir /data2</div><div class="line">host ~ # mount -t ext4 -o rw,noatime,nodiratime,data=ordered,journal_async_commit,inode_readahead_blks=512 /dev/data2/lvol0 /data2</div><div class="line">host ~ # df -h</div><div class="line">Filesystem               Size  Used Avail Use% Mounted on</div><div class="line">/dev/mapper/myvg-data  3.0T  784G  2.1T  28% /data</div><div class="line">/dev/mapper/data2-lvol0  2.7T   89M  2.6T   1% /data2</div></pre></td></tr></table></figure>
+<h1 id="LVM条带测试"><a href="#LVM条带测试" class="headerlink" title="LVM条带测试"></a>LVM条带测试</h1><p>上面我们创建的LVM，为3块磁盘组成条带，简单对比下(dd测试是不专业的，但是大致能看出问题)和非条带的方式，其性能有和差异：</p>
+<p><img src="/2017/10/20/lvm-create/8k.png" alt="8k"></p>
+<p>上图为bs=8k的情况。</p>
+<ul>
+<li>1,2对比，3,4对比，发现不管几个并发进程，读IO在条带方式下，都比非条带快。同理，5,6对比，7,8对比，写IO也类似。</li>
+<li>1,3对比，2,4对比，发现并发读，性能下降非常明显，5,7对比，6,8对比，写IO也类似。</li>
+</ul>
+<p><img src="/2017/10/20/lvm-create/1M.png" alt="1M"></p>
+<p>上图为bs=1M的情况。</p>
+<ul>
+<li>和8k的情况对比，IO利用充分，吞吐量随着bs增大而增大，例如8k read为110MB/s， 1M read为187MB/s。</li>
+<li>和8k的情况对比，并发导致的性能下降没有8k时那么明显。</li>
+<li>bs足够大，磁盘的读写性能和条带底层磁盘个数成正比，但非线性叠加。</li>
+</ul>
+<h1 id="LVM条带优劣势分析"><a href="#LVM条带优劣势分析" class="headerlink" title="LVM条带优劣势分析"></a>LVM条带优劣势分析</h1><ul>
+<li><p>LVM条带的优势：</p>
+<ol>
+<li>可以极大提高磁盘的IO性能。</li>
+<li>磁盘空间相比liner方式无减少。</li>
+</ol>
+</li>
+<li><p>LVM条带劣势：</p>
+<ol>
+<li>一块磁盘坏，所有数据全坏。<br> 为什么不做RAID5 OR RAID10？<br> 由于没有RAID卡，软RAID方案或者LVM目前已经支持的RAID方案，软RAID5的计算放到了CPU上，会加大CPU负担，而RAID10的方案太浪费空间，都不是很好的方案，加之同等磁盘数量下冗余RAID的性能根本就不如条带。</li>
+<li>扩容难度加大（需要一次加入之前PV数量的磁盘或分区）。</li>
+<li>依靠软件做负载，性能不如RAID卡，性能非线性增长。</li>
+</ol>
+</li>
+</ul>
+<p>磁盘IO分布相对均匀，如果某块磁盘性能差一些，那IO UTIL会高，但速度维持一致。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/LVM/" rel="tag"># LVM</a>
+          
+            <a href="/tags/Striped/" rel="tag"># Striped</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/10/20/lvm-reduce/" rel="next" title="LVM缩容">
+                <i class="fa fa-chevron-left"></i> LVM缩容
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/11/14/qemu-balloon-damage-file-cache/" rel="prev" title="内存气泡导致文件损坏错误分析">
+                内存气泡导致文件损坏错误分析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">39</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">55</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#现状"><span class="nav-number">1.</span> <span class="nav-text">现状</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#创建"><span class="nav-number">2.</span> <span class="nav-text">创建</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#pvcreate创建物理卷"><span class="nav-number">2.1.</span> <span class="nav-text">pvcreate创建物理卷</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#vgcreate创建卷组"><span class="nav-number">2.2.</span> <span class="nav-text">vgcreate创建卷组</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#lvcreate创建逻辑分区"><span class="nav-number">2.3.</span> <span class="nav-text">lvcreate创建逻辑分区</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mke2fs创建文件系统"><span class="nav-number">2.4.</span> <span class="nav-text">mke2fs创建文件系统</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#挂载分区"><span class="nav-number">2.5.</span> <span class="nav-text">挂载分区</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#LVM条带测试"><span class="nav-number">3.</span> <span class="nav-text">LVM条带测试</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#LVM条带优劣势分析"><span class="nav-number">4.</span> <span class="nav-text">LVM条带优劣势分析</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

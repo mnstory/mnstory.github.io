@@ -242,6 +242,757 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/11/14/qemu-balloon-damage-file-cache/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/11/14/qemu-balloon-damage-file-cache/" itemprop="url">内存气泡导致文件损坏错误分析</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-11-14T21:00:00+08:00">
+                2017-11-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>今天测试发现，升级新包后，原来可以插入Elasticsearch的数据，插入不了了，具体错误，我缩减到了一行代码，如下，可重现：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">python -c &quot;from pandas.formats.format import detect_console_encoding&quot;</div></pre></td></tr></table></figure></p>
+<p>输出错误：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">  File &quot;/home/fantom/share/Python-2.7/lib/site-packages/pandas/__init__.py&quot;, line 37, in &lt;module&gt;</div><div class="line">    import pandas.core.config_init</div><div class="line">  File &quot;/home/fantom/share/Python-2.7/lib/site-packages/pandas/core/config_init.py&quot;, line 18, in &lt;module&gt;</div><div class="line">    from pandas.formats.format import detect_console_encoding</div><div class="line">  File &quot;/home/fantom/share/Python-2.7/lib/site-packages/pandas/formats/format.py&quot;, line 13, in &lt;module&gt;</div><div class="line">    from pandas.types.missing import isnull, notnull</div><div class="line">  File &quot;/home/fantom/share/Python-2.7/lib/site-packages/pandas/types/missing.py&quot;, line 12, in &lt;module&gt;</div><div class="line">    from .common import (is_string_dtype, is_datetimelike,</div><div class="line">  File &quot;/home/fantom/share/Python-2.7/lib/site-packages/pandas/types/common.py&quot;, line 8, in &lt;module&gt;</div><div class="line">    from pandas import lib, algos</div><div class="line">  File &quot;pandas/algos.pyx&quot;, line 1, in init pandas.algos (pandas/algos.c:155772)</div><div class="line">SystemError: Negative size passed to PyString_FromStringAndSize</div></pre></td></tr></table></figure></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/11/14/qemu-balloon-damage-file-cache/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/10/20/lvm-create/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/10/20/lvm-create/" itemprop="url">创建LVM条带</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-20T23:00:00+08:00">
+                2017-10-20
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>LVM的概念很简单，先要将物理卷加入LVM，并创建一个vg来管理物理卷，然后在vg上分逻辑分区叫lv，然后在逻辑分区上创建文件系统。</p>
+<h1 id="现状"><a href="#现状" class="headerlink" title="现状"></a>现状</h1><p>一般是先将创建，再讲缩减，由于实际项目原因，我反过来了，先将缩减，再讲创建，接上篇，我们的磁盘信息如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">host ~ # lsblk </div><div class="line">NAME          MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT</div><div class="line">sda             8:0    0 119.2G  0 disk </div><div class="line">|-sda1          8:1    0   500M  0 part /boot</div><div class="line">|-sda2          8:2    0    50G  0 part /home/myvg</div><div class="line">|-sda3          8:3    0    25G  0 part /</div><div class="line">|-sda4          8:4    0     1K  0 part </div><div class="line">|-sda5          8:5    0    20G  0 part /home/myvg/var/logs</div><div class="line">|-sda6          8:6    0    10G  0 part /home/myvg/var/tmp</div><div class="line">|-sda7          8:7    0   9.9G  0 part /ac</div><div class="line">`-sda8          8:8    0   3.9G  0 part </div><div class="line">sdb             8:16   0 931.5G  0 disk </div><div class="line">sdc             8:32   0   1.8T  0 disk </div><div class="line">sdd             8:48   0   3.7T  0 disk </div><div class="line">`-myvg-data 253:0    0     3T  0 lvm  /data</div><div class="line">sde             8:64   0   1.8T  0 disk</div></pre></td></tr></table></figure></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/10/20/lvm-create/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/10/20/lvm-reduce/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/10/20/lvm-reduce/" itemprop="url">LVM缩容</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-20T22:00:00+08:00">
+                2017-10-20
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>LVM可动态扩容，也可以缩容，我们直接讲缩容部分，缩容前，肯定是有环境配置成了LVM，我们看下环境的目前现状。</p>
+<h1 id="现状"><a href="#现状" class="headerlink" title="现状"></a>现状</h1><p>看看当前的磁盘信息：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">host ~ # lsblk </div><div class="line">NAME          MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT</div><div class="line">sda             8:0    0 119.2G  0 disk </div><div class="line">|-sda1          8:1    0   500M  0 part /boot</div><div class="line">|-sda2          8:2    0    50G  0 part /home/myvg</div><div class="line">|-sda3          8:3    0    25G  0 part /</div><div class="line">|-sda4          8:4    0     1K  0 part </div><div class="line">|-sda5          8:5    0    20G  0 part /home/myvg/var/logs</div><div class="line">|-sda6          8:6    0    10G  0 part /home/myvg/var/tmp</div><div class="line">|-sda7          8:7    0   9.9G  0 part /ac</div><div class="line">`-sda8          8:8    0   3.9G  0 part </div><div class="line">sdb             8:16   0 931.5G  0 disk </div><div class="line">`-myvg-data 253:0    0   8.2T  0 lvm  /data</div><div class="line">sdc             8:32   0   1.8T  0 disk </div><div class="line">`-myvg-data 253:0    0   8.2T  0 lvm  /data</div><div class="line">sdd             8:48   0   3.7T  0 disk </div><div class="line">`-myvg-data 253:0    0   8.2T  0 lvm  /data</div><div class="line">sde             8:64   0   1.8T  0 disk </div><div class="line">`-myvg-data 253:0    0   8.2T  0 lvm  /data</div></pre></td></tr></table></figure></p>
+<p>可以看出sdb, sdc, sdd, sde 组成了一个lvm 挂载到/data上。<br></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/10/20/lvm-reduce/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/10/19/tmux/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/10/19/tmux/" itemprop="url">TMux 安装</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-19T21:00:00+08:00">
+                2017-10-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <h1 id="安装依赖-ncurses"><a href="#安装依赖-ncurses" class="headerlink" title="安装依赖 ncurses"></a>安装依赖 ncurses</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">do ~/tmux # yum -y install ncurses-devel</div></pre></td></tr></table></figure>
+<h1 id="安装依赖-libevent"><a href="#安装依赖-libevent" class="headerlink" title="安装依赖 libevent"></a>安装依赖 libevent</h1><p>官网 <a href="http://libevent.org/" target="_blank" rel="external">http://libevent.org/</a> 下载包 <a href="https://github.com/libevent/libevent/releases/download/release-2.1.8-stable/libevent-2.1.8-stable.tar.gz" target="_blank" rel="external">2.1.8-stable</a><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">do ~/tmux/libevent-2.1.8-stable # ./configure --prefix=/usr/local/libevent</div><div class="line">do ~/tmux/libevent-2.1.8-stable # make -j8</div><div class="line">do ~/tmux/libevent-2.1.8-stable # make install</div></pre></td></tr></table></figure></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/10/19/tmux/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/10/17/elasticsearch-split-index-performance/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/10/17/elasticsearch-split-index-performance/" itemprop="url">Elasticsearch 数据分表性能验证</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-17T21:00:00+08:00">
+                2017-10-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>假设一次查询某表，query的时候term里有两个主要字段，rule_minor_type和rule_major_type，这两个字段取值不同，表示不同类型的数据，例如，我们取一组值，叫做风险数据，风险数据相对于原表来说，数据量要小很多（原表可能是1一条数据，而风险数据只有1百万条）。</p>
+<p>我们想要验证，提前将这部分风险数据分到单独的表，能否加快查询速度，如果可以，可以加快多少？<br></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/10/17/elasticsearch-split-index-performance/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/10/16/use-opcache-to-accelerate-php/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/10/16/use-opcache-to-accelerate-php/" itemprop="url">使用OPCache加速PHP字节码翻译</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-16T21:00:00+08:00">
+                2017-10-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>之前讲APCu的时候，提到过，OpCache是Zend专门为OpCode而提供的缓存插件，可以加速从源文件到字节码的生成过程。</p>
+<h1 id="安装OPCache"><a href="#安装OPCache" class="headerlink" title="安装OPCache"></a>安装OPCache</h1><p>据说此模块已经默认继承了，我也忘记我是自己编译的还是之前就有的，反正等我想用的时候，发现opcache.so已经存在extensions目录了。<br></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/10/16/use-opcache-to-accelerate-php/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/10/14/use-apcu-as-php-cache/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -730,772 +1481,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/09/27/install-elasticsearch-and-plugins/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="mnstory.net">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="码农故事">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h2 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2017/09/27/install-elasticsearch-and-plugins/" itemprop="url">ElasticSearch及其插件安装</a></h2>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-09-27T21:08:37+08:00">
-                2017-09-27
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <p>ElasticSearch，强大的数据搜索应用，可以当成数据库来使用，接下来演示如何安装和安装它的插件。</p>
-<h1 id="安装Elasticsearch"><a href="#安装Elasticsearch" class="headerlink" title="安装Elasticsearch"></a>安装Elasticsearch</h1><ol>
-<li>安装Java<br> Java安装就不多说了，记得安装完后设置JAVA_HOME环境变量，我使用的1.8版本。</li>
-<li>下载<br> 从 <a href="https://www.elastic.co/downloads/elasticsearch" target="_blank" rel="external">https://www.elastic.co/downloads/elasticsearch</a> 下载最新版本，解压，假设elasticsearch解压后的根目录为$ES_HOME。</li>
-<li><p>修改配置<br> 配置文件在 $ES_HOME/config/elasticsearch.yml，设置基本的集群名称，节点名称，和网络监听地址：</p>
- <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">cluster.name: myes</div><div class="line">node.name: n1</div><div class="line">network.host: 0.0.0.0</div></pre></td></tr></table></figure>
-</li>
-<li><p>运行<br> 进入$ES_HOME/bin目录，执行elasticsearch即可。</p></li></ol>
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2017/09/27/install-elasticsearch-and-plugins/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/09/21/recover-centos-after-tar-overwrite/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="mnstory.net">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="码农故事">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h2 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2017/09/21/recover-centos-after-tar-overwrite/" itemprop="url">tar解压冲掉软连接后恢复CentOS系统</a></h2>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-09-21T22:08:37+08:00">
-                2017-09-21
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <h1 id="问题来源"><a href="#问题来源" class="headerlink" title="问题来源"></a>问题来源</h1><p>tar解压文件，如果你的源目录是一个文件夹，目标地址有一个相同名字的文件夹（但它其实是一个软连接），那么目标地址里面的那个软连接会修改为你的源目录文件夹，而非从源目录里面将内容拷贝到目标软连接下面。</p>
-<p>例如，你有一个tar.gz压缩的安装包libedit.tar.gz<br>里面内容为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">./lib64/libedit.so.0.0.42</div><div class="line">./lib64/libedit.so.2 -&gt; libedit.so.0</div></pre></td></tr></table></figure></p>
-<p>现在我们使用:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">tar -zxvf libedit.tar.gz -C /</div></pre></td></tr></table></figure></p>
-<p>解压到根目录。<br></p>
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2017/09/21/recover-centos-after-tar-overwrite/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/09/21/elasticsearch-python-client-readtimeout/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="mnstory.net">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="码农故事">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h2 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2017/09/21/elasticsearch-python-client-readtimeout/" itemprop="url">ElasticSearch Python Client ReadTimeout</a></h2>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-09-21T21:08:37+08:00">
-                2017-09-21
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <h1 id="异常"><a href="#异常" class="headerlink" title="异常"></a>异常</h1><p>ElasticSearch Python Client API，Bulk操作时，当ElasticSearch服务端的性能不足时，Client可能会超时，打印类似异常：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="number">2017</span><span class="number">-09</span><span class="number">-27</span> <span class="number">12</span>:<span class="number">37</span>:<span class="number">42.228</span> <span class="number">25934</span>/MainThread W     base.py:<span class="number">96</span>   POST http://localhost:<span class="number">9200</span>/_bulk [status:N/A request:<span class="number">10.011</span>s]</div><div class="line">Traceback (most recent call last):</div><div class="line">  File <span class="string">"build/bdist.linux-x86_64/egg/elasticsearch/connection/http_urllib3.py"</span>, line <span class="number">114</span>, <span class="keyword">in</span> perform_request</div><div class="line">    response = self.pool.urlopen(method, url, body, retries=<span class="keyword">False</span>, headers=self.headers, **kw)</div><div class="line">  File <span class="string">"/home/fantom/share/Python-2.7/lib/site-packages/urllib3-1.21.1-py2.7.egg/urllib3/connectionpool.py"</span>, line <span class="number">649</span>, <span class="keyword">in</span> urlopen</div><div class="line">    _stacktrace=sys.exc_info()[<span class="number">2</span>])</div><div class="line">  File <span class="string">"/home/fantom/share/Python-2.7/lib/site-packages/urllib3-1.21.1-py2.7.egg/urllib3/util/retry.py"</span>, line <span class="number">333</span>, <span class="keyword">in</span> increment</div><div class="line">    <span class="keyword">raise</span> six.reraise(type(error), error, _stacktrace)</div><div class="line">  File <span class="string">"/home/fantom/share/Python-2.7/lib/site-packages/urllib3-1.21.1-py2.7.egg/urllib3/connectionpool.py"</span>, line <span class="number">600</span>, <span class="keyword">in</span> urlopen</div><div class="line">    chunked=chunked)</div><div class="line">  File <span class="string">"/home/fantom/share/Python-2.7/lib/site-packages/urllib3-1.21.1-py2.7.egg/urllib3/connectionpool.py"</span>, line <span class="number">388</span>, <span class="keyword">in</span> _make_request</div><div class="line">    self._raise_timeout(err=e, url=url, timeout_value=read_timeout)</div><div class="line">  File <span class="string">"/home/fantom/share/Python-2.7/lib/site-packages/urllib3-1.21.1-py2.7.egg/urllib3/connectionpool.py"</span>, line <span class="number">308</span>, <span class="keyword">in</span> _raise_timeout</div><div class="line">    <span class="keyword">raise</span> ReadTimeoutError(self, url, <span class="string">"Read timed out. (read timeout=%s)"</span> % timeout_value)</div><div class="line">ReadTimeoutError: HTTPConnectionPool(host=<span class="string">'localhost'</span>, port=<span class="number">9200</span>): Read timed out. (read timeout=<span class="number">10</span>)</div></pre></td></tr></table></figure></p>
-<p>简单的解决方法是加入timeout和重试相关参数（参考：<a href="https://stackoverflow.com/questions/25908484/how-to-fix-read-timed-out-in-elasticsearch）" target="_blank" rel="external">https://stackoverflow.com/questions/25908484/how-to-fix-read-timed-out-in-elasticsearch）</a><br></p>
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2017/09/21/elasticsearch-python-client-readtimeout/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/09/15/multi-process-parallel-functions-in-python/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="mnstory.net">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="码农故事">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h2 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2017/09/15/multi-process-parallel-functions-in-python/" itemprop="url">Python多进程并行函数对比</a></h2>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-09-15T21:08:37+08:00">
-                2017-09-15
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <p>Python因为解释器本身实现的比较挫（是的，就是代码写得挫），有一个GLI(Global Interpreter Lock)锁，导致多线程基本上是一个人装出来的几个分身，所以如果要并行，推荐使用多进程，有multiprocessing库，封装的还算简洁，但是毫无疑问，多进程通信成本会比多线程高一些。但是，有什么办法？用Python你还在乎性能？</p>
-<p>别人在不在乎，我是不知道，反正最近我们有个模块是非常在乎，用Python是因为历史原因和现实原因，有本事换成Go，你得问问那一大堆支撑库答应不答应。</p>
-<p>Python多进程并行，可调用map和apply，两个函数都有对应的ansy版本，ansy版本返回的是Result对象，此对象可用于后面等待结果。</p>
-<p>并行功能比较适合那些执行之间不存在时间依赖(可能后传人的会先执行)或者结果依赖(后面的执行依赖前面的输出状态)的模块。</p>
-<p>异步功能比较适合后续代码的执行不需要依赖当前步骤执行结果的模块，比如插入一条数据到数据库，插入过程比较耗时，可以异步执行，我的主进程可以继续执行处理构造下一条数据的工作。<br></p>
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2017/09/15/multi-process-parallel-functions-in-python/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/09/14/profile-python-with-pycharm/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="mnstory.net">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="码农故事">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h2 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2017/09/14/profile-python-with-pycharm/" itemprop="url">使用PyCharm Profile Python性能</a></h2>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-09-14T21:07:45+08:00">
-                2017-09-14
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <p>好的武器可以事半功倍。</p>
-<p>所以，我们定位Python模块性能，不需要绕弯子，直接用PyCharm自带的Profiles功能即可。</p>
-<h1 id="本地Profile"><a href="#本地Profile" class="headerlink" title="本地Profile"></a>本地Profile</h1><p>本地运行的Python代码，Profile就和Debug一样简单，具体操作是：</p>
-<ol>
-<li>工具栏上，点击”Profile ‘your project’”</li>
-<li>在Run窗口里面，导航按钮上有一个软盘的图标，是用来保存profile信息的，手动点击一下，会更新你当前的profile stats窗口数据(或者在新窗口展现)，同时在Run窗口会输出pstat文件保存的位置，例如：<br>Snapshot saved to /tmp/LogTransfer7.pstat</li>
-<li>如果profile stats窗口不小心关闭了，可以通过tools-&gt;Open CProfile snapshot打开一个pstat文件，比如刚才保存的。</li></ol>
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2017/09/14/profile-python-with-pycharm/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/09/11/port-c-to-python-with-swig/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="mnstory.net">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="码农故事">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h2 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2017/09/11/port-c-to-python-with-swig/" itemprop="url">利用SWIG帮助Python调用C模块</a></h2>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-09-11T23:07:45+08:00">
-                2017-09-11
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <p>我并不是写一个SWIG的介绍，而是记录之前的用法，以供后续查阅（更重视后续能快速复制粘贴，而不是原理介绍）。SWIG的内容，最好看文档： <a href="http://www.swig.org/Doc3.0/SWIGDocumentation.html" target="_blank" rel="external">http://www.swig.org/Doc3.0/SWIGDocumentation.html</a></p>
-<p>SWIG封装Python，需要链接Python的库文件和包含Python的头文件，可以通过命令安装，我是新编译的一个Python。<br></p>
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2017/09/11/port-c-to-python-with-swig/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -1545,7 +1530,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">33</span>
+                <span class="site-state-item-count">39</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -1558,7 +1543,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">50</span>
+                <span class="site-state-item-count">55</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>

@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Qemu,BUG," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="今天测试发现，升级新包后，原来可以插入Elasticsearch的数据，插入不了了，具体错误，我缩减到了一行代码，如下，可重现：1python -c &amp;quot;from pandas.formats.format import detect_console_encoding&amp;quot; 输出错误：123456789101112  File &amp;quot;/home/fantom/share/Pyt">
+<meta name="keywords" content="Qemu,BUG">
+<meta property="og:type" content="article">
+<meta property="og:title" content="内存气泡导致文件损坏错误分析">
+<meta property="og:url" content="http://mnstory.net/2017/11/14/qemu-balloon-damage-file-cache/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="今天测试发现，升级新包后，原来可以插入Elasticsearch的数据，插入不了了，具体错误，我缩减到了一行代码，如下，可重现：1python -c &amp;quot;from pandas.formats.format import detect_console_encoding&amp;quot; 输出错误：123456789101112  File &amp;quot;/home/fantom/share/Pyt">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2017/11/14/qemu-balloon-damage-file-cache/diff-so.png">
+<meta property="og:updated_time" content="2017-11-14T14:14:10.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="内存气泡导致文件损坏错误分析">
+<meta name="twitter:description" content="今天测试发现，升级新包后，原来可以插入Elasticsearch的数据，插入不了了，具体错误，我缩减到了一行代码，如下，可重现：1python -c &amp;quot;from pandas.formats.format import detect_console_encoding&amp;quot; 输出错误：123456789101112  File &amp;quot;/home/fantom/share/Pyt">
+<meta name="twitter:image" content="http://mnstory.net/2017/11/14/qemu-balloon-damage-file-cache/diff-so.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2017/11/14/qemu-balloon-damage-file-cache/"/>
+
+
+
+
+
+  <title>内存气泡导致文件损坏错误分析 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/11/14/qemu-balloon-damage-file-cache/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">内存气泡导致文件损坏错误分析</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-11-14T13:00:00+00:00">
+                2017-11-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>今天测试发现，升级新包后，原来可以插入Elasticsearch的数据，插入不了了，具体错误，我缩减到了一行代码，如下，可重现：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">python -c &quot;from pandas.formats.format import detect_console_encoding&quot;</div></pre></td></tr></table></figure></p>
+<p>输出错误：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">  File &quot;/home/fantom/share/Python-2.7/lib/site-packages/pandas/__init__.py&quot;, line 37, in &lt;module&gt;</div><div class="line">    import pandas.core.config_init</div><div class="line">  File &quot;/home/fantom/share/Python-2.7/lib/site-packages/pandas/core/config_init.py&quot;, line 18, in &lt;module&gt;</div><div class="line">    from pandas.formats.format import detect_console_encoding</div><div class="line">  File &quot;/home/fantom/share/Python-2.7/lib/site-packages/pandas/formats/format.py&quot;, line 13, in &lt;module&gt;</div><div class="line">    from pandas.types.missing import isnull, notnull</div><div class="line">  File &quot;/home/fantom/share/Python-2.7/lib/site-packages/pandas/types/missing.py&quot;, line 12, in &lt;module&gt;</div><div class="line">    from .common import (is_string_dtype, is_datetimelike,</div><div class="line">  File &quot;/home/fantom/share/Python-2.7/lib/site-packages/pandas/types/common.py&quot;, line 8, in &lt;module&gt;</div><div class="line">    from pandas import lib, algos</div><div class="line">  File &quot;pandas/algos.pyx&quot;, line 1, in init pandas.algos (pandas/algos.c:155772)</div><div class="line">SystemError: Negative size passed to PyString_FromStringAndSize</div></pre></td></tr></table></figure></p>
+<a id="more"></a>
+<h1 id="分析1-新改动导致？"><a href="#分析1-新改动导致？" class="headerlink" title="分析1 - 新改动导致？"></a>分析1 - 新改动导致？</h1><p>由于是新包升级后才发现的，导致将怀疑重心放到了新改动代码，但是SVN上的记录并没有相关联部分。对比了一部分python代码，发现新老版本并没有不同。</p>
+<h1 id="分析2-从报错源码入手"><a href="#分析2-从报错源码入手" class="headerlink" title="分析2 - 从报错源码入手"></a>分析2 - 从报错源码入手</h1><p>而报错的 pandas/algos.c:155772 位置，是个编译时工具合并的代码，这库是用包管理器安装的，不是自己编译的，只好从<a href="https://github.com/pandas-dev/pandas" target="_blank" rel="external">官网</a>找源码，algos.pyx倒是有，但是对应不上algos.c，咱们的编译环境也缺乏依赖，编译麻烦，从源码路径查找线索的方法，先放一放，看有没有更简单的方法。</p>
+<h1 id="分析3-怀疑加载的库不一样"><a href="#分析3-怀疑加载的库不一样" class="headerlink" title="分析3 - 怀疑加载的库不一样"></a>分析3 - 怀疑加载的库不一样</h1><p>因为是测试环境，可能会有人安装新库，或者修改环境变量，我输出sys.path，对比了一下，新旧环境是一致的:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">import sys; </div><div class="line">for i in sys.path: </div><div class="line">    print i</div></pre></td></tr></table></figure></p>
+<h1 id="分析4-调试python"><a href="#分析4-调试python" class="headerlink" title="分析4 - 调试python"></a>分析4 - 调试python</h1><p>用pdb跑语句：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">python -c &quot;import pdb; pdb.set_trace(); from pandas.formats.format import detect_console_encoding&quot;</div></pre></td></tr></table></figure></p>
+<p>用s进入，输出：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">&gt; /home/fantom/share/Python-2.7/lib/site-packages/pandas/types/common.py(8)&lt;module&gt;()</div><div class="line">-&gt; from pandas import lib, algos</div><div class="line">(Pdb) s</div><div class="line">--Call--</div><div class="line">&gt; /home/fantom/share/Python-2.7/lib/site-packages/six-1.10.0-py2.7.egg/six.py(184)find_module()</div><div class="line">-&gt; def find_module(self, fullname, path=None):</div><div class="line">(Pdb) n</div><div class="line">&gt; /home/fantom/share/Python-2.7/lib/site-packages/six-1.10.0-py2.7.egg/six.py(185)find_module()</div><div class="line">-&gt; if fullname in self.known_modules:</div><div class="line">(Pdb) n</div><div class="line">&gt; /home/fantom/share/Python-2.7/lib/site-packages/six-1.10.0-py2.7.egg/six.py(188)find_module()</div><div class="line">-&gt; return None</div></pre></td></tr></table></figure></p>
+<p>经过多次试验，在这个地方，再执行下一条，就会报错，打印一下堆栈看，也看不出什么有价值的信息：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">(Pdb) bt</div><div class="line">  &lt;string&gt;(1)&lt;module&gt;()</div><div class="line">  /home/fantom/share/Python-2.7/lib/site-packages/pandas/__init__.py(37)&lt;module&gt;()</div><div class="line">-&gt; import pandas.core.config_init</div><div class="line">  /home/fantom/share/Python-2.7/lib/site-packages/pandas/core/config_init.py(18)&lt;module&gt;()</div><div class="line">-&gt; from pandas.formats.format import detect_console_encoding</div><div class="line">  /home/fantom/share/Python-2.7/lib/site-packages/pandas/formats/format.py(13)&lt;module&gt;()</div><div class="line">-&gt; from pandas.types.missing import isnull, notnull</div><div class="line">  /home/fantom/share/Python-2.7/lib/site-packages/pandas/types/missing.py(12)&lt;module&gt;()</div><div class="line">-&gt; from .common import (is_string_dtype, is_datetimelike,</div><div class="line">  /home/fantom/share/Python-2.7/lib/site-packages/pandas/types/common.py(8)&lt;module&gt;()</div><div class="line">-&gt; from pandas import lib, algos</div><div class="line">&gt; /home/fantom/share/Python-2.7/lib/site-packages/six-1.10.0-py2.7.egg/six.py(188)find_module()</div><div class="line">-&gt; return None</div></pre></td></tr></table></figure></p>
+<p>继续执行return None：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">(Pdb) s</div><div class="line">--Return--</div><div class="line">&gt; /home/fantom/share/Python-2.7/lib/site-packages/six-1.10.0-py2.7.egg/six.py(188)find_module()-&gt;None</div><div class="line">-&gt; return None</div></pre></td></tr></table></figure></p>
+<p>报错了：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">(Pdb) s</div><div class="line">SystemError: &apos;Negative size passed to PyString_FromStringAndSize&apos;</div><div class="line">&gt; /home/fantom/share/Python-2.7/lib/site-packages/pandas/types/common.py(8)&lt;module&gt;()</div><div class="line">-&gt; from pandas import lib, algos</div></pre></td></tr></table></figure></p>
+<p>这很无奈，我正常的环境，这里执行return None后，是可以执行到下面的代码的：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">(Pdb) s</div><div class="line">--Call--</div><div class="line">&gt; /home/fantom/share/Python-2.7/lib/site-packages/numpy/core/getlimits.py(250)__init__()</div><div class="line">-&gt; def __init__(self, int_type):</div></pre></td></tr></table></figure></p>
+<p>可以看出，pdb的调试，粒度还是比较粗糙，并不能看出是哪儿有错误。不过还是缩短了怀疑点。</p>
+<h1 id="分析5-调试python配合strace输出"><a href="#分析5-调试python配合strace输出" class="headerlink" title="分析5 - 调试python配合strace输出"></a>分析5 - 调试python配合strace输出</h1><p>之前用pdb调试到了return None的地方，然后再执行就错误，中间肯定有什么语句，只是pdb粒度不够，显示不出来，于是我想用strace来试试运气，看能不能更深入细节，好在pdb调试不是gdb类似原理，不然，不能既调试又strace。<br>两边都执行到return None这里，然后将strace attach上python进程，再输入s执行下一条语句，此时，strace终端显示的结果的确有差异，对比一下。</p>
+<p>执行正常的情况：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line">stat(&quot;/home/fantom/share/Python-2.7/lib/site-packages/pandas/algos&quot;, 0x7fffee5b2150) = -1 ENOENT (No such file or directory)</div><div class="line">open(&quot;/home/fantom/share/Python-2.7/lib/site-packages/pandas/algos.so&quot;, O_RDONLY) = 8</div><div class="line">fstat(8, &#123;st_mode=S_IFREG|0644, st_size=8162301, ...&#125;) = 0</div><div class="line">open(&quot;/home/fantom/share/Python-2.7/lib/site-packages/pandas/algos.so&quot;, O_RDONLY|O_CLOEXEC) = 9</div><div class="line">read(9, &quot;\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0&gt;\0\1\0\0\0\200$\1\0\0\0\0\0&quot;..., 832) = 832</div><div class="line">fstat(9, &#123;st_mode=S_IFREG|0644, st_size=8162301, ...&#125;) = 0</div><div class="line">mmap(NULL, 3853896, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 9, 0) = 0x7f48d4521000</div><div class="line">mprotect(0x7f48d46bd000, 2097152, PROT_NONE) = 0</div><div class="line">mmap(0x7f48d48bd000, 53248, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 9, 0x19c000) = 0x7f48d48bd000</div><div class="line">mmap(0x7f48d48ca000, 15944, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7f48d48ca000</div><div class="line">close(9)                                = 0</div><div class="line">brk(0)                                  = 0x121b000</div><div class="line">brk(0x1265000)                          = 0x1265000</div><div class="line">write(1, &quot;--Call--\n&quot;, 9)               = 9</div><div class="line">stat(&quot;/home/fantom/share/Python-2.7/lib/site-packages/numpy/core/getlimits.py&quot;, &#123;st_mode=S_IFREG|0644, st_size=9904, ...&#125;) = 0</div><div class="line">open(&quot;/home/fantom/share/Python-2.7/lib/site-packages/numpy/core/getlimits.py&quot;, O_RDONLY) = 9</div><div class="line">fstat(9, &#123;st_mode=S_IFREG|0644, st_size=9904, ...&#125;) = 0</div><div class="line">fstat(9, &#123;st_mode=S_IFREG|0644, st_size=9904, ...&#125;) = 0</div><div class="line">mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f48f1755000</div><div class="line">read(9, &quot;\&quot;\&quot;\&quot;Machine limits for Float32 an&quot;..., 8192) = 8192</div><div class="line">read(9, &quot;lid integer data type.\&quot;)\n\n    de&quot;..., 4096) = 1712</div><div class="line">read(9, &quot;&quot;, 4096)                       = 0</div><div class="line">close(9)                                = 0</div><div class="line">munmap(0x7f48f1755000, 4096)            = 0</div><div class="line">write(1, &quot;&gt; /home/fantom/share/Python-2.7/&quot;..., 89) = 89</div><div class="line">write(1, &quot;-&gt; def __init__(self, int_type):&quot;..., 33) = 33</div></pre></td></tr></table></figure></p>
+<p>执行异常的情况：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">stat(&quot;/home/fantom/share/Python-2.7/lib/site-packages/pandas/algos&quot;, 0x7ffff01e83c0) = -1 ENOENT (No such file or directory)</div><div class="line">open(&quot;/home/fantom/share/Python-2.7/lib/site-packages/pandas/algos.so&quot;, O_RDONLY) = 8</div><div class="line">fstat(8, &#123;st_mode=S_IFREG|0644, st_size=8162301, ...&#125;) = 0</div><div class="line">open(&quot;/home/fantom/share/Python-2.7/lib/site-packages/pandas/algos.so&quot;, O_RDONLY|O_CLOEXEC) = 9</div><div class="line">read(9, &quot;\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0&gt;\0\1\0\0\0\200$\1\0\0\0\0\0&quot;..., 832) = 832</div><div class="line">fstat(9, &#123;st_mode=S_IFREG|0644, st_size=8162301, ...&#125;) = 0</div><div class="line">mmap(NULL, 3853896, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 9, 0) = 0x7f25ec120000</div><div class="line">mprotect(0x7f25ec2bc000, 2097152, PROT_NONE) = 0</div><div class="line">mmap(0x7f25ec4bc000, 53248, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 9, 0x19c000) = 0x7f25ec4bc000</div><div class="line">mmap(0x7f25ec4c9000, 15944, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7f25ec4c9000</div><div class="line">close(9)                                = 0</div><div class="line">close(8)                                = 0</div><div class="line">write(1, &quot;SystemError: &apos;Negative size pass&quot;..., 66) = 66</div><div class="line">write(1, &quot;&gt; /home/fantom/share/Python-2.7/&quot;..., 86) = 86</div></pre></td></tr></table></figure></p>
+<p>可以看出，两者都载入了 /home/fantom/share/Python-2.7/lib/site-packages/pandas/algos.so，正常情况下，有三次read：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">read(9, &quot;\&quot;\&quot;\&quot;Machine limits for Float32 an&quot;..., 8192) = 8192</div><div class="line">read(9, &quot;lid integer data type.\&quot;)\n\n    de&quot;..., 4096) = 1712</div><div class="line">read(9, &quot;&quot;, 4096)                       = 0</div></pre></td></tr></table></figure></p>
+<p>而异常情况下，没有read，直接close句柄报错了。</p>
+<p>这下怀疑点放在了文件algos.so上。</p>
+<p>对比两个文件的差异，MD5不同，将两个文件下载下来，对比一下，发现，有问题的环境，文件内容有多块置零区域，如图：<br><img src="/2017/11/14/qemu-balloon-damage-file-cache/diff-so.png" alt="diff so"></p>
+<p>算了一下置零区域，是：0x19fff - 0x16fff = 12K<br>这个整数让我想起了之前查过的一个虚拟机内存回收导致的文件系统缓存被冲刷掉的情况，12K正好是页大小的整倍数。</p>
+<p>询问了一下，测试部的环境的确是放到虚拟机上的，根据当时的判断，这个问题只需要重启一下就会恢复，最后重启的确恢复了。</p>
+<h1 id="原BUG分析"><a href="#原BUG分析" class="headerlink" title="原BUG分析"></a>原BUG分析</h1><p>我们来回顾一下当时的BUG，之前是在QEMU虚拟化环境下的docker文件损坏，里面的rm命令，一执行就报错：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">docker-host ~ # /var/lib/docker/overlay2/51ad45a29186d1a9b9bed169ff495bc451e6895b8142b21eadfac23fd4789c72/diff/bin/rm</div><div class="line">Segmentation fault</div></pre></td></tr></table></figure></p>
+<p>docker-host上，磁盘结构如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">└─vda4             254:4    0 458.5G  0 part </div><div class="line">  ├─acc--vg-log    253:0    0  32.1G  0 lvm  /var/log</div><div class="line">  ├─acc--vg-docker 253:1    0  96.3G  0 lvm  /var/lib/docker</div><div class="line">  ├─acc--vg-data   253:2    0  64.2G  0 lvm  /sf/k8s/data</div><div class="line">  └─acc--vg-volume 253:3    0 128.4G  0 lvm  /sf/k8s/volume</div></pre></td></tr></table></figure></p>
+<p>可以看出，vda4是磁盘分区，vda表示是使用了virtio的磁盘。<br>将vda4划分为四个LVM逻辑分区，rm文件，位于第二个分区 acc–vg-docker 上。</p>
+<h2 id="普通读取rm文件"><a href="#普通读取rm文件" class="headerlink" title="普通读取rm文件"></a>普通读取rm文件</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">dd if=/var/lib/docker/overlay2/51ad45a29186d1a9b9bed169ff495bc451e6895b8142b21eadfac23fd4789c72/diff/bin/rm of=./read_fs_rm</div></pre></td></tr></table></figure>
+<p>现在其实是从文件缓存里面读取的，如果加了iflag=direct的话会破坏现场。</p>
+<h2 id="从逻辑分区-acc–vg-docker-偏移读取rm文件"><a href="#从逻辑分区-acc–vg-docker-偏移读取rm文件" class="headerlink" title="从逻辑分区(acc–vg-docker)偏移读取rm文件"></a>从逻辑分区(acc–vg-docker)偏移读取rm文件</h2><p>当前文件系统为xfs，通过xfs_bmap可以看到，文件的起始位置：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">docker-host ~ # xfs_bmap -v /var/lib/docker/overlay2/51ad45a29186d1a9b9bed169ff495bc451e6895b8142b21eadfac23fd4789c72/diff/bin/rm</div><div class="line">/var/lib/docker/overlay2/51ad45a29186d1a9b9bed169ff495bc451e6895b8142b21eadfac23fd4789c72/diff/bin/rm:</div><div class="line"> EXT: FILE-OFFSET      BLOCK-RANGE          AG AG-OFFSET        TOTAL</div><div class="line">   0: [0..119]:        151446672..151446791  3 (9360..9479)       120</div></pre></td></tr></table></figure></p>
+<p>起始位置 151446672 * 512 = 77540696064，此值便是文件rm在当前分区的offset：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">dd if=/dev/acc-vg/docker of=./read_lv_rm bs=1 count=60072 skip=77540696064</div></pre></td></tr></table></figure></p>
+<h2 id="从物理分区-vda4-偏移读取rm文件"><a href="#从物理分区-vda4-偏移读取rm文件" class="headerlink" title="从物理分区(vda4)偏移读取rm文件"></a>从物理分区(vda4)偏移读取rm文件</h2><p>物理分区上vda4上，创建了4个逻辑分区：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">docker-host ~ # dmsetup table</div><div class="line">acc--vg-data: 0 134610944 linear 254:4 269223936</div><div class="line">acc--vg-docker: 0 201916416 linear 254:4 67307520 &lt;--</div><div class="line">acc--vg-volume: 0 269238272 linear 254:4 403834880</div><div class="line">acc--vg-log: 0 67305472 linear 254:4 2048</div></pre></td></tr></table></figure></p>
+<p>可以看出，逻辑分区acc–vg-docker相对于物理分区vda4的偏移为67307520，那么，结合前面的文件在逻辑分区的偏移为151446672，可以得出，文件rm相对于vda4的偏移为(67307520 + 151446672)*512 = 112002146304<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">dd if=/dev/vda4 bs=1 count=60072 of=./read_pv_rm  skip=112002146304</div></pre></td></tr></table></figure></p>
+<h2 id="初步结论"><a href="#初步结论" class="headerlink" title="初步结论"></a>初步结论</h2><p>对比几个文件的MD5，可以发现，从xfs文件系统读取出来的，是错误rm，而其他地方读取出来的是正确的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">docker-host ~ # md5sum *</div><div class="line">4ecc7b84fd459f2f8ab1da28bce231d4  read_fs_rm           xfs文件系统读出的</div><div class="line">2314b8d72ef05e807b99a0963a117692  read_lv_rm           根据逻辑分区acc--vg-docker偏移读出的</div><div class="line">2314b8d72ef05e807b99a0963a117692  read_pv_rm           根据物理分区vda4偏移读出的</div><div class="line"></div><div class="line">2314b8d72ef05e807b99a0963a117692  rm                   提供的正确的rm</div><div class="line">4ecc7b84fd459f2f8ab1da28bce231d4  rm-bug               提供的错误的rm</div></pre></td></tr></table></figure>
+<p>基本上，错误限定在了文件系统缓存和xfs文件系统BUG上。</p>
+<h1 id="虚拟机层次的原因"><a href="#虚拟机层次的原因" class="headerlink" title="虚拟机层次的原因"></a>虚拟机层次的原因</h1><p>这个问题，之前出现过一次，由于环境破坏了，没有分析出原因，后来发现一个类似日志：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">docker-host ~ # docker logs sxfdcloud</div><div class="line">/sf/k8s/lib/scripts/hostutils.sh: line 5:  9843 Segmentation fault      rm -rf &quot;$&#123;PREFIX&#125;/var/k8sdns&quot;</div></pre></td></tr></table></figure></p>
+<p>通过日志查找蛛丝马迹，最后怀疑点放到了balloon上，如下是日志分析过程。</p>
+<ol>
+<li><p>17-08-02 17:26 由于balloon_auto导致GUEST可用内存聚然变小</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">[17-08-02 17:26:00]***********************************</div><div class="line">             total       used       free     shared    buffers     cached</div><div class="line">Mem:      31966052   28770748    3195304          0     158244   19168896</div><div class="line">-/+ buffers/cache:    9443608   22522444</div><div class="line">Swap:     31457276          0   31457276</div><div class="line">[17-08-02 17:28:01]***********************************</div><div class="line">             total       used       free     shared    buffers     cached</div><div class="line">Mem:      31966052   30989192     976860          0     159524   20696388</div><div class="line">-/+ buffers/cache:   10133280   21832772</div><div class="line">Swap:     31457276    1270364   30186912</div></pre></td></tr></table></figure>
+</li>
+<li><p>17-08-02 18:45 又来一次气泡，这次有点过了，导致GUEST分配内存失败</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">Aug  2 18:45:42 localhost kernel: [38623.583998] vballoon: page allocation failure: order:0, mode:0x310da</div><div class="line">Aug  2 18:45:42 localhost kernel: [38623.584823] CPU: 3 PID: 62 Comm: vballoon Tainted: G               ------------ T 3.10.0-514.6.1.el7-sxfacc-hcivm-c27a60ea #1</div><div class="line">Aug  2 18:45:42 localhost kernel: [38623.584827] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2011</div><div class="line">Aug  2 18:45:42 localhost kernel: [38623.584829]  0000000000000000 ffff880233703c10 ffffffff817fcf59 ffff880233703c98</div><div class="line">Aug  2 18:45:42 localhost kernel: [38623.584832]  ffffffff8115c380 00000000ffffffff ffff880233703c38 ffffffffffffffff</div><div class="line">Aug  2 18:45:42 localhost kernel: [38623.584835]  000310da00000000 0000000000000286 0000000000000003 0000000100000004</div><div class="line">Aug  2 18:45:42 localhost kernel: [38623.584838] Call Trace:</div><div class="line">Aug  2 18:45:42 localhost kernel: [38623.602056]  [&lt;ffffffff817fcf59&gt;] dump_stack+0x19/0x1b</div><div class="line">Aug  2 18:45:42 localhost kernel: [38623.604510]  [&lt;ffffffff8115c380&gt;] warn_alloc_failed+0xf0/0x160</div><div class="line">Aug  2 18:45:42 localhost kernel: [38623.615100]  [&lt;ffffffff81160e49&gt;] __alloc_pages_nodemask+0x9a9/0xb60</div><div class="line">Aug  2 18:45:42 localhost kernel: [38623.615134]  [&lt;ffffffff811a310a&gt;] alloc_pages_current+0xaa/0x170</div><div class="line">Aug  2 18:45:42 localhost kernel: [38623.615147]  [&lt;ffffffff811ce3ef&gt;] balloon_page_enqueue+0x1f/0x90</div><div class="line">Aug  2 18:45:42 localhost kernel: [38623.616079]  [&lt;ffffffff81519d64&gt;] balloon+0x164/0x3d0</div><div class="line">Aug  2 18:45:42 localhost kernel: [38623.618249]  [&lt;ffffffff810943b0&gt;] ? wake_up_atomic_t+0x30/0x30</div><div class="line">Aug  2 18:45:42 localhost kernel: [38623.622373]  [&lt;ffffffff81519c00&gt;] ? update_balloon_stats+0x110/0x110</div><div class="line">Aug  2 18:45:42 localhost kernel: [38623.622376]  [&lt;ffffffff81093390&gt;] kthread+0xc0/0xd0</div><div class="line">Aug  2 18:45:42 localhost kernel: [38623.622378]  [&lt;ffffffff810932d0&gt;] ? kthread_create_on_node+0x110/0x110</div><div class="line">Aug  2 18:45:42 localhost kernel: [38623.622391]  [&lt;ffffffff8180d298&gt;] ret_from_fork+0x58/0x90</div><div class="line">Aug  2 18:45:42 localhost kernel: [38623.622393]  [&lt;ffffffff810932d0&gt;] ? kthread_create_on_node+0x110/0x110</div></pre></td></tr></table></figure>
+<p> 这个日志我后来重现出来过：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">Aug  8 10:00:44 localhost kernel: [ 5774.504262] virtio_balloon virtio0: Out of puff! Can&apos;t get 1 pages</div><div class="line">Aug  8 10:00:46 localhost kernel: [ 5776.965079] sangfor_watchdo[3596]: segfault at 8 ip 000000000042ad48 sp 00007ffdd3fd7b38 error 4 in bash[400000+ab000]</div></pre></td></tr></table></figure>
+</li>
+<li><p>2017-08-03 02:06 又来一次气泡</p>
+<p> HOST机日志：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">[2017-08-03 02:05:55] BEGIN reclaim_vm_mem 1145875170240, os_type=linux</div><div class="line">[2017-08-03 02:06:02] [OK]/sf/sbin/guest_reduce_physical_mem.sh 1145875170240 5955, ret=0</div><div class="line">[2017-08-03 02:06:03] [OK]TOTAL=7910736, RECLAIMABLE=3066064, USED=3379280, HELD=6445344, REPORTDATA_TIME=65194, CURRENT_TIME=65201</div><div class="line">[2017-08-03 02:06:03] END reclaim_vm_mem 1145875170240, ret=0</div></pre></td></tr></table></figure>
+<p> GUEST机，空闲内存突然增加：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">=========2017-08-03 02:06:01===============</div><div class="line">              total        used        free      shared  buff/cache   available</div><div class="line">Mem:           7.4G        2.9G        1.7G        2.9M        2.8G        4.2G</div><div class="line">Swap:           13G         60M         12G</div><div class="line">=========2017-08-03 02:07:01===============</div><div class="line">              total        used        free      shared  buff/cache   available</div><div class="line">Mem:           7.5G        391M        4.5G        592K        2.7G        6.9G</div><div class="line">Swap:           13G        3.7M         13G</div></pre></td></tr></table></figure>
+<p> 根据blackbox发现，是由于docker相关进程全部结束了。<br> 推测是内存再次压缩后，导致进程分配内存失败，所以，被KILL掉了。</p>
+</li>
+<li><p>2017-08-03 02:07 开始出现多个atools进程现象</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line">USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND</div><div class="line">root      3251  0.3  0.0  22780  2896 ?        S    Aug02   3:27 /bin/bash /usr/local/SangforVMSTool/sangfor_vm_proxyd</div><div class="line">root      3444  0.3  0.0  22624  2544 ?        S    Aug02   4:15  \_ /bin/bash /usr/local/SangforVMSTool/sangfor_vm_proxyd_w</div><div class="line">root      8151  0.0  0.0   7824   624 ?        S    02:07   0:00  |   \_ sleep 1</div><div class="line">root      3498  0.0  0.0  22112  2156 ?        S    Aug02   0:14  \_ /bin/bash /usr/local/SangforVMSTool/sangfor_vm_proxyd_r</div><div class="line">root      8064  0.0  0.0   7824   620 ?        S    02:06   0:00  \_ sleep 1</div><div class="line">root      3252  0.0  0.0  23088  3268 ?        S    Aug02   0:12 /bin/bash /usr/local/SangforVMSTool/sangfor_module_update</div><div class="line">root      3446  0.6  0.0  22876  3020 ?        S    Aug02   7:01  \_ /bin/bash /usr/local/SangforVMSTool/sangfor_update_ipc_callback</div><div class="line">root      8113  0.0  0.0   7824   624 ?        S    02:06   0:00  |   \_ sleep 1</div><div class="line">root      7948  0.0  0.0   7824   620 ?        S    02:06   0:00  \_ sleep 5</div><div class="line">root      3254  0.6  0.0  22708  2868 ?        S    Aug02   7:02 /bin/bash /usr/local/SangforVMSTool/sangfor_sfping</div><div class="line">root      8126  0.0  0.0   7824   620 ?        S    02:07   0:00  \_ sleep 1</div><div class="line">root      5716  0.0  0.0  22780  2852 ?        S    02:06   0:00 /bin/bash /usr/local/SangforVMSTool/sangfor_module_update</div><div class="line">root      5885  0.3  0.0  22120  2260 ?        S    02:06   0:00  \_ /bin/bash /usr/local/SangforVMSTool/sangfor_update_ipc_callback</div><div class="line">root      8143  0.0  0.0   7824   620 ?        S    02:07   0:00  |   \_ sleep 1</div><div class="line">root      7753  0.0  0.0   7824   624 ?        S    02:06   0:00  \_ sleep 5</div><div class="line">root      5807  0.3  0.0  21988  2140 ?        S    02:06   0:00 /bin/bash /usr/local/SangforVMSTool/sangfor_sfping</div><div class="line">root      8101  0.0  0.0   7824   620 ?        S    02:06   0:00  \_ sleep 1</div><div class="line">root      5864  0.5  0.0  22120  2260 ?        S    02:06   0:00 /bin/bash /usr/local/SangforVMSTool/sangfor_update_ipc_callback</div><div class="line">root      8146  0.0  0.0   7824   620 ?        S    02:07   0:00  \_ sleep 1</div><div class="line">root      6013  0.0  0.0  21856  1996 ?        S    02:06   0:00 /bin/bash /usr/local/SangforVMSTool/sangfor_vm_proxyd</div><div class="line">root      7382  0.0  0.0   7824   624 ?        S    02:06   0:00  \_ sleep 10</div></pre></td></tr></table></figure>
+</li>
+<li><p>2017-08-03 02:45 出现grep文件错误的日志</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">Aug  3 02:45:13 localhost CROND[24320]: (root) CMDOUT (/sf/k8s/etc/cron/minutely/blackbox: line 366: /bin/grep: cannot execute binary file: Exec format error)</div></pre></td></tr></table></figure>
+<p> 结合第4点多个atools现象的源码分析，其中，依靠kill同名进程来达到互斥目的，而如果grep坏掉，就不会KILL掉同名进程，导致会被多次拉起。</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">local ps_list=`ps -Ao pid,command | grep &quot;$&#123;procname&#125;\&gt;&quot; | grep -v grep | grep -v sudo | grep -v &quot;\&lt;$&#123;pid&#125;\&gt;&quot;`</div><div class="line">if [ ! -z &quot;$&#123;ps_list&#125;&quot; ]; then</div><div class="line">    echo &quot;$&#123;ps_list&#125;&quot; | awk &apos;&#123;print &quot;kill &quot; $1 &quot; 2&gt;/dev/null&quot;&#125;&apos; | sh</div><div class="line">fi</div></pre></td></tr></table></figure>
+<p> 这里kill逻辑进不来。<br> 于是，第4点的现象能合理解释通。<br> 此外，坏掉的不止grep：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">Aug  3 03:10:41 localhost CROND[22055]: (root) CMDOUT (/usr/sbin/savelog: line 132:  1098 Segmentation fault      chgrp -- &quot;$group&quot; &quot;$1&quot;)</div><div class="line">Aug  3 03:10:41 localhost kernel: [68923.261013] chgrp[1098]: segfault at 1 ip 0000000000409800 sp 00007fffdecce0d8 error 6 in chgrp[400000+e000]</div></pre></td></tr></table></figure>
+</li>
+<li><p>grep为何会坏？</p>
+<p> 第一次的环境我并没有参与，目前已经不存在；第二次的环境，是重启后的，也相当于不存在，只剩下日志。<br> 推测原因是balloon挤占内存逻辑在出现失败后，导致GUEST系统内存紊乱，所以出现只读文件内存数据损坏。</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">node-6544842425444 ~ # lspci | grep -i balloon</div><div class="line">00:03.0 Unclassified device [00ff]: Red Hat, Inc Virtio memory balloon</div><div class="line">node-6544842425444 ~ # lspci -vv -s 00:03.0</div><div class="line">00:03.0 Unclassified device [00ff]: Red Hat, Inc Virtio memory balloon</div><div class="line">    Subsystem: Red Hat, Inc Virtio memory balloon</div><div class="line">    Physical Slot: 3</div><div class="line">    Control: I/O+ Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR+ FastB2B- DisINTx-</div><div class="line">    Status: Cap- 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast &gt;TAbort- &lt;TAbort- &lt;MAbort- &gt;SERR- &lt;PERR- INTx-</div><div class="line">    Latency: 0</div><div class="line">    Interrupt: pin A routed to IRQ 11</div><div class="line">    Region 0: I/O ports at f120 [size=32]</div><div class="line">    Kernel driver in use: virtio-pci</div></pre></td></tr></table></figure>
+<p> 根据第一次出现4K空数据的推理：xfs文件系统cache里面的数据有问题，而重新direct读入的数据没有问题，正好印证，内存里面的数据被破坏，而磁盘里面是正确的。</p>
+</li>
+<li><p>重现印证</p>
+<p> 之前出现4K空数据问题的时候，有一条日志记录，是docker打印出来的，如下：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">time=&quot;2017-06-21T06:19:43.273510485+08:00&quot; level=error msg=&quot;Handler for GET /containers/78742eb6600e8046bafcfeeb02cd0d410510ed1609194d58385b67c10e14fa1c/json returned error: No such container: 78742eb6600e8046bafcfeeb02cd0d410510ed1609194d58385b67c10e14fa1c&quot;</div><div class="line">panic: runtime error: invalid memory address or nil pointer dereference</div><div class="line">[signal 0xb code=0x1 addr=0x0 pc=0x40a5e4]</div></pre></td></tr></table></figure>
+<p> 看得出，是由于内存不够导致空指针了，所以反推之前4K问题出现的时候，和内存相关。<br> 后面我自己通过重复验证：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">/sf/sbin/qmpcmd.pl 6544842425444 &quot;balloon_auto 6341&quot;</div></pre></td></tr></table></figure>
+<p> 发现类似日志：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">2017-08-08 11:10:42.812567 I | http: panic serving @: runtime error: invalid memory address or nil pointer dereference</div><div class="line">goroutine 8557 [running]:</div><div class="line">net/http.(*conn).serve.func1(0xc8236eaf00)</div><div class="line">        /usr/local/go/src/net/http/server.go:1389 +0xc1</div></pre></td></tr></table></figure>
+<p> 两者可以相互印证，遗憾的是，我做此类验证的时候，GUEST系统是直接挂掉，而非仅仅文件损坏。</p>
+<p> 同时，还有一些怎么balloon对系统造成影响的日志出现：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">Aug  8 11:06:44 localhost kernel: [ 2126.910391] EXT4-fs error (device vda2): htree_dirblock_to_tree:914: inode #1218848: block 4883835: comm find: bad entry in directory: rec_len is smaller than minimal - offset=0(0), inode=0, rec_len=0, name_len=0</div><div class="line">Aug  8 11:06:44 localhost kernel: [ 2127.051347] EXT4-fs warning (device vda2): dx_probe:719: dx entry: limit != root limit</div><div class="line">Aug  8 11:06:44 localhost kernel: [ 2127.051351] EXT4-fs warning (device vda2): dx_probe:797: Corrupt dir inode 1218885, running e2fsck is recommended.</div><div class="line">Aug  8 11:06:44 localhost kernel: [ 2127.051358] EXT4-fs error (device vda2): ext4_readdir:227: inode #1218885: block 4883970: comm find: path (unknown): bad entry in directory: rec_len is smaller than minimal - offset=0(0), inode=0, rec_len=0, name_len=0</div><div class="line">Aug  8 11:06:44 localhost kernel: [ 2127.113701] EXT4-fs error (device vda2): htree_dirblock_to_tree:914: inode #1245958: block 4984406: comm find: bad entry in directory: rec_len is smaller than minimal - offset=0(0), inode=0, rec_len=0, name_len=0</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>虽然没有100%吻合现象，但是至少有80%左右可以断定，问题来自于内存气泡，后同事发现Centos 7 virtio_balloon驱动新增了migratepage特性，而我们的还不支持。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Qemu/" rel="tag"># Qemu</a>
+          
+            <a href="/tags/BUG/" rel="tag"># BUG</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/10/20/lvm-create/" rel="next" title="创建LVM条带">
+                <i class="fa fa-chevron-left"></i> 创建LVM条带
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">39</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">55</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#分析1-新改动导致？"><span class="nav-number">1.</span> <span class="nav-text">分析1 - 新改动导致？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分析2-从报错源码入手"><span class="nav-number">2.</span> <span class="nav-text">分析2 - 从报错源码入手</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分析3-怀疑加载的库不一样"><span class="nav-number">3.</span> <span class="nav-text">分析3 - 怀疑加载的库不一样</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分析4-调试python"><span class="nav-number">4.</span> <span class="nav-text">分析4 - 调试python</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分析5-调试python配合strace输出"><span class="nav-number">5.</span> <span class="nav-text">分析5 - 调试python配合strace输出</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#原BUG分析"><span class="nav-number">6.</span> <span class="nav-text">原BUG分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#普通读取rm文件"><span class="nav-number">6.1.</span> <span class="nav-text">普通读取rm文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#从逻辑分区-acc–vg-docker-偏移读取rm文件"><span class="nav-number">6.2.</span> <span class="nav-text">从逻辑分区(acc–vg-docker)偏移读取rm文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#从物理分区-vda4-偏移读取rm文件"><span class="nav-number">6.3.</span> <span class="nav-text">从物理分区(vda4)偏移读取rm文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#初步结论"><span class="nav-number">6.4.</span> <span class="nav-text">初步结论</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#虚拟机层次的原因"><span class="nav-number">7.</span> <span class="nav-text">虚拟机层次的原因</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

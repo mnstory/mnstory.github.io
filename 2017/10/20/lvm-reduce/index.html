@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="LVM," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="LVM可动态扩容，也可以缩容，我们直接讲缩容部分，缩容前，肯定是有环境配置成了LVM，我们看下环境的目前现状。 现状看看当前的磁盘信息：12345678910111213141516171819host ~ # lsblk NAME          MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTsda             8:0    0 119.2G  0 dis">
+<meta name="keywords" content="LVM">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LVM缩容">
+<meta property="og:url" content="http://mnstory.net/2017/10/20/lvm-reduce/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="LVM可动态扩容，也可以缩容，我们直接讲缩容部分，缩容前，肯定是有环境配置成了LVM，我们看下环境的目前现状。 现状看看当前的磁盘信息：12345678910111213141516171819host ~ # lsblk NAME          MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTsda             8:0    0 119.2G  0 dis">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2017-11-14T14:18:52.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="LVM缩容">
+<meta name="twitter:description" content="LVM可动态扩容，也可以缩容，我们直接讲缩容部分，缩容前，肯定是有环境配置成了LVM，我们看下环境的目前现状。 现状看看当前的磁盘信息：12345678910111213141516171819host ~ # lsblk NAME          MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTsda             8:0    0 119.2G  0 dis">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2017/10/20/lvm-reduce/"/>
+
+
+
+
+
+  <title>LVM缩容 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2017/10/20/lvm-reduce/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">LVM缩容</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-20T14:00:00+00:00">
+                2017-10-20
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>LVM可动态扩容，也可以缩容，我们直接讲缩容部分，缩容前，肯定是有环境配置成了LVM，我们看下环境的目前现状。</p>
+<h1 id="现状"><a href="#现状" class="headerlink" title="现状"></a>现状</h1><p>看看当前的磁盘信息：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">host ~ # lsblk </div><div class="line">NAME          MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT</div><div class="line">sda             8:0    0 119.2G  0 disk </div><div class="line">|-sda1          8:1    0   500M  0 part /boot</div><div class="line">|-sda2          8:2    0    50G  0 part /home/myvg</div><div class="line">|-sda3          8:3    0    25G  0 part /</div><div class="line">|-sda4          8:4    0     1K  0 part </div><div class="line">|-sda5          8:5    0    20G  0 part /home/myvg/var/logs</div><div class="line">|-sda6          8:6    0    10G  0 part /home/myvg/var/tmp</div><div class="line">|-sda7          8:7    0   9.9G  0 part /ac</div><div class="line">`-sda8          8:8    0   3.9G  0 part </div><div class="line">sdb             8:16   0 931.5G  0 disk </div><div class="line">`-myvg-data 253:0    0   8.2T  0 lvm  /data</div><div class="line">sdc             8:32   0   1.8T  0 disk </div><div class="line">`-myvg-data 253:0    0   8.2T  0 lvm  /data</div><div class="line">sdd             8:48   0   3.7T  0 disk </div><div class="line">`-myvg-data 253:0    0   8.2T  0 lvm  /data</div><div class="line">sde             8:64   0   1.8T  0 disk </div><div class="line">`-myvg-data 253:0    0   8.2T  0 lvm  /data</div></pre></td></tr></table></figure></p>
+<p>可以看出sdb, sdc, sdd, sde 组成了一个lvm 挂载到/data上。<br><a id="more"></a><br>再看volume groups信息：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div></pre></td><td class="code"><pre><div class="line">host ~ # vgdisplay -v</div><div class="line">    Using volume group(s) on command line.</div><div class="line">    Finding all volume groups.</div><div class="line">  --- Volume group ---</div><div class="line">  VG Name               myvg # 只有一个卷组，名叫myvg</div><div class="line">  System ID             </div><div class="line">  Format                lvm2</div><div class="line">  Metadata Areas        4</div><div class="line">  Metadata Sequence No  2</div><div class="line">  VG Access             read/write</div><div class="line">  VG Status             resizable</div><div class="line">  MAX LV                0</div><div class="line">  Cur LV                1</div><div class="line">  Open LV               1</div><div class="line">  Max PV                0</div><div class="line">  Cur PV                4</div><div class="line">  Act PV                4</div><div class="line">  VG Size               8.19 TiB</div><div class="line">  PE Size               4.00 MiB</div><div class="line">  Total PE              2146192</div><div class="line">  Alloc PE / Size       2146192 / 8.19 TiB</div><div class="line">  Free  PE / Size       0 / 0   </div><div class="line">  VG UUID               podu2f-xyGh-ZerU-cVNa-fNeL-5MFh-wzO3ye</div><div class="line">   </div><div class="line">  # 在myvg卷组下，有一个逻辑分区，叫data</div><div class="line">  --- Logical volume ---</div><div class="line">  LV Path                /dev/myvg/data</div><div class="line">  LV Name                data</div><div class="line">  VG Name                myvg</div><div class="line">  LV UUID                4YcW3O-NbZD-3zrR-olkO-CFQ9-xcJz-0vzYEZ</div><div class="line">  LV Write Access        read/write</div><div class="line">  LV Creation host, time localhost.localdomain, 2017-08-09 14:32:48 +0800</div><div class="line">  LV Status              available</div><div class="line">  # open                 1</div><div class="line">  LV Size                8.19 TiB</div><div class="line">  Current LE             2146192</div><div class="line">  Segments               4</div><div class="line">  Allocation             inherit</div><div class="line">  Read ahead sectors     auto</div><div class="line">  - currently set to     256</div><div class="line">  Block device           253:0</div><div class="line">  </div><div class="line">  # 有4个物理分区，现在受LVM管理</div><div class="line">  --- Physical volumes ---</div><div class="line">  PV Name               /dev/sdb     </div><div class="line">  PV UUID               1YfPS2-8OR8-LFEP-WDyk-kLAw-wBL6-0NPDyf</div><div class="line">  PV Status             allocatable</div><div class="line">  Total PE / Free PE    238467 / 0</div><div class="line">   </div><div class="line">  PV Name               /dev/sdc     </div><div class="line">  PV UUID               f2VZdK-8hRF-QJlF-BreW-VeEO-Ctrb-U9zujp</div><div class="line">  PV Status             allocatable</div><div class="line">  Total PE / Free PE    476932 / 0</div><div class="line">   </div><div class="line">  PV Name               /dev/sdd     </div><div class="line">  PV UUID               H4n9ta-bYRW-TD88-MYL2-H9Nv-vuhT-jNaUbq</div><div class="line">  PV Status             allocatable</div><div class="line">  Total PE / Free PE    953861 / 0</div><div class="line">   </div><div class="line">  PV Name               /dev/sde     </div><div class="line">  PV UUID               Xv9I0x-09Bk-Q5J3-2YKs-9ACP-nJUg-eSEhiE</div><div class="line">  PV Status             allocatable</div><div class="line">  Total PE / Free PE    476932 / 0</div></pre></td></tr></table></figure></p>
+<p>看看逻辑分区/dev/myvg/data，他实际上是挂载到了/data目录：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">host ~ # df</div><div class="line">Filesystem               Size  Used Avail Use% Mounted on</div><div class="line">/dev/mapper/myvg-data  8.2T  784G  7.0T  10% /data</div><div class="line"></div><div class="line">host ~ # lh /dev/myvg/data </div><div class="line">lrwxrwxrwx 1 root root 7 Oct 19 20:15 /dev/myvg/data -&gt; ../dm-0</div></pre></td></tr></table></figure></p>
+<p>我们上面知道了，有4块物理分区加入了LVM，我们看看其详细信息：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div></pre></td><td class="code"><pre><div class="line">host ~ # pvdisplay -m</div><div class="line">  --- Physical volume ---</div><div class="line">  PV Name               /dev/sdb</div><div class="line">  VG Name               myvg</div><div class="line">  PV Size               931.51 GiB / not usable 1.71 MiB</div><div class="line">  Allocatable           yes (but full)</div><div class="line">  PE Size               4.00 MiB</div><div class="line">  Total PE              238467</div><div class="line">  Free PE               0</div><div class="line">  Allocated PE          238467</div><div class="line">  PV UUID               1YfPS2-8OR8-LFEP-WDyk-kLAw-wBL6-0NPDyf</div><div class="line">   </div><div class="line">  --- Physical Segments ---</div><div class="line">  Physical extent 0 to 238466:</div><div class="line">    Logical volume	/dev/myvg/data</div><div class="line">    Logical extents	1907725 to 2146191 # 第4块逻辑盘sdb</div><div class="line">   </div><div class="line"></div><div class="line">  --- Physical volume ---</div><div class="line">  PV Name               /dev/sdc</div><div class="line">  VG Name               myvg</div><div class="line">  PV Size               1.82 TiB / not usable 1.09 MiB</div><div class="line">  Allocatable           yes (but full)</div><div class="line">  PE Size               4.00 MiB</div><div class="line">  Total PE              476932</div><div class="line">  Free PE               0</div><div class="line">  Allocated PE          476932</div><div class="line">  PV UUID               f2VZdK-8hRF-QJlF-BreW-VeEO-Ctrb-U9zujp</div><div class="line">   </div><div class="line">  --- Physical Segments ---</div><div class="line">  Physical extent 0 to 476931:</div><div class="line">    Logical volume	/dev/myvg/data</div><div class="line">    Logical extents	953861 to 1430792 # 第2块逻辑盘sdc</div><div class="line">   </div><div class="line"></div><div class="line">  --- Physical volume ---</div><div class="line">  PV Name               /dev/sdd</div><div class="line">  VG Name               myvg</div><div class="line">  PV Size               3.64 TiB / not usable 3.84 MiB</div><div class="line">  Allocatable           yes (but full)</div><div class="line">  PE Size               4.00 MiB</div><div class="line">  Total PE              953861</div><div class="line">  Free PE               0</div><div class="line">  Allocated PE          953861</div><div class="line">  PV UUID               H4n9ta-bYRW-TD88-MYL2-H9Nv-vuhT-jNaUbq</div><div class="line">   </div><div class="line">  --- Physical Segments ---</div><div class="line">  Physical extent 0 to 953860:</div><div class="line">    Logical volume	/dev/myvg/data</div><div class="line">    Logical extents	0 to 953860       # 第1块逻辑盘sdd</div><div class="line">   </div><div class="line"></div><div class="line">  --- Physical volume ---</div><div class="line">  PV Name               /dev/sde</div><div class="line">  VG Name               myvg</div><div class="line">  PV Size               1.82 TiB / not usable 1.09 MiB</div><div class="line">  Allocatable           yes (but full)</div><div class="line">  PE Size               4.00 MiB</div><div class="line">  Total PE              476932</div><div class="line">  Free PE               0</div><div class="line">  Allocated PE          476932</div><div class="line">  PV UUID               Xv9I0x-09Bk-Q5J3-2YKs-9ACP-nJUg-eSEhiE</div><div class="line">   </div><div class="line">  --- Physical Segments ---</div><div class="line">  Physical extent 0 to 476931:</div><div class="line">    Logical volume	/dev/myvg/data</div><div class="line">    Logical extents	1430793 to 1907724 # 第3块逻辑盘sde</div></pre></td></tr></table></figure></p>
+<h1 id="缩减"><a href="#缩减" class="headerlink" title="缩减"></a>缩减</h1><p>我的缩容需求为，将4块物理磁盘的内容，放到1块里面，释放其他3块。</p>
+<h2 id="尝试pvmove数据"><a href="#尝试pvmove数据" class="headerlink" title="尝试pvmove数据"></a>尝试pvmove数据</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">host ~ # pvmove /dev/sdb</div><div class="line">  No extents available for allocation</div><div class="line">host ~ # pvmove /dev/sdb --alloc anywhere</div><div class="line">  No extents available for allocation</div><div class="line">host ~ # pvmove /dev/sdb /dev/sdd</div><div class="line">  No free extents on physical volume &quot;/dev/sdd&quot;.</div><div class="line">  No specified PVs have space available.</div></pre></td></tr></table></figure>
+<p>直接将一个物理分区的数据移动到另一个物理分区，看样子都失败了，原因应该是上面我们的pv信息里显示的full：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">Allocatable           yes (but full)</div></pre></td></tr></table></figure></p>
+<p>但是，通过df看，我的实际占用大小是 784G，第一块盘是 sdd 是 3.64T，数据量远远不足一块盘。维护不能pvmove？<br>原因是，文件系统占满了分区，我们需要先缩减文件系统。</p>
+<h2 id="缩减文件系统"><a href="#缩减文件系统" class="headerlink" title="缩减文件系统"></a>缩减文件系统</h2><ol>
+<li><p>卸载分区</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">host ~ # umount /dev/mapper/myvg-data</div></pre></td></tr></table></figure>
+</li>
+<li><p>检查文件系统是否损坏</p>
+<p> 缩减文件系统大小前，会强制要求检测分区是否损坏，执行如下命令：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">host ~ # e2fsck -f /dev/mapper/myvg-data</div><div class="line">e2fsck 1.42.9 (28-Dec-2013)</div><div class="line">Pass 1: Checking inodes, blocks, and sizes</div><div class="line">Pass 2: Checking directory structure</div><div class="line">Pass 3: Checking directory connectivity</div><div class="line">Pass 4: Checking reference counts</div><div class="line">Pass 5: Checking group summary information</div><div class="line">/dev/mapper/myvg-data: 90068/274714624 files (5.4% non-contiguous), 222667189/2197700608 blocks</div></pre></td></tr></table></figure>
+</li>
+<li><p>缩减文件系统</p>
+<p> 使用resize2fs来缩减，因为我只想将数据放到第一块盘，第一块盘是sdd 是 3.64T，我将文件系统缩小为3T，小于第一块盘即可：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">host ~ # resize2fs /dev/mapper/myvg-data 3T</div><div class="line">resize2fs 1.42.9 (28-Dec-2013)</div><div class="line">Resizing the filesystem on /dev/mapper/myvg-data to 805306368 (4k) blocks.</div><div class="line">The filesystem on /dev/mapper/myvg-data is now 805306368 blocks long.</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<h2 id="缩减逻辑卷"><a href="#缩减逻辑卷" class="headerlink" title="缩减逻辑卷"></a>缩减逻辑卷</h2><p>上面，我们将文件系统缩减了，接着就可以缩减LV大小了：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">host ~ # lvreduce -L 3T /dev/mapper/myvg-data</div><div class="line">  WARNING: Reducing active logical volume to 3.00 TiB</div><div class="line">  THIS MAY DESTROY YOUR DATA (filesystem etc.)</div><div class="line">Do you really want to reduce data? [y/n]: y</div><div class="line">  Size of logical volume myvg/data changed from 8.19 TiB (2146192 extents) to 3.00 TiB (786432 extents).</div><div class="line">  Logical volume data successfully resized</div></pre></td></tr></table></figure></p>
+<p>缩减完成再看看lv信息：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line">host ~ # lvdisplay -m</div><div class="line">  --- Logical volume ---</div><div class="line">  LV Path                /dev/myvg/data</div><div class="line">  LV Name                data</div><div class="line">  VG Name                myvg</div><div class="line">  LV UUID                4YcW3O-NbZD-3zrR-olkO-CFQ9-xcJz-0vzYEZ</div><div class="line">  LV Write Access        read/write</div><div class="line">  LV Creation host, time localhost.localdomain, 2017-08-09 14:32:48 +0800</div><div class="line">  LV Status              available</div><div class="line">  # open                 0</div><div class="line">  LV Size                3.00 TiB # 看这里，变成了3T</div><div class="line">  Current LE             786432</div><div class="line">  Segments               1</div><div class="line">  Allocation             inherit</div><div class="line">  Read ahead sectors     auto</div><div class="line">  - currently set to     256</div><div class="line">  Block device           253:0</div><div class="line">   </div><div class="line">  --- Segments ---</div><div class="line">  Logical extents 0 to 786431:</div><div class="line">    Type                linear</div><div class="line">    Physical volume     /dev/sdd</div><div class="line">    Physical extents    0 to 786431</div></pre></td></tr></table></figure></p>
+<p>再看看pv信息，此时的Allocatable后面已经不是yes (but full)了，而是 yes：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div></pre></td><td class="code"><pre><div class="line">host ~ # pvdisplay -m</div><div class="line">  --- Physical volume ---</div><div class="line">  PV Name               /dev/sdb</div><div class="line">  VG Name               myvg</div><div class="line">  PV Size               931.51 GiB / not usable 1.71 MiB</div><div class="line">  Allocatable           yes </div><div class="line">  PE Size               4.00 MiB</div><div class="line">  Total PE              238467</div><div class="line">  Free PE               238467</div><div class="line">  Allocated PE          0</div><div class="line">  PV UUID               1YfPS2-8OR8-LFEP-WDyk-kLAw-wBL6-0NPDyf</div><div class="line">   </div><div class="line">  --- Physical Segments ---</div><div class="line">  Physical extent 0 to 238466:</div><div class="line">    FREE</div><div class="line">   </div><div class="line">  --- Physical volume ---</div><div class="line">  PV Name               /dev/sdc</div><div class="line">  VG Name               myvg</div><div class="line">  PV Size               1.82 TiB / not usable 1.09 MiB</div><div class="line">  Allocatable           yes </div><div class="line">  PE Size               4.00 MiB</div><div class="line">  Total PE              476932</div><div class="line">  Free PE               476932</div><div class="line">  Allocated PE          0</div><div class="line">  PV UUID               f2VZdK-8hRF-QJlF-BreW-VeEO-Ctrb-U9zujp</div><div class="line">   </div><div class="line">  --- Physical Segments ---</div><div class="line">  Physical extent 0 to 476931:</div><div class="line">    FREE</div><div class="line">   </div><div class="line">  --- Physical volume ---</div><div class="line">  PV Name               /dev/sdd</div><div class="line">  VG Name               myvg</div><div class="line">  PV Size               3.64 TiB / not usable 3.84 MiB</div><div class="line">  Allocatable           yes </div><div class="line">  PE Size               4.00 MiB</div><div class="line">  Total PE              953861</div><div class="line">  Free PE               167429</div><div class="line">  Allocated PE          786432</div><div class="line">  PV UUID               H4n9ta-bYRW-TD88-MYL2-H9Nv-vuhT-jNaUbq</div><div class="line">   </div><div class="line">  --- Physical Segments ---</div><div class="line">  Physical extent 0 to 786431:</div><div class="line">    Logical volume      /dev/myvg/data</div><div class="line">    Logical extents     0 to 786431</div><div class="line">  Physical extent 786432 to 953860:</div><div class="line">    FREE</div><div class="line">   </div><div class="line">  --- Physical volume ---</div><div class="line">  PV Name               /dev/sde</div><div class="line">  VG Name               myvg</div><div class="line">  PV Size               1.82 TiB / not usable 1.09 MiB</div><div class="line">  Allocatable           yes </div><div class="line">  PE Size               4.00 MiB</div><div class="line">  Total PE              476932</div><div class="line">  Free PE               476932</div><div class="line">  Allocated PE          0</div><div class="line">  PV UUID               Xv9I0x-09Bk-Q5J3-2YKs-9ACP-nJUg-eSEhiE</div><div class="line">   </div><div class="line">  --- Physical Segments ---</div><div class="line">  Physical extent 0 to 476931:</div><div class="line">    FREE</div></pre></td></tr></table></figure></p>
+<h2 id="再次pvmove数据"><a href="#再次pvmove数据" class="headerlink" title="再次pvmove数据"></a>再次pvmove数据</h2><p>可以看出，现在除了第一块盘sdd有数据，其他的Free PE都等于Total PE，完全没有数据，试试move数据，提示没有数据可以移动：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">host ~ # pvmove /dev/sdb </div><div class="line">  No data to move for myvg</div><div class="line">host ~ # pvmove /dev/sde </div><div class="line">  No data to move for myvg</div><div class="line">host ~ # pvmove /dev/sdc</div><div class="line">  No data to move for myvg</div></pre></td></tr></table></figure></p>
+<h2 id="pvchange属性为不可用"><a href="#pvchange属性为不可用" class="headerlink" title="pvchange属性为不可用"></a>pvchange属性为不可用</h2><p>修改几块pv的属性，让其不能再分配数据，pv修改为Allocatable为no<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">host ~ # pvchange -xn /dev/sdb</div><div class="line">  Physical volume &quot;/dev/sdb&quot; changed</div><div class="line">  1 physical volume changed / 0 physical volumes not changed</div><div class="line">host ~ # pvchange -xn /dev/sde</div><div class="line">  Physical volume &quot;/dev/sde&quot; changed</div><div class="line">  1 physical volume changed / 0 physical volumes not changed</div><div class="line">host ~ # pvchange -xn /dev/sdc</div><div class="line">  Physical volume &quot;/dev/sdc&quot; changed</div><div class="line">  1 physical volume changed / 0 physical volumes not changed</div></pre></td></tr></table></figure></p>
+<p>此时再用pvdisplay查看，Allocatable 字段已经设置为 NO 了。</p>
+<h2 id="vgreduce和pvremove删除pv"><a href="#vgreduce和pvremove删除pv" class="headerlink" title="vgreduce和pvremove删除pv"></a>vgreduce和pvremove删除pv</h2><p>接下来，咱们可以安全地将 几块pv从vg里面删除了：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">host ~ # vgreduce myvg /dev/sdb</div><div class="line">  Removed &quot;/dev/sdb&quot; from volume group &quot;myvg&quot;</div><div class="line">host ~ # vgreduce myvg /dev/sde</div><div class="line">  Removed &quot;/dev/sde&quot; from volume group &quot;myvg&quot;</div><div class="line">host ~ # vgreduce myvg /dev/sdc</div><div class="line">  Removed &quot;/dev/sdc&quot; from volume group &quot;myvg&quot;</div></pre></td></tr></table></figure></p>
+<p>此时的pv列表里面还有这几个磁盘的信息，但是状态是NEW Physical volume：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div></pre></td><td class="code"><pre><div class="line">host ~ # pvdisplay -m</div><div class="line">  --- Physical volume ---</div><div class="line">  PV Name               /dev/sdd</div><div class="line">  VG Name               myvg</div><div class="line">  PV Size               3.64 TiB / not usable 3.84 MiB</div><div class="line">  Allocatable           yes </div><div class="line">  PE Size               4.00 MiB</div><div class="line">  Total PE              953861</div><div class="line">  Free PE               167429</div><div class="line">  Allocated PE          786432</div><div class="line">  PV UUID               H4n9ta-bYRW-TD88-MYL2-H9Nv-vuhT-jNaUbq</div><div class="line">   </div><div class="line">  --- Physical Segments ---</div><div class="line">  Physical extent 0 to 786431:</div><div class="line">    Logical volume	/dev/myvg/data</div><div class="line">    Logical extents	0 to 786431</div><div class="line">  Physical extent 786432 to 953860:</div><div class="line">    FREE</div><div class="line">   </div><div class="line">  &quot;/dev/sdb&quot; is a new physical volume of &quot;931.51 GiB&quot;</div><div class="line">  --- NEW Physical volume ---</div><div class="line">  PV Name               /dev/sdb</div><div class="line">  VG Name               </div><div class="line">  PV Size               931.51 GiB</div><div class="line">  Allocatable           NO</div><div class="line">  PE Size               0   </div><div class="line">  Total PE              0</div><div class="line">  Free PE               0</div><div class="line">  Allocated PE          0</div><div class="line">  PV UUID               1YfPS2-8OR8-LFEP-WDyk-kLAw-wBL6-0NPDyf</div><div class="line">   </div><div class="line">   </div><div class="line">  &quot;/dev/sde&quot; is a new physical volume of &quot;1.82 TiB&quot;</div><div class="line">  --- NEW Physical volume ---</div><div class="line">  PV Name               /dev/sde</div><div class="line">  VG Name               </div><div class="line">  PV Size               1.82 TiB</div><div class="line">  Allocatable           NO</div><div class="line">  PE Size               0   </div><div class="line">  Total PE              0</div><div class="line">  Free PE               0</div><div class="line">  Allocated PE          0</div><div class="line">  PV UUID               Xv9I0x-09Bk-Q5J3-2YKs-9ACP-nJUg-eSEhiE</div><div class="line">   </div><div class="line">   </div><div class="line">  &quot;/dev/sdc&quot; is a new physical volume of &quot;1.82 TiB&quot;</div><div class="line">  --- NEW Physical volume ---</div><div class="line">  PV Name               /dev/sdc</div><div class="line">  VG Name               </div><div class="line">  PV Size               1.82 TiB</div><div class="line">  Allocatable           NO</div><div class="line">  PE Size               0   </div><div class="line">  Total PE              0</div><div class="line">  Free PE               0</div><div class="line">  Allocated PE          0</div><div class="line">  PV UUID               f2VZdK-8hRF-QJlF-BreW-VeEO-Ctrb-U9zujp</div></pre></td></tr></table></figure></p>
+<p>彻底从pv列表里面移除：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">host ~ # pvremove /dev/sdb </div><div class="line">  Labels on physical volume &quot;/dev/sdb&quot; successfully wiped</div><div class="line">host ~ # pvremove /dev/sde </div><div class="line">  Labels on physical volume &quot;/dev/sde&quot; successfully wiped</div><div class="line">host ~ # pvremove /dev/sdc</div><div class="line">  Labels on physical volume &quot;/dev/sdc&quot; successfully wiped</div></pre></td></tr></table></figure></p>
+<p>现在在pv列表里面已经看不到了：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">host ~ # pvdisplay -m</div><div class="line">  --- Physical volume ---</div><div class="line">  PV Name               /dev/sdd</div><div class="line">  VG Name               myvg</div><div class="line">  PV Size               3.64 TiB / not usable 3.84 MiB</div><div class="line">  Allocatable           yes </div><div class="line">  PE Size               4.00 MiB</div><div class="line">  Total PE              953861</div><div class="line">  Free PE               167429</div><div class="line">  Allocated PE          786432</div><div class="line">  PV UUID               H4n9ta-bYRW-TD88-MYL2-H9Nv-vuhT-jNaUbq</div><div class="line">   </div><div class="line">  --- Physical Segments ---</div><div class="line">  Physical extent 0 to 786431:</div><div class="line">    Logical volume	/dev/myvg/data</div><div class="line">    Logical extents	0 to 786431</div><div class="line">  Physical extent 786432 to 953860:</div><div class="line">    FREE</div></pre></td></tr></table></figure></p>
+<p>大功告成，现在可以恢复lvm之前的挂载点了：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">host ~ # mount /dev/mapper/myvg-data /data</div></pre></td></tr></table></figure></p>
+<h1 id="缩减后"><a href="#缩减后" class="headerlink" title="缩减后"></a>缩减后</h1><p>现在的三块是否后的硬盘 sdb sdc sde，就像刚插入的硬盘一样，想怎么处理，都可以(可以对比看一下，和最开始的lsblk，有什么差别)：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">host ~ # lsblk </div><div class="line">NAME          MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT</div><div class="line">sda             8:0    0 119.2G  0 disk </div><div class="line">|-sda1          8:1    0   500M  0 part /boot</div><div class="line">|-sda2          8:2    0    50G  0 part /home/myvg</div><div class="line">|-sda3          8:3    0    25G  0 part /</div><div class="line">|-sda4          8:4    0     1K  0 part </div><div class="line">|-sda5          8:5    0    20G  0 part /home/myvg/var/logs</div><div class="line">|-sda6          8:6    0    10G  0 part /home/myvg/var/tmp</div><div class="line">|-sda7          8:7    0   9.9G  0 part /ac</div><div class="line">`-sda8          8:8    0   3.9G  0 part </div><div class="line">sdb             8:16   0 931.5G  0 disk </div><div class="line">sdc             8:32   0   1.8T  0 disk </div><div class="line">sdd             8:48   0   3.7T  0 disk </div><div class="line">`-myvg-data 253:0    0     3T  0 lvm  /data</div><div class="line">sde             8:64   0   1.8T  0 disk</div></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/LVM/" rel="tag"># LVM</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/10/19/tmux/" rel="next" title="TMux 安装">
+                <i class="fa fa-chevron-left"></i> TMux 安装
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/10/20/lvm-create/" rel="prev" title="创建LVM条带">
+                创建LVM条带 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">39</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">55</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#现状"><span class="nav-number">1.</span> <span class="nav-text">现状</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#缩减"><span class="nav-number">2.</span> <span class="nav-text">缩减</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#尝试pvmove数据"><span class="nav-number">2.1.</span> <span class="nav-text">尝试pvmove数据</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#缩减文件系统"><span class="nav-number">2.2.</span> <span class="nav-text">缩减文件系统</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#缩减逻辑卷"><span class="nav-number">2.3.</span> <span class="nav-text">缩减逻辑卷</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#再次pvmove数据"><span class="nav-number">2.4.</span> <span class="nav-text">再次pvmove数据</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pvchange属性为不可用"><span class="nav-number">2.5.</span> <span class="nav-text">pvchange属性为不可用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#vgreduce和pvremove删除pv"><span class="nav-number">2.6.</span> <span class="nav-text">vgreduce和pvremove删除pv</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#缩减后"><span class="nav-number">3.</span> <span class="nav-text">缩减后</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>
