@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="理论," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="写作文是件很痛苦的事情，特别是命题作文，特别是让一个懒人写命题作文。 懒人喜欢改造外界条件来匹配自己的要求，确切地说，是因为当外在条件不满足的时候，懒人便有了自我安慰的借口。例如，我认为没有写过像样的IOS APP是因为没有一台好MAC，没有做到地产大亨是因为老婆不是张欣，而不是世界首富的原因很简单，那是没有一个能取到源代码的爹，这世上，几乎所有的不如意都可以归结为没有一个好爹。 盖茨的成功，有一">
+<meta name="keywords" content="理论">
+<meta property="og:type" content="article">
+<meta property="og:title" content="运营需求篇">
+<meta property="og:url" content="http://mnstory.net/2015/11/16/requirement/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="写作文是件很痛苦的事情，特别是命题作文，特别是让一个懒人写命题作文。 懒人喜欢改造外界条件来匹配自己的要求，确切地说，是因为当外在条件不满足的时候，懒人便有了自我安慰的借口。例如，我认为没有写过像样的IOS APP是因为没有一台好MAC，没有做到地产大亨是因为老婆不是张欣，而不是世界首富的原因很简单，那是没有一个能取到源代码的爹，这世上，几乎所有的不如意都可以归结为没有一个好爹。 盖茨的成功，有一">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2017-12-01T15:33:15.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="运营需求篇">
+<meta name="twitter:description" content="写作文是件很痛苦的事情，特别是命题作文，特别是让一个懒人写命题作文。 懒人喜欢改造外界条件来匹配自己的要求，确切地说，是因为当外在条件不满足的时候，懒人便有了自我安慰的借口。例如，我认为没有写过像样的IOS APP是因为没有一台好MAC，没有做到地产大亨是因为老婆不是张欣，而不是世界首富的原因很简单，那是没有一个能取到源代码的爹，这世上，几乎所有的不如意都可以归结为没有一个好爹。 盖茨的成功，有一">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2015/11/16/requirement/"/>
+
+
+
+
+
+  <title>运营需求篇 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2015/11/16/requirement/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">运营需求篇</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2015-11-16T15:00:00+00:00">
+                2015-11-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>写作文是件很痛苦的事情，特别是命题作文，特别是让一个懒人写命题作文。</p>
+<p>懒人喜欢改造外界条件来匹配自己的要求，确切地说，是因为当外在条件不满足的时候，懒人便有了自我安慰的借口。例如，我认为没有写过像样的IOS APP是因为没有一台好MAC，没有做到地产大亨是因为老婆不是张欣，而不是世界首富的原因很简单，那是没有一个能取到源代码的爹，这世上，几乎所有的不如意都可以归结为没有一个好爹。</p>
+<p>盖茨的成功，有一部分是家庭原因，有一部分不是，正如客户需求，有一部分真实存在，有一部分属于意淫，有一部分可以替代，还有一部分其实说的另外一件事。</p>
+<p>大家时间都是那么的宝贵，我也不忍将本是饺子大小的东西写成包子，啰嗦两句，算是饺子前沾的酱油，以便吃着更有味。<br><a id="more"></a></p>
+<h1 id="需求必要性"><a href="#需求必要性" class="headerlink" title="需求必要性"></a>需求必要性</h1><p>莎士比亚说过，一千个人眼中有一千种需求。</p>
+<p>同样的需求，可能有多种看法，例如，市场认为很紧急的需求，研发慢条不紊，研发认为很必要的需求，老大说这都不重要，其实客户说的都不是这个意思，而产品最后长什么样，基本上看谁对产品影响最多，这不算一个好现象，我们虽然很乐意相信自己是最聪明的别人都是傻逼，但一人之力毕竟有限，毕竟术业有专攻，团队做产品还得靠大家。</p>
+<p>方向比努力重要，如果做的都是用户最迫切需要的功能，可以省去多少人加班，给员工的压力在适度范围内，太小和太过都会适得其反，比如一个IT老人回到家是筋疲力尽，都不愿意再打开如小老婆般爱护的电脑，表示压力太过，那么他应该是没有多余时间去思考如何做好产品的，只是纯粹地将脑力活变成体力活而已，如果用小弟们的加班来弥补管理的焦虑，实在是不明智的做法（写到这里，我问了下我内心，确定不是因为我现在是小弟才这么说的），作为管理，更应该在方向上调整，而需求规划的准确性，正是方向上努力。</p>
+<p>有人觉得，既然你们目前处于追赶竞争对手阶段，说白了就是别人有什么就抄什么，何必管方向，人家怎么做你就怎么做呗？</p>
+<p>如果抄产品像抄作业那么简单，那这句话是对的，因为等你用几天时间分析好先抄哪个，后抄哪个，黄花菜都变老坛酸菜了。而做虚拟化则不然，因为你的产品不是一两个小时能抄完的，也不是所有的需求都要做，为什么？很简单，你做不完呗！</p>
+<p>这里涉及到一个定位问题，你的产品在这个阶段想卖给谁？在未来想卖给谁？</p>
+<h1 id="早期定位"><a href="#早期定位" class="headerlink" title="早期定位"></a>早期定位</h1><p>其实直到今年上半年，我们偶尔还认为我们要卖给非VMWARE的目标客户，就是那些不用VMWARE的客户，其实盗版免费+VMWARE都搞不定的用户，我们也很难搞定，开始推广后发现，有的对手就像税收，不是想避就能避的。</p>
+<p>需求是个动态成长的过程，回头看，前期我们花了好多时间来成长，换成俗话说，就是吃了好久的干饭。哎，不说了，说多了我自己感觉都悲伤逆流成河，只是适度举例，论证下本文观点即可：</p>
+<ol>
+<li><p>有的需求超前了<br>拿UI改进来说，互联网产品的核心诉求是简单易用，企业市场不一定，他们更在乎第一次配置好了之后永远也不要来碰这个UI，一个好的UI甚至没法纳入购买产品的思考范围，且不说好UI并不等于易用。<br>国内不少客户自己本来就不维护产品，而是交由代理商，他们完全不去操作；企业软件的使用者往往并不是购买决策者，产品是否有漂亮易用的UI对决策者而言影响有却不大，这也是企业软件为啥一直这么难用的最主要原因；甚至一部分国企中存在一种现象，他们不希望这个东西做的太容易，谁都能接手，不需要这么多人力，他们就失业了，当然，这是极少极少数的，我们应当对这种行为说“同志，这样做是不对的”。<br>我们在安装包上的易用改进，值得肯定，毕竟竞争对手们的安装做的实在太难用了，以我业余的水平，不研究一天半日也很难搞定，而推翻1.2版本的UI做3.0的UI，个人认为有点超前，UI漂亮，不一定更易用，比如被吐槽多次的虚拟机管理页面，那个小方块确实没考虑到上百个的虚拟机如何维护，可能是咱们的设计师刚开始就认定了“我敢打赌这个集群一定扛不住二十台虚拟机，设计这么多虚拟机的茅坑有个屎用！”<br>aCenter这款产品做的有些超前，据不完全统计，我现在还没有真正用过。跨集群的用户我们可先推迟，毕竟早期市场，一个集群能容纳的主机已经足够，aCenter真正要做的是跨数据中心跨三层网络管理，以便组建异地网络和异地容灾，需要一个方案而已，方案而已，不一定是产品。</p>
+</li>
+<li><p>有的需求落后了<br>迁移是产品初期的重点，但凡测试用户都会有迁移已有业务到aSV平台的需求，不过当时低估了迁移的重要性，认为只要能跑起来即可，以至于后来多个版本一直在擦屁股，哦不，是改进产品。而现在想做的在线迁移，个人认为还是锦上添花，并非必须，因为我们目前解决的重点问题是要让用户的所有系统都能迁移过来而不是改进已经能迁移过来的系统，如果我们做不到所有系统都能迁移，是否有替代办案？如果运行过程可能由于意外多次中断都能接受，迁移时一次业务中断又有多少关系呢？当一个用户说：“我fake-Raid主机上的centos系统通过aConverter迁移不了。”我们告诉他：“你的windows2008可以使用不中断业务的在线方式来迁移了。”貌似并没有什么用。</p>
+</li>
+<li><p>有的需求有其他替代方案<br>之前做快虚的目的是为了让用户快速体验我们的产品，可能还有一个目的是体验完后可以回退。于是我们做了这个高大上的功能，然而最近却没有怎么维护这块，因为问题颇多，研发投入产出比低，最主要的是，我们做了公网演示环境。现在不论是研发或市场跟客户讲解，还是互联网用户体验，都是用公网环境，虽然公司网络慢如老汉推车，但是能立即看到效果，也不用扛着设备四处奔波，也不用找服务器刻光盘安装系统，这些优点是其他方案所不能替代的，如果当时想到用这个方案来替代快虚，是否会节约部分研发成本？<br>当然，事后再来说这些事情，是极不公平的，今天看着大盘我知道昨天那人亏了，但是我要在今天入市，谁又能保证明天就能涨停。</p>
+</li>
+</ol>
+<h1 id="大环境"><a href="#大环境" class="headerlink" title="大环境"></a>大环境</h1><p>需求的广义定义并不局限于用代码解决的问题，如果不用代码就能解决问题，何必写一堆破代码？有的场景，在目前这个阶段，是不需要代码就能解决的，基本上，能拿出一个方案，最多自己试验试验，总结成文档即可，例如：混合云场景，异地容灾场景，集群跨区域管理，这些是跟用户吹吹牛看看文档能解决的事情，不需要大动干戈。</p>
+<p>而有的需求虽然不需要代码，但是需要比文档更多的东西，老外都叫Best Practices，例如，基于应用的最佳实践：数据库应用，WEB服务器应用，分布式应用，企业SAP应用，EXCHANGE协作，医院HIS系统等，这些都是目前市场上主流的应用场景，我们需要专门验证优化，形成易验证的最佳实践，方便客户测试的同时做到自己心里有数。</p>
+<p>在不同时间段，客户关注的问题也会有所不同。</p>
+<p>接触产品前，客户能看到的是我们的文档介绍，我们的广告，我们的官网，我们市场吹的牛，我们的演示环境，我们的下载注册体验，总的来说，营销资料是一个重心。</p>
+<p>接触产品前期，安装体验，迁移业务，基本操作是重点，特别要保证这些基本操作没有问题，才能打消客户对国产软件和后起之秀的疑问，如果有一、二个地方报错，没有问题，如果有四、五个地方报错，可能就没法再用，哪怕是小问题。易用性问题优先级低于实际障碍问题，例如，安装失败，使用过程断网，虚拟机卡死等，这类问题一旦出现在客户处，会把客户脆弱的心灵烫起好多泡，什么鸡汤也救不了。</p>
+<p>接触产品中期，相对前期来说，客户验证的功能点更多，基本原则还是，宁可无功能，不要不稳定。有的小错误，研发认为是个小问题，客户却束手无策。此外用户开始关注性能，开始实际验证稳定性，特别是存储虚拟化这种玩数据的东西，能稳定运行且不丢用户数据是最基本的节操，数据无价，如果真的不幸有佯，是否有恢复方案，是否能得到及时医治？</p>
+<p>目测，我们大致处于前期到中期的过渡阶段，同志们，希望就在前方。</p>
+<p>深信服虚拟化之于华为、华三，我认为是极有优势的，基因影响华为之类的厂商无法放弃其硬件利润，也不会倾其所有投入虚拟化。之于VMWARE、路坦力我认为也是有优势的，在国产化、开源与技术差距缩小的大趋势下，国内厂商的服务、性价比皆是国外厂商学习不来的，而深信服的客户第一原则在这方面做得也是非常不错，所有市场早晚是我们的，用老何作风来说，就是坚持做一件事一坚持就是一辈子，谁敢跟我比！另外一个好处是，据在下多日夜观星象，发现用户真正用到的技术其实都是基本技术，高端功能多为点缀，做好服务和稳定性，指日可得天下。</p>
+<p>类似我们，最大的威胁可能并不是来自目前关注的竞争对手，而是两种技术，一是云，二是容器。</p>
+<p>SDDC虽然简化了数据中心的搭建、运维和管理，但是云是不需要基础设施且易于扩展和维护的平台，对小型客户和简单应用非常有吸引力，如果互联网的速度和安全问题能解决，公有云应该是更多人的选择，反之，SDDC和私有云会是更多人的选择。</p>
+<p>容器技术的火热，让人们看到了全虚拟化的笨重，很多全虚拟化里面要花大力量高成本解决的问题，在容器技术里面，并不是瓶颈所在，可惜成熟企业的敏捷性一直干不过创业小团队，不然早就该干了。</p>
+<p>废话太多，其实，我理解的需求它不应该是割裂的纯产品需求，有时跳出产品，可能会看到更平坦的道路；有时候四处看看，咦，跨过你家门前那条难过的小乳沟还有条秘密通道。</p>
+<p>个人观点，如有雷同，不胜荣幸，如果认同，不用客气，毕竟说话和放屁一样都是极简单的事，“做”才最困难。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/理论/" rel="tag"># 理论</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/12/25/trojan/" rel="prev" title="网站被挂马">
+                网站被挂马 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">49</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">62</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#需求必要性"><span class="nav-number">1.</span> <span class="nav-text">需求必要性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#早期定位"><span class="nav-number">2.</span> <span class="nav-text">早期定位</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#大环境"><span class="nav-number">3.</span> <span class="nav-text">大环境</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

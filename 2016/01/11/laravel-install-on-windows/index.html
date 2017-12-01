@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Laravel,环境搭建," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="Windows下，我使用PHP是XAMPP里面自带的，XAMPP可以从 http://www.xampps.com/ 下载。 Composer安装本来是应该从官网 https://getcomposer.org/download/下载安装的，但是被墙，中国人做了个镜像：http://packagist.cn/ 我自己用这个镜像安装后还是有问题：1234D:\Programmer\laravel-v">
+<meta name="keywords" content="Laravel,环境搭建">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Windows下安装Laravel">
+<meta property="og:url" content="http://mnstory.net/2016/01/11/laravel-install-on-windows/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="Windows下，我使用PHP是XAMPP里面自带的，XAMPP可以从 http://www.xampps.com/ 下载。 Composer安装本来是应该从官网 https://getcomposer.org/download/下载安装的，但是被墙，中国人做了个镜像：http://packagist.cn/ 我自己用这个镜像安装后还是有问题：1234D:\Programmer\laravel-v">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2016/01/11/laravel-install-on-windows/1.mb-error.png">
+<meta property="og:updated_time" content="2017-12-01T15:18:49.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Windows下安装Laravel">
+<meta name="twitter:description" content="Windows下，我使用PHP是XAMPP里面自带的，XAMPP可以从 http://www.xampps.com/ 下载。 Composer安装本来是应该从官网 https://getcomposer.org/download/下载安装的，但是被墙，中国人做了个镜像：http://packagist.cn/ 我自己用这个镜像安装后还是有问题：1234D:\Programmer\laravel-v">
+<meta name="twitter:image" content="http://mnstory.net/2016/01/11/laravel-install-on-windows/1.mb-error.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2016/01/11/laravel-install-on-windows/"/>
+
+
+
+
+
+  <title>Windows下安装Laravel | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/01/11/laravel-install-on-windows/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">Windows下安装Laravel</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-01-11T15:00:00+00:00">
+                2016-01-11
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Windows下，我使用PHP是XAMPP里面自带的，XAMPP可以从 <a href="http://www.xampps.com/" target="_blank">http://www.xampps.com/</a> 下载。</p>
+<h1 id="Composer安装"><a href="#Composer安装" class="headerlink" title="Composer安装"></a>Composer安装</h1><p>本来是应该从官网 <a href="https://getcomposer.org/download/" target="_blank">https://getcomposer.org/download/</a>下载安装的，但是被墙，中国人做了个镜像：<a href="http://packagist.cn/" target="_blank">http://packagist.cn/</a> 我自己用这个镜像安装后还是有问题：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">D:\Programmer\laravel-v5.1.11&gt;composer show monolog/monolog</div><div class="line">  [Composer\Repository\RepositorySecurityException]</div><div class="line">  The contents of http://packagist.cn/p/provider-latest%2496c1323f8988d6ff304275d52caa63774d906b9c1e908e72e2dcb6b4dfce24a5.json do not match its signature. This should indicate a man-in-the-middle attack. Try running composer again and report this if you think it is a mistake.</div><div class="line">show [-i|--installed] [-p|--platform] [-a|--available] [-s|--self] [-N|--name-only] [-P|--path] [-t|--tree] [--] [&lt;package&gt;] [&lt;version&gt;]</div></pre></td></tr></table></figure></p>
+<p>没有深究是什么原因，很有可能是下面介绍的PHP SSL证书问题。<br><a id="more"></a><br>如果从官网下载<a href="https://getcomposer.org/Composer-Setup.exe" target="_blank">https://getcomposer.org/Composer-Setup.exe</a>安装不成功，原因是主要是PHP的SSL证书问题，用：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">php -r &quot;readfile(&apos;https://getcomposer.org/installer&apos;);&quot; | php</div></pre></td></tr></table></figure></p>
+<p>方式也一样下载不了。</p>
+<p>提示SSL证书错误，解决办法，可以参考 <a href="http://curl.haxx.se/docs/caextract.html" target="_blank">http://curl.haxx.se/docs/caextract.html</a>  ，下载两种证书中的任意一种，放到本地任意目录，例如我放到：<br><br>C:\xampp\php\cfg\ca-bundle.crt<br>然后修改php.ini，在openssl节添加(如果没有openssl节可自行添加)openssl.cafile 和 curl.cainfo，指向刚才下载的证书，如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">[openssl]</div><div class="line">openssl.cafile=C:/xampp/php/cfg/ca-bundle.crt</div><div class="line">curl.cainfo=C:/xampp/php/cfg/ca-bundle.crt</div></pre></td></tr></table></figure></p>
+<p>添加完后，验证是否正确：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">C:\Users\mnstory&gt;php -r &quot;print_r(openssl_get_cert_locations());&quot;</div><div class="line">Array</div><div class="line">(</div><div class="line">    [default_cert_file] =&gt; c:/usr/local/ssl/cert.pem</div><div class="line">    [default_cert_file_env] =&gt; SSL_CERT_FILE</div><div class="line">    [default_cert_dir] =&gt; c:/usr/local/ssl/certs</div><div class="line">    [default_cert_dir_env] =&gt; SSL_CERT_DIR</div><div class="line">    [default_private_dir] =&gt; c:/usr/local/ssl/private</div><div class="line">    [default_default_cert_area] =&gt; c:/usr/local/ssl</div><div class="line">    [ini_cafile] =&gt; C:/xampp/php/cfg/ca-bundle.crt</div><div class="line">    [ini_capath] =&gt;</div><div class="line">)</div></pre></td></tr></table></figure></p>
+<p>如果PHP的这个证书问题不解决，就算安装上composer，也会有错误，例如执行self-update报错：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">C:\xampp\htdocs\laravel&gt;composer self-update</div><div class="line">  [Composer\Downloader\TransportException]</div><div class="line">  The &quot;https://getcomposer.org/version&quot; file could not be downloaded: failed to open stream: HTTP request failed!</div><div class="line">self-update [-r|--rollback] [--clean-backups] [--no-progress] [--] [&lt;version&gt;]</div></pre></td></tr></table></figure></p>
+<p>正常情况应该是：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">C:\xampp\htdocs\laravel&gt;composer self-update</div><div class="line">Updating to version 44bc8e019f8b4ac711b647b0693f84061ac7bb38.</div><div class="line">    Downloading: 100%</div><div class="line">Use composer self-update --rollback to return to version 1.0.0-alpha11</div></pre></td></tr></table></figure></p>
+<h1 id="Laravel安装"><a href="#Laravel安装" class="headerlink" title="Laravel安装"></a>Laravel安装</h1><p>网上的文档一般推荐是从Composer安装，我直接从 <a href="http://www.golaravel.com/download/" target="_blank">http://www.golaravel.com/download/</a> 下载 的Laravel 5.1.11版本，解压到xampp的htdocs目录下。</p>
+<p>解压后（例如我解压到C:\xampp\htdocs\laravel目录），我们需要修改根目录下的.env文件来<b>设置数据库连接环境变量。</b></p>
+<p>先为Laravel生成数据库，我使用的是XAMPP自带的MySQL生成：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">create database homestead;</div></pre></td></tr></table></figure></p>
+<p>然后在.env文件中配置，例如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">DB_HOST=localhost</div><div class="line">DB_DATABASE=homestead</div><div class="line">DB_USERNAME=root</div><div class="line">DB_PASSWORD=</div></pre></td></tr></table></figure></p>
+<p>配置完数据库，可以修改下其他地方，看下config/app.php这个文件，其中，URL一节可修改为你当前的实际访问URL，例如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">&apos;url&apos; =&gt; &apos;http://localhost/laravel/public&apos;,</div></pre></td></tr></table></figure></p>
+<p>打开 <a href="http://localhost/laravel/public" target="_blank" rel="external">http://localhost/laravel/public</a> 你会看到欢迎界面。<br>当然，你也可以在Apache里面设置Root目录到C:\xampp\htdocs\laravel\public，这样，访问 <a href="http://localhost" target="_blank" rel="external">http://localhost</a> 即为网站主页。</p>
+<h1 id="使用Composer安装依赖库"><a href="#使用Composer安装依赖库" class="headerlink" title="使用Composer安装依赖库"></a>使用Composer安装依赖库</h1><p>有了Composer和Laravel后，如果你代码里面需要用到其他库，可以修改Laravel解压后根目录下的composer.json文件，或者用composer config -e命令打开此文件，在其require下添加依赖，例如，我想使用AMQP库，则添加：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">&quot;videlalvaro/php-amqplib&quot;: &quot;2.5.*&quot;</div></pre></td></tr></table></figure></p>
+<p>然后在根目录执行composer update，例如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">C:\xampp\htdocs\laravel&gt;composer update -vvv</div><div class="line">Reading ./composer.json</div><div class="line">Loading config file ./composer.json</div><div class="line">Executing command (C:\xampp\htdocs\laravel): git describe --exact-match --tags</div><div class="line">Executing command (C:\xampp\htdocs\laravel): git branch --no-color --no-abbrev -v</div><div class="line">Executing command (C:\xampp\htdocs\laravel): hg branch</div><div class="line">Executing command (C:\xampp\htdocs\laravel): svn info --xml</div><div class="line">Failed to initialize global composer: Composer could not find the config file: C:/Users/mnstory/AppData/Roaming/Composer/composer.json</div><div class="line">To initialize a project, please create a composer.json file as described in the https://getcomposer.org/ &quot;Getting Started&quot; section</div><div class="line">&gt; pre-update-cmd: php artisan clear-compiled</div><div class="line">Executing command (CWD): php artisan clear-compiled</div><div class="line">Loading composer repositories with package information</div><div class="line">Downloading https://packagist.org/packages.json</div><div class="line">Writing C:/Users/mnstory/AppData/Local/Composer/repo/https---packagist.org/packages.json into cache</div></pre></td></tr></table></figure></p>
+<h1 id="安装PhpStorm-IDE支持"><a href="#安装PhpStorm-IDE支持" class="headerlink" title="安装PhpStorm IDE支持"></a>安装PhpStorm IDE支持</h1><p>用其他编辑工具的可以忽略此节。<br>PhpStorm是JetBrains公司的PHP开发IDE，使用起来非常方便，安装可以参考 <a href="http://segmentfault.com/a/1190000002912820" target="_blank">http://segmentfault.com/a/1190000002912820</a> </p>
+<p>主要步骤为：</p>
+<ol>
+<li><p>执行composer require barryvdh/laravel-ide-helper</p>
+</li>
+<li><p>在config/app.php的providers中添加：</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class</div></pre></td></tr></table></figure>
+</li>
+<li><p>生成IDE能读取的文件。</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">C:\xampp\htdocs\laravel&gt;php artisan clear-compiled</div><div class="line">C:\xampp\htdocs\laravel&gt;php artisan ide-helper:generate</div><div class="line">A new helper file was written to _ide_helper.php</div><div class="line">C:\xampp\htdocs\laravel&gt;php artisan optimize</div><div class="line">Generating optimized class loader</div></pre></td></tr></table></figure>
+<p> 如果每次都手动生成IDE读取文件很麻烦，我们可以在composer.json的post-update-cmd中加入如下命令，保证helper在每次commit都会更新:</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">&quot;post-update-cmd&quot;: [</div><div class="line">      &quot;php artisan clear-compiled&quot;,</div><div class="line">      &quot;php artisan ide-helper:generate&quot;,</div><div class="line">      &quot;php artisan optimize&quot;</div><div class="line">],</div></pre></td></tr></table></figure>
+</li>
+<li><p>配置PhpStorm<br> 首先，安装插件。<br> 启动PhpSorm的初始化页面，在UI的左下角，点击”Configure”-&gt;”Plugins”-&gt;”Browse repositories”-&gt;搜索”laravel”-&gt;左边列表选择”Laravel Plugin”-&gt;右边点击”Install”-&gt;重启IDE<br> 然后，导入工程。<br> 在PhpSorm启动UI，点击”Create New Project from Existing Files”-&gt;”Web Server is installed locally, source files are located under its document root”-&gt;选择路径”C:\xampp\htdocs\laravel”-&gt;点击”Project Root”-&gt;”Next”-&gt;设置工程名字，其他的默认即可。</p>
+</li>
+</ol>
+<h1 id="部署"><a href="#部署" class="headerlink" title="部署"></a>部署</h1><p>开发环境开发完成后，一般都会将软件部署到运行环境，部署类似应用，一般有三步：</p>
+<ol>
+<li>将数据库导出，然后在目标系统里导入，修改数据库连接。</li>
+<li>将目录整个打包，上传到目标系统。</li>
+<li>微调。<br> 对于Laravel就是不匹配的配置需要修改下，我只修改了.env里面的数据库密码和config/app.php文件下的URL。<br> 部署在LINUX系统上的时候，遇到了一个错误：<br> <img src="/2016/01/11/laravel-install-on-windows/1.mb-error.png" alt="mb error"><br> 这个错误是由于没有安装mbstring导致，安装后解决： <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">yum install php-mbstring</div></pre></td></tr></table></figure>
+</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Laravel/" rel="tag"># Laravel</a>
+          
+            <a href="/tags/环境搭建/" rel="tag"># 环境搭建</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/12/27/jsplumb-absolute-offset/" rel="next" title="改正绝对定位导致jsPlumb偏移问题">
+                <i class="fa fa-chevron-left"></i> 改正绝对定位导致jsPlumb偏移问题
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/01/18/asv-webui-speed-optimization/" rel="prev" title="WEBUI响应速度优化">
+                WEBUI响应速度优化 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">49</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">62</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Composer安装"><span class="nav-number">1.</span> <span class="nav-text">Composer安装</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Laravel安装"><span class="nav-number">2.</span> <span class="nav-text">Laravel安装</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用Composer安装依赖库"><span class="nav-number">3.</span> <span class="nav-text">使用Composer安装依赖库</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#安装PhpStorm-IDE支持"><span class="nav-number">4.</span> <span class="nav-text">安装PhpStorm IDE支持</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#部署"><span class="nav-number">5.</span> <span class="nav-text">部署</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

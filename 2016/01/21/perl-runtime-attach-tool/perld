@@ -1,0 +1,143 @@
+#!/bin/bash
+#
+# runtime perl debug
+# 
+# @author mnstory.net
+# @version 
+#    verion 1.0 - @20131121 - add listen, connect option
+#    verion 2.0 - @20160119 - add exec option
+
+arg_port_dft=29219
+cmd_tmp_file=/tmp/perld.cmd
+
+usage()
+{
+local help=`cat <<- HELP
+usage: 
+    $0 -l [PORT], waiting for connection on port, default PORT=$arg_port_dft
+    $0 -c PID/PROCESSNAME [PORT], connect runtime process to debug port
+    $0 -e PID/PROCESSNAME [CMDS], execute commands in runtime process, print stack info by default
+    e.g:
+        $0 -l
+        $0 -l $arg_port_dft
+        $0 -c vtpdaemon $arg_port_dft
+        $0 -c 10010 $arg_port_dft
+        $0 -e vtpdaemon 'use plog; plog::ldebug(caller());'
+        $0 -e vtpdaemon && tail -f /sf/log/today/sfvt_vtpdaemon.log
+HELP`
+    echo "$help" >&2
+    return 1
+}
+
+inject()
+{
+    local arg_pid="$1"
+    shift
+    local arg_cmd="$@"
+    
+    if [ -z "$arg_cmd" ]; then
+        arg_cmd="print 'inject test!'";
+    fi
+    
+    echo > $cmd_tmp_file
+    echo "call (void*)Perl_eval_pv((void*)Perl_get_context(),\"$arg_cmd\",0)" >> $cmd_tmp_file
+    echo detach >> $cmd_tmp_file
+    echo q >> $cmd_tmp_file
+    
+    rtinject "$arg_pid" $cmd_tmp_file
+    lasterr=$?
+    if [ $lasterr -ne 0 ]; then
+        echo "rtinject $arg_pid $cmd_tmp_file failed($lasterr)" >&2
+        return $lasterr
+    fi
+}
+
+onListen()
+{
+    if [ -z "$1" ]; then
+        arg_port=$arg_port_dft
+    else
+        arg_port=$1
+    fi
+    echo perl debug server listen on port $arg_port
+    nc -l -p $arg_port
+}
+
+onConnect()
+{
+    arg_pid=$1
+    if [ -z "$arg_pid" ]; then
+        usage
+        return 1
+    fi
+
+    if [ -z "$2" ]; then
+        arg_port=$arg_port_dft
+    else
+        arg_port=$2
+    fi
+
+    netstat -l --numeric-ports | grep -P ":$arg_port\s.*?LISTEN" >/dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo "you must run: '$0 -l $arg_port' first"
+        return 1;
+    fi
+    
+    inject $arg_pid "eval{require Enbugger;warn q(stopping);\$ENV{PERLDB_OPTS}='RemotePort=127.0.0.1:$arg_port';Enbugger->stop;};print STDERR \$@;"
+    if [ $? -eq 0 ]; then
+        echo "connect to 127.0.0.1:$arg_port ok"
+    fi
+}
+
+onExec()
+{
+    arg_pid=$1
+    if [ -z "$arg_pid" ]; then
+        usage
+        return 1
+    fi
+
+    if [ -z "$2" ]; then
+        arg_cmd='eval{ use plog qw(linfo); linfo(\"\"); foreach $i (1..30) { ($p,$f,$l,$s)=caller($i); if(!$f) {last}; linfo(\"[$i] -> $f:$l ($s)\"); } };print STDERR $@;'
+    else
+        arg_cmd="$2"
+    fi
+	
+	expr "$arg_pid" "+" 10 >/dev/null 2>&1
+	if [ $? -ne 0 ];then
+		arg_pid=$(pidof "$arg_pid")
+		if [ -z "$arg_pid" ]; then
+			echo "can't find runtime process $1" >&2
+			return 2
+		fi
+	fi
+
+	for pid in $arg_pid; do
+		inject $pid "$arg_cmd"
+		echo "inject $pid ok"
+	done
+}
+
+main()
+{
+    arg_cmd=$1
+    shift
+    
+    if [ -z "$arg_cmd" ]; then
+        usage
+        return 1
+    fi
+    
+    if [ "$arg_cmd" = "-l" ]; then
+        onListen "$@"
+    elif [ "$arg_cmd" = "-c" ]; then
+        onConnect "$@"
+    elif [ "$arg_cmd" = "-e" ]; then
+        onExec "$@"
+    else
+        usage
+        return 1
+    fi
+}
+
+main "$@"

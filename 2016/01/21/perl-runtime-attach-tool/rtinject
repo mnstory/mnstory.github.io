@@ -1,0 +1,90 @@
+#!/bin/bash
+#
+# 1. runtime commands inject
+# @author mnstory.net@20131024
+
+lerror()
+{
+	echo "$@" >&2
+}
+
+ldebug()
+{
+	echo "$@" >&2
+}
+
+usage()
+{
+	local help=`cat <<- HELP
+usage:
+    $0 PID/PROCESSNAME COMMANDS/FILE [TRIPLEVEL]
+    TRIPLEVEL - trip stdout/stderr, choose value from 'all' 'trip' 'none', default is 'trip'
+e.g:
+    $0 a.out /tmp/commands.txt
+    $0 29219 'thread apply all bt' none
+    $0 bash 'bt'
+HELP`
+    echo "$help" >&2
+}
+
+inject_pid()
+{
+	local arg_pid=$1
+	local arg_cmd=$2
+
+	if [ ! -d "/proc/$arg_pid" ]; then
+		lerror "proc $arg_pid not exist, no inject!"
+		return 1
+	fi
+
+	local cmd_args="-n -q /proc/$arg_pid/exe $arg_pid"
+	if test -f "$arg_cmd" 2>/dev/null; then
+#	    ldebug gdb $cmd_args -x $arg_cmd
+		gdb $cmd_args -x $arg_cmd 2>&1
+	else
+#		ldebug gdb $cmd_args "$arg_cmd"
+gdb $cmd_args 2>&1 <<EOF 
+$arg_cmd
+EOF
+	fi
+}
+
+inject_cmd() 
+{
+	local arg_pid="$1"
+	local arg_cmd="$2"
+
+	expr "$arg_pid" "+" 10 >/dev/null 2>&1
+	if [ $? -ne 0 ];then
+		# just peek first pid
+		arg_pid=$(pidof "$arg_pid" | awk '{print $1}')
+		if [ -z "$arg_pid" ]; then
+			lerror "can't find runtime process $1"
+			return 2
+		fi
+	fi
+
+	inject_pid "$arg_pid" "$arg_cmd"
+}
+
+main()
+{
+	local arg_pid="$1"
+	local arg_cmd="$2"
+	local arg_trip="$3"
+	
+	if [ "$arg_pid" = "" -o "$arg_cmd" = "" ]; then
+		usage
+		return 1
+	fi
+
+	if [ "$arg_trip" = "all" ]; then 
+		inject_cmd "$arg_pid" "$arg_cmd"
+	elif [ "$arg_trip" = "none" ]; then 
+		inject_cmd "$arg_pid" "$arg_cmd" >/dev/null
+	else
+		inject_cmd "$arg_pid" "$arg_cmd" | /bin/sed -n -e 's/^(gdb) //' -e '/^#/p' -e '/^Thread/p'
+	fi
+}
+
+main "$1" "$2" "$3"

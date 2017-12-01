@@ -1819,7 +1819,7 @@ pre .javascript .function {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #aae717;
+  background: #94e8ff;
 }
 .links-of-blogroll {
   font-size: 13px;
@@ -2994,4 +2994,17 @@ pre .javascript .function {
 }
 .footer {
   bottom: auto;
+}
+p {
+  line-height: 34.2px;
+  color: #000;
+  font-family: youyuan;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: SimHei;
 }
