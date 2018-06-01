@@ -77,7 +77,7 @@
 <meta property="og:site_name" content="码农故事">
 <meta property="og:description" content="测试部让查一个BUG，某台虚拟机的fantom启动不来。 我准备调试一下：1234~ # python -mpdb /home/fantom/share/Python-2.7/lib/supervisor/supervisord.py -c /home/fantom/apps/super/default/conf/fantom/supervisord.conf&amp;gt; /home/fantom/s">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-06-01T06:24:52.000Z">
+<meta property="og:updated_time" content="2018-06-01T06:50:56.141Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="谁KILL了进程定位工具之auditd">
 <meta name="twitter:description" content="测试部让查一个BUG，某台虚拟机的fantom启动不来。 我准备调试一下：1234~ # python -mpdb /home/fantom/share/Python-2.7/lib/supervisor/supervisord.py -c /home/fantom/apps/super/default/conf/fantom/supervisord.conf&amp;gt; /home/fantom/s">
@@ -272,7 +272,7 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-31T21:00:00+08:00">
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-31T13:00:00+00:00">
                 2018-01-31
               </time>
             
@@ -316,11 +316,11 @@
 
       
         <p>测试部让查一个BUG，某台虚拟机的fantom启动不来。</p>
-<p>我准备调试一下：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">~ # python -mpdb /home/fantom/share/Python-2.7/lib/supervisor/supervisord.py -c /home/fantom/apps/super/default/conf/fantom/supervisord.conf</div><div class="line"><span class="meta">&gt;</span><span class="bash"> /home/fantom/share/Python-2.7/lib/supervisor/supervisord.py(31)&lt;module&gt;()</span></div><div class="line"><span class="meta">-&gt;</span><span class="bash"> <span class="string">""</span><span class="string">"</span></span></div><div class="line">(Pdb) Killed</div></pre></td></tr></table></figure></p>
+<p>我准备调试一下：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">~ # python -mpdb /home/fantom/share/Python-2.7/lib/supervisor/supervisord.py -c /home/fantom/apps/super/default/conf/fantom/supervisord.conf</div><div class="line"><span class="meta">&gt;</span> /home/fantom/share/Python-2.7/lib/supervisor/supervisord.py(31)&lt;module&gt;()</div><div class="line"><span class="meta">-&gt;</span> """</div><div class="line">(Pdb) Killed</div></pre></td></tr></table></figure></p>
 <p>发现刚启动就被KILL了。</p>
 <p>是谁这么暗箭伤人？操作系统给了我们杀死其他进程的能力，但自己被杀时，却连仇家都找不到。大概是怕冤冤相报何时了。</p>
 <h1 id="auditd"><a href="#auditd" class="headerlink" title="auditd"></a>auditd</h1><p>想要找到是谁干的，Linux下有一个比较厉害审计工具，auditd，他可以审计很多系统调用，包括kill。</p>
-<p>看下如何配置：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">~ # cat /etc/audit/rules.d/audit.rules </div><div class="line">-a entry,always -F arch=b64 -S kill -k kill_signals</div></pre></td></tr></table></figure></p>
+<p>看下如何配置：<br><a id="more"></a><br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">~ # cat /etc/audit/rules.d/audit.rules </div><div class="line">-a entry,always -F arch=b64 -S kill -k kill_signals</div></pre></td></tr></table></figure></p>
 <p>启动：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">~ # service auditd restart</div></pre></td></tr></table></figure></p>
 <p>有可能启动不了，strace看了一下，发现日志目录没创建，补充一个：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">~# mkdir -p /var/log/audit</div></pre></td></tr></table></figure></p>
 <p>可以通过ausearch去搜索刚才定义的kill_signals日志：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">~ # ausearch -k kill_signals</div></pre></td></tr></table></figure></p>
@@ -364,8 +364,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2017/12/29/elasticsearch-aggregations/" rel="next" title="Elasticsearch �ۺ�">
-                <i class="fa fa-chevron-left"></i> Elasticsearch �ۺ�
+              <a href="/2017/12/29/elasticsearch-aggregations/" rel="next" title="Elasticsearch 聚合">
+                <i class="fa fa-chevron-left"></i> Elasticsearch 聚合
               </a>
             
           </div>
