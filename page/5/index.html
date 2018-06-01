@@ -242,6 +242,508 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/06/13/storage-access-by-qemu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2016/06/13/storage-access-by-qemu/" itemprop="url">QEMU虚拟存储的几种访问形式</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-06-13T23:00:00+08:00">
+                2016-06-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <h1 id="存储相关命令"><a href="#存储相关命令" class="headerlink" title="存储相关命令"></a>存储相关命令</h1><p>查看是否有FC存储：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> lspci -nn | grep "Fibre Channel"</div><div class="line">81:00.0 Fibre Channel [0c04]: Brocade Communications Systems, Inc. 425/825/42B/82B 4Gbps/8Gbps PCIe dual port FC HBA [1657:0013] (rev 01)</div><div class="line">81:00.1 Fibre Channel [0c04]: Brocade Communications Systems, Inc. 425/825/42B/82B 4Gbps/8Gbps PCIe dual port FC HBA [1657:0013] (rev 01)</div></pre></td></tr></table></figure></p>
+<p>其中ID为81:00.0 的 vendor &amp; device ID 为 1657: 0013（上面中括号内），通过device ID，可以查找是否已经有设备驱动存在：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span> grep 1657 /lib/modules/`uname -r`/modules.* | grep 0013</div><div class="line">/lib/modules/3.10.0/modules.alias:alias pci:v00001657d00000013sv*sd*bc*sc*i* bfa</div></pre></td></tr></table></figure></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2016/06/13/storage-access-by-qemu/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/05/23/ovirt-install-guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2016/05/23/ovirt-install-guide/" itemprop="url">oVirt安装体验（CentOS 7.2）</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-05-23T23:00:00+08:00">
+                2016-05-23
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>ovirt是redhat支持的QEMU管理UI，本次安装主要是想体验不同的管理软件。 主要根据文章 <a href="http://jensd.be/550/linux/install-ovirt-on-centos-7" target="_blank" rel="external">http://jensd.be/550/linux/install-ovirt-on-centos-7</a> 来安装，安装结果基本能用，但是错误比较多。</p>
+<h1 id="安装软件"><a href="#安装软件" class="headerlink" title="安装软件"></a>安装软件</h1><p>本机节点IP是200.200.103.61，我设置本机的hostname为cent7。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[root@localhost ~]# echo -e "200.200.103.61 cent7\n" &gt;&gt; /etc/hosts</div></pre></td></tr></table></figure></p>
+<p>然后安装软件<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">[root@localhost ~]# yum install http://resources.ovirt.org/pub/yum-repo/ovirt-release36.rpm</div><div class="line">[root@localhost vm]# wget http://mirrors.aliyun.com/centos/7.2.1511/isos/x86_64/CentOS-7-x86_64-Minimal-1511.iso</div><div class="line">[root@localhost ~]# yum -y install ovirt-engine</div></pre></td></tr></table></figure></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2016/05/23/ovirt-install-guide/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/05/22/first-look-at-office-web-addon/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2016/05/22/first-look-at-office-web-addon/" itemprop="url">自制Office Web插件</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-05-22T23:00:00+08:00">
+                2016-05-22
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>写文章还是WORD比较适合，但是发布到BLOG网站却是HTML，每次转换格式都是件麻烦的事情，于是写了个简单的转换插件，能自动将部分内容按BLOG格式转换，减少人为参与。</p>
+<p>Office的WEB插件非常简单，就是简单的js和html即可，工程名字取名为CleanHtmlExport，于是先写入口配置文件CleanHtmlExport.xml：<br><figure class="highlight xml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="php"><span class="meta">&lt;?</span>xml version=<span class="string">"1.0"</span> encoding=<span class="string">"utf-8"</span><span class="meta">?&gt;</span></span></div><div class="line"><span class="tag">&lt;<span class="name">OfficeApp</span> <span class="attr">xmlns</span>=<span class="string">"http://schemas.microsoft.com/office/appforoffice/1.1"</span> </span></div><div class="line"><span class="tag">    <span class="attr">xmlns:xsi</span>=<span class="string">"http://www.w3.org/2001/XMLSchema-instance"</span> </span></div><div class="line"><span class="tag">    <span class="attr">xsi:type</span>=<span class="string">"TaskPaneApp"</span>&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">Id</span>&gt;</span>08afd7fe-1631-42f4-84f1-5ba51e2d435a<span class="tag">&lt;/<span class="name">Id</span>&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">Version</span>&gt;</span>1.0<span class="tag">&lt;/<span class="name">Version</span>&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">ProviderName</span>&gt;</span>mnstory.net<span class="tag">&lt;/<span class="name">ProviderName</span>&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">DefaultLocale</span>&gt;</span>zh-CN<span class="tag">&lt;/<span class="name">DefaultLocale</span>&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">DisplayName</span> <span class="attr">DefaultValue</span>=<span class="string">"Clean Html Export"</span>/&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">Description</span> <span class="attr">DefaultValue</span>=<span class="string">"Export contents as Html format which fit my blog"</span>/&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">IconUrl</span> <span class="attr">DefaultValue</span>=</span></div><div class="line"><span class="tag">    "<span class="attr">http:</span>//<span class="attr">officeimg.vo.msecnd.net</span>/<span class="attr">_layouts</span>/<span class="attr">images</span>/<span class="attr">general</span>/<span class="attr">office_logo.jpg</span>"/&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">Hosts</span>&gt;</span></div><div class="line">    <span class="tag">&lt;<span class="name">Host</span> <span class="attr">Name</span>=<span class="string">"Document"</span>/&gt;</span></div><div class="line">    <span class="tag">&lt;<span class="name">Host</span> <span class="attr">Name</span>=<span class="string">"Workbook"</span>/&gt;</span></div><div class="line">  <span class="tag">&lt;/<span class="name">Hosts</span>&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">DefaultSettings</span>&gt;</span></div><div class="line">    <span class="tag">&lt;<span class="name">SourceLocation</span> <span class="attr">DefaultValue</span>=<span class="string">"\\mypc\CleanHtmlExport\export.html"</span>/&gt;</span></div><div class="line">  <span class="tag">&lt;/<span class="name">DefaultSettings</span>&gt;</span></div><div class="line">  <span class="tag">&lt;<span class="name">Permissions</span>&gt;</span>ReadWriteDocument<span class="tag">&lt;/<span class="name">Permissions</span>&gt;</span></div><div class="line"><span class="tag">&lt;/<span class="name">OfficeApp</span>&gt;</span></div></pre></td></tr></table></figure></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2016/05/22/first-look-at-office-web-addon/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/03/28/redis-cache/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2016/03/28/redis-cache/" itemprop="url">Redis做内容缓存改善大集群性能问题</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-03-28T23:00:00+08:00">
+                2016-03-28
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>启动虚拟机前，需要选择运行节点，运行节点的选择主要是评估每个节点的内存和CPU使用，之前的PERL端是通过datareport向所有节点发送请求，走NFS通道，收集结果后打包回复PERL，大集群是48个节点，最开始尝试批量启动1000台虚拟机一天都没能启动完成。</p>
+<p>评估每个节点的内存和CPU很必要，但是过中消耗时间太久，平均每台机器启动消耗2分钟，1000台需要33小时。</p>
+<p>小打小闹优化效果并不明显，对比了几种优化手段，最后选择了使用Redis内存数据做缓存。<br></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2016/03/28/redis-cache/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/01/21/perl-runtime-attach-tool/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -989,264 +1491,11 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2015/12/25/trojan/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="mnstory.net">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="码农故事">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h2 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2015/12/25/trojan/" itemprop="url">网站被挂马</a></h2>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2015-12-25T23:00:00+08:00">
-                2015-12-25
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <h1 id="现象"><a href="#现象" class="headerlink" title="现象"></a>现象</h1><p>打开网站发现很慢。</p>
-<p>发现是加载一个JS文件 x6q.org/p.js ，我先在GOOGLE里面搜索了一遍，并未发现此域名的信息，然后我有在后台grep了一下，没有发现这个URL，看这个域名和名称，感觉像是被挂马了。这种小网站也会有人盯上，没什么内容啊亲。</p>
-<p>看了下页面，这一堆代码确非本人代码：<br></p>
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2015/12/25/trojan/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2015/11/16/requirement/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="mnstory.net">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="码农故事">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h2 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2015/11/16/requirement/" itemprop="url">运营需求篇</a></h2>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2015-11-16T23:00:00+08:00">
-                2015-11-16
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <p>写作文是件很痛苦的事情，特别是命题作文，特别是让一个懒人写命题作文。</p>
-<p>懒人喜欢改造外界条件来匹配自己的要求，确切地说，是因为当外在条件不满足的时候，懒人便有了自我安慰的借口。例如，我认为没有写过像样的IOS APP是因为没有一台好MAC，没有做到地产大亨是因为老婆不是张欣，而不是世界首富的原因很简单，那是没有一个能取到源代码的爹，这世上，几乎所有的不如意都可以归结为没有一个好爹。</p>
-<p>盖茨的成功，有一部分是家庭原因，有一部分不是，正如客户需求，有一部分真实存在，有一部分属于意淫，有一部分可以替代，还有一部分其实说的另外一件事。</p>
-<p>大家时间都是那么的宝贵，我也不忍将本是饺子大小的东西写成包子，啰嗦两句，算是饺子前沾的酱油，以便吃着更有味。<br></p>
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2015/11/16/requirement/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/4/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><span class="page-number current">5</span>
+    <a class="extend prev" rel="prev" href="/page/4/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><span class="page-number current">5</span><a class="page-number" href="/page/6/">6</a><a class="extend next" rel="next" href="/page/6/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 
@@ -1291,7 +1540,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-count">52</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -1346,7 +1595,7 @@
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2017</span>
+  <span itemprop="copyrightYear">2018</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

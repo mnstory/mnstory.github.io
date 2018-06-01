@@ -79,7 +79,7 @@
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://mnstory.net/2017/10/20/lvm-create/8k.png">
 <meta property="og:image" content="http://mnstory.net/2017/10/20/lvm-create/1M.png">
-<meta property="og:updated_time" content="2017-11-14T14:16:05.000Z">
+<meta property="og:updated_time" content="2018-05-02T11:09:00.509Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="创建LVM条带">
 <meta name="twitter:description" content="LVM的概念很简单，先要将物理卷加入LVM，并创建一个vg来管理物理卷，然后在vg上分逻辑分区叫lv，然后在逻辑分区上创建文件系统。 现状一般是先将创建，再讲缩减，由于实际项目原因，我反过来了，先将缩减，再讲创建，接上篇，我们的磁盘信息如下：12345678910111213141516host ~ # lsblk NAME          MAJ:MIN RM   SIZE RO TYPE M">
@@ -347,6 +347,8 @@
 <li>和8k的情况对比，并发导致的性能下降没有8k时那么明显。</li>
 <li>bs足够大，磁盘的读写性能和条带底层磁盘个数成正比，但非线性叠加。</li>
 </ul>
+<p>测试方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"># sync; dd if=/dev/zero of=test.dd oflag=direct,nonblock bs=1M count=10000</div><div class="line">10000+0 records in</div><div class="line">10000+0 records out</div><div class="line">10485760000 bytes (10 GB) copied, 26.158 s, 401 MB/s</div><div class="line"></div><div class="line"># sync; dd if=/dev/mapper/data2-lvol0 iflag=direct,nonblock of=/dev/null bs=8k count=1250000</div><div class="line">1250000+0 records in</div><div class="line">1250000+0 records out</div><div class="line">10240000000 bytes (10 GB) copied, 70.0835 s, 146 MB/s</div></pre></td></tr></table></figure>
 <h1 id="LVM条带优劣势分析"><a href="#LVM条带优劣势分析" class="headerlink" title="LVM条带优劣势分析"></a>LVM条带优劣势分析</h1><ul>
 <li><p>LVM条带的优势：</p>
 <ol>
@@ -405,8 +407,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2017/11/14/qemu-balloon-damage-file-cache/" rel="prev" title="内存气泡导致文件损坏错误分析">
-                内存气泡导致文件损坏错误分析 <i class="fa fa-chevron-right"></i>
+              <a href="/2017/11/02/multi-character-constant-compare/" rel="prev" title="multi-character constant优化比较">
+                multi-character constant优化比较 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -483,7 +485,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-count">52</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -554,7 +556,7 @@
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2017</span>
+  <span itemprop="copyrightYear">2018</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

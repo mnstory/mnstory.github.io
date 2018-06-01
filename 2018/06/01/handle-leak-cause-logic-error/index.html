@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="BUG," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="现象后端现象是，某个配置文件 “changedir/某配置文件.json” 不定期会被删除。但是不知道是什么进程删除的。 inotify和audit监控使用inotify监控，的确看到有删除动作，但是同样没法看到是什么进程删除了。于是改用 audit 监控，监控出来，如下信息：123456~ # ausearch -f changedir/某配置文件.json | tailtime-&amp;gt;Thu">
+<meta name="keywords" content="BUG">
+<meta property="og:type" content="article">
+<meta property="og:title" content="句柄泄漏引发的逻辑错误">
+<meta property="og:url" content="http://mnstory.net/2018/06/01/handle-leak-cause-logic-error/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="现象后端现象是，某个配置文件 “changedir/某配置文件.json” 不定期会被删除。但是不知道是什么进程删除的。 inotify和audit监控使用inotify监控，的确看到有删除动作，但是同样没法看到是什么进程删除了。于是改用 audit 监控，监控出来，如下信息：123456~ # ausearch -f changedir/某配置文件.json | tailtime-&amp;gt;Thu">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2018/06/01/handle-leak-cause-logic-error/no-close-fd.png">
+<meta property="og:updated_time" content="2018-06-01T06:16:20.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="句柄泄漏引发的逻辑错误">
+<meta name="twitter:description" content="现象后端现象是，某个配置文件 “changedir/某配置文件.json” 不定期会被删除。但是不知道是什么进程删除的。 inotify和audit监控使用inotify监控，的确看到有删除动作，但是同样没法看到是什么进程删除了。于是改用 audit 监控，监控出来，如下信息：123456~ # ausearch -f changedir/某配置文件.json | tailtime-&amp;gt;Thu">
+<meta name="twitter:image" content="http://mnstory.net/2018/06/01/handle-leak-cause-logic-error/no-close-fd.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2018/06/01/handle-leak-cause-logic-error/"/>
+
+
+
+
+
+  <title>句柄泄漏引发的逻辑错误 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2018/06/01/handle-leak-cause-logic-error/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">句柄泄漏引发的逻辑错误</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-06-01T21:00:00+08:00">
+                2018-06-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="现象"><a href="#现象" class="headerlink" title="现象"></a>现象</h1><p>后端现象是，某个配置文件 “changedir/某配置文件.json” 不定期会被删除。但是不知道是什么进程删除的。</p>
+<h1 id="inotify和audit监控"><a href="#inotify和audit监控" class="headerlink" title="inotify和audit监控"></a>inotify和audit监控</h1><p>使用inotify监控，的确看到有删除动作，但是同样没法看到是什么进程删除了。<br>于是改用 audit 监控，监控出来，如下信息：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">~ # ausearch -f changedir/某配置文件.json | tail</div><div class="line"><span class="meta">time-&gt;</span><span class="bash">Thu May 31 18:00:50 2018</span></div><div class="line">type=PATH msg=audit(1527760850.765:209600): item=1 name="changedir/某配置文件.json" inode=2722142 dev=08:02 mode=0100644 ouid=0 ogid=0 rdev=00:00 objtype=DELETE</div><div class="line">type=PATH msg=audit(1527760850.765:209600): item=0 name="changedir/" inode=2720150 dev=08:02 mode=040755 ouid=2 ogid=2 rdev=00:00 objtype=PARENT</div><div class="line">type=CWD msg=audit(1527760850.765:209600):  cwd="数据根目录"</div><div class="line">type=SYSCALL msg=audit(1527760850.765:209600): arch=c000003e syscall=87 success=yes exit=0 a0=7ffa4402a460 a1=1 a2=7ffa59a22f88 a3=fffffff0 items=2 ppid=10311 pid=23637 auid=0 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=(none) ses=1 comm="python" exe="/usr/bin/python2.7" key=(null)</div></pre></td></tr></table></figure></p>
+<p>可以看到，进程号pid=23637，进程名为python，删除了文件。但是，我们执行：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ps auxf | grep 23637</div></pre></td></tr></table></figure></p>
+<p>并没有发现进程。<br>ppid=10311为supervisor监控进程。</p>
+<p>此外，我们发现，刚才的删除记录里面，每个十分钟就会删除一次文件：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">changedir # ausearch -f changedir/某配置文件.json | grep DELETE -B1</div><div class="line"><span class="meta">time-&gt;</span><span class="bash">Thu May 31 16:40:50 2018</span></div><div class="line">type=PATH msg=audit(1527756050.211:202603): item=1 name="changedir/某配置文件.json" inode=2722145 dev=08:02 mode=0100644 ouid=0 ogid=0 rdev=00:00 objtype=DELETE</div><div class="line">--</div><div class="line"><span class="meta">time-&gt;</span><span class="bash">Thu May 31 17:30:50 2018</span></div><div class="line">type=PATH msg=audit(1527759050.608:208372): item=1 name="changedir/某配置文件.json" inode=2722145 dev=08:02 mode=0100644 ouid=0 ogid=0 rdev=00:00 objtype=DELETE</div><div class="line">--</div><div class="line"><span class="meta">time-&gt;</span><span class="bash">Thu May 31 17:50:50 2018</span></div><div class="line">type=PATH msg=audit(1527760250.733:209185): item=1 name="changedir/某配置文件.json" inode=2722145 dev=08:02 mode=0100644 ouid=0 ogid=0 rdev=00:00 objtype=DELETE</div><div class="line">--</div><div class="line"><span class="meta">time-&gt;</span><span class="bash">Thu May 31 18:00:50 2018</span></div><div class="line">type=PATH msg=audit(1527760850.765:209600): item=1 name="changedir/某配置文件.json" inode=2722142 dev=08:02 mode=0100644 ouid=0 ogid=0 rdev=00:00 objtype=DELETE</div></pre></td></tr></table></figure></p>
+<p>上面结束，明确了一点。</p>
+<blockquote>
+<p><strong>结论</strong><br>有一个由supervisor拉起来的python进程，每十分钟会删除一次文件，查不到进程号的原因，目前怀疑是进程一启动便结束了。</p>
+<p><strong>疑问</strong><br>上面”grep DELETE -B1”没有显示出来，其实我们看到，这里每10分钟执行一次DELETE操作的进程，其PID都是23637，为什么会这样？<br>难道每次启动都是同样的PID？还是auditd本来监控就不准确？</p>
+</blockquote>
+<h1 id="python代码分析"><a href="#python代码分析" class="headerlink" title="python代码分析"></a>python代码分析</h1><p>supervisor下面会拉起很多进程，逐一排查不太容易，通过搜索文件名”某配置文件.json”，我们定位到了一个python脚本：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">serial_control = Serial_control(<span class="string">"某配置文件.json"</span>)</div><div class="line"><span class="keyword">if</span> serial_control.verify_plat_serial() != <span class="number">1</span>:</div><div class="line">    ret = serial_control.verify_access_serial(<span class="string">'DEV_'</span> + client_address[<span class="number">0</span>], <span class="number">3</span>)</div><div class="line">    <span class="keyword">if</span> ret <span class="keyword">is</span> <span class="keyword">False</span>:</div><div class="line">        time.sleep(<span class="number">600</span>)</div><div class="line">        <span class="keyword">continue</span></div></pre></td></tr></table></figure></p>
+<p>如果verify_plat_serial和verify_access_serial都判断错误，会周期性进入sleep 600s逻辑，刚好是10分钟。而且此进程也是由supervisor拉起来的，但是这个进程一直在运行，其PID并不是23637，而是23629。（注意，这两个ID之前的关联性，其PID值差别不大，应该想到是差不多时刻fork出来的。）</p>
+<p>检测这段代码里面的判断逻辑，没什么问题，只有文件不存在的时候，才可能走到下面来，但是文件的确是存在的，单独用python调试，也是不会进入这个逻辑的。</p>
+<p>这是最为矛盾的点：<br>代码是正确的，逻辑是正确的，单独调试调用函数也是正确的，pid不是它，但是从inotify删除的痕迹来看，的确是这个函数捣的鬼。</p>
+<blockquote>
+<p><strong>结论</strong><br>这段代码嫌疑最大。</p>
+<p><strong>疑问</strong><br>仍然是PID问题，PID不是它。</p>
+</blockquote>
+<h1 id="进程strace监控"><a href="#进程strace监控" class="headerlink" title="进程strace监控"></a>进程strace监控</h1><p>我决定看看，这个 23629 进程，到底在搞什么鬼，用strace监控：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">~ # strace -Ff -Tt -p 23629 &gt; /var/log/s.log 2&gt;&amp;1</div></pre></td></tr></table></figure></p>
+<p>抓到一段在10分钟周期点上的系统调用痕迹：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">[pid 23637] 18:00:50 &lt;... select resumed&gt; ) = 0 (Timeout) &lt;134.921093&gt;</div><div class="line">[pid 23637] 18:00:50 open("xxxxx/sydays.ini", O_RDONLY) = -1 EMFILE (Too many open files) &lt;0.000017&gt;</div><div class="line">[pid 23637] 18:00:50 open("xxxxx/sydays_bak.ini", O_RDONLY) = -1 EMFILE (Too many open files) &lt;0.000017&gt;</div><div class="line">[pid 23637] 18:00:50 open("xxxxx/sydays.ini", O_RDONLY) = -1 EMFILE (Too many open files) &lt;0.000017&gt;</div><div class="line">[pid 23637] 18:00:50 open("xxxxx/sydays_bak.ini", O_RDONLY) = -1 EMFILE (Too many open files) &lt;0.000017&gt;</div><div class="line">[pid 23637] 18:00:50 stat("changedir/另外二种型号的类似配置文件.json", 0x7ffa4b4bf050) = -1 ENOENT (No such file or directory) &lt;0.000024&gt;</div><div class="line">[pid 23637] 18:00:50 stat("changedir/某配置文件.json", &#123;st_mode=S_IFREG|0644, st_size=0, ...&#125;) = 0 &lt;0.000024&gt;</div><div class="line">[pid 23637] 18:00:50 unlink("changedir/某配置文件.json") = 0 &lt;0.000233&gt;</div><div class="line">[pid 23637] 18:00:50 stat("changedir/另外一种型号的类似配置文件.json", &#123;st_mode=S_IFREG|0644, st_size=172, ...&#125;) = 0 &lt;0.000023&gt;</div><div class="line">[pid 23637] 18:00:50 unlink("changedir/另外一种型号的类似配置文件.json") = 0 &lt;0.000094&gt;</div><div class="line">[pid 23637] 18:00:50 select(0, NULL, NULL, NULL, &#123;600, 0&#125; &lt;unfinished ...&gt;</div></pre></td></tr></table></figure></p>
+<blockquote>
+<p><strong>结论</strong><br>问题就是出在进程 23629，而23637，其实是进程的线程ID。<br>在LINUX下，线程ID也用PID表示，而真正的进程ID，其实是TGID，这里属于一个表达上的误导。auditd的审计结果展示的是PID，是用的gettid获取的结果，本质上是TID。  </p>
+</blockquote>
+<p>查看进程的线程，的确存在23637线程，前面的两个疑问也能很好诠释。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">~ # pidstat -p 23629 -t 1</div></pre></td></tr></table></figure></p>
+<h2 id="LINUX线程问题"><a href="#LINUX线程问题" class="headerlink" title="LINUX线程问题"></a>LINUX线程问题</h2><p>Linux的NPTL(Native POSIX Threading Library)多线程，每个用户线程对应一个内核线程，是1:1的映射，相比原本实现的单线程进程，也就是在tast_struct结构体里面多加了一个tgid字段，这个字段表示线程组ID，而原本的pid含义改为线程ID的意思。<br>使用getpid系统调用返回的也是tast_struct中的tgid, 而tast_struct中的pid则由gettid系统调用返回。<br>tgid等于pid的线程，就是线程组长，也就是我们平时看到的进程ID。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">~/w # ps auxf | grep receive_daemon</div><div class="line">USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND</div><div class="line">root     34305  0.0  0.0 2578000 30936 pts/3   Sl+  00:43   0:05  |       \_ python /aaaa/bin/LinkDEV/receive_daemon.py.bak</div></pre></td></tr></table></figure></p>
+<p>查看多线程：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">~/w # ps -Laf | receive_daemon</div><div class="line">UID        PID  PPID   LWP  C NLWP STIME TTY          TIME CMD</div><div class="line">root     34305 20133 34305  0   34 00:43 pts/3    00:00:00 python /aaaa/bin/LinkDEV/receive_daemon.py.bak</div><div class="line">root     34305 20133 34351  0   34 00:43 pts/3    00:00:00 python /aaaa/bin/LinkDEV/receive_daemon.py.bak</div><div class="line">root     34305 20133 34352  0   34 00:43 pts/3    00:00:00 python /aaaa/bin/LinkDEV/receive_daemon.py.bak</div><div class="line">root     34305 20133 34353  0   34 00:43 pts/3    00:00:00 python /aaaa/bin/LinkDEV/receive_daemon.py.bak</div><div class="line">root     34305 20133 34354  0   34 00:43 pts/3    00:00:00 python /aaaa/bin/LinkDEV/receive_daemon.py.bak</div></pre></td></tr></table></figure></p>
+<p>通过上面的strace日志，还可以看出一个重要结论：</p>
+<blockquote>
+<p><strong>结论</strong><br>打开文件返回的错误是 -1 EMFILE (Too many open files) 。<br>再明确不过的提示，表示进程句柄超限了，确认：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">&gt;</span><span class="bash"> ~ <span class="comment"># lh /proc/23629/fd | wc -l</span></span></div><div class="line"><span class="meta">&gt;</span><span class="bash"> 65537</span></div><div class="line"><span class="meta">&gt;</span><span class="bash"></span></div></pre></td></tr></table></figure></p>
+</blockquote>
+<p>而且，此通过句柄超限，可以印证为什么会走到上面删除文件的逻辑：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">verify_plat_serial</span><span class="params">(self)</span>:</span></div><div class="line">    ret = <span class="number">1</span></div><div class="line">    result = sipserial.verifyModelSerial(<span class="number">1</span>)</div><div class="line">    <span class="keyword">if</span> result == <span class="number">-2</span>:</div><div class="line">        <span class="keyword">try</span>:</div><div class="line">            <span class="keyword">for</span> path <span class="keyword">in</span> dev_list:</div><div class="line">                <span class="keyword">if</span> os.path.isfile(path):</div><div class="line">                    os.remove(path)</div><div class="line">                <span class="comment"># 这里日志没有打印出来，是句柄超限？还是daemon标记设置后关闭了所有继承句柄，需要重新初始化syslog？反正日志是没有打印出来。</span></div><div class="line">        <span class="keyword">except</span>:</div><div class="line">            <span class="keyword">return</span> <span class="number">-1</span></div><div class="line">    <span class="keyword">return</span> ret</div></pre></td></tr></table></figure></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">verifyModelSerial</span><span class="params">(<span class="keyword">int</span> model, <span class="keyword">int</span> subModel, <span class="keyword">int</span> subModelCount )</span></span></div><div class="line"><span class="function"></span>&#123;</div><div class="line">	...</div><div class="line">	ReadFile(CONF_SERIAL_PATH,ConfSerialIterator,(<span class="keyword">void</span>*)serial);</div><div class="line">	<span class="keyword">if</span> (<span class="built_in">strlen</span>(serial) == <span class="number">0</span>)</div><div class="line">	&#123;</div><div class="line">		<span class="built_in">free</span>(decrypts); <span class="comment">//这里读取不到数据，上面函数收到了-2的返回值</span></div><div class="line">		<span class="keyword">return</span> <span class="number">-2</span>;</div><div class="line">	&#125;</div></pre></td></tr></table></figure>
+<h1 id="代码移除法"><a href="#代码移除法" class="headerlink" title="代码移除法"></a>代码移除法</h1><p>通过proc可以看到，泄漏的句柄属于socket:<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">SIS3.0.2.1 ~/w # ls -lh /proc/$(psp receive_daemon.py.bak | awk '&#123;print $1&#125;')/fd </div><div class="line">lrwx------ 1 root root 64 May 27 00:43 13 -&gt; socket:[146446952]</div><div class="line">lrwx------ 1 root root 64 May 27 00:49 14 -&gt; socket:[146474097]</div><div class="line">lrwx------ 1 root root 64 May 27 00:49 15 -&gt; socket:[146474098]</div><div class="line">...</div></pre></td></tr></table></figure></p>
+<p>而netstat里面看不到是谁连接的socket，这是比较不解的地方。代码里面有两个地方使用了socket，一是使用了mongo连接，检查逻辑，没什么问题。二是使用了UDPServer监听端口：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">serv = UDPServer(LISTEN_SOCKET, UserInfoToMongoHandler)</div><div class="line"><span class="keyword">for</span> n <span class="keyword">in</span> range(NWORKERS):</div><div class="line">    t = Thread(target=serv.serve_forever)</div><div class="line">    t.daemon = <span class="keyword">True</span></div><div class="line">    t.start()</div><div class="line">serv.serve_forever()</div></pre></td></tr></table></figure></p>
+<p>现在怀疑UDPServer用法是否有误，撸了一遍UDPServer源码，没有发现问题。<br>又写了一个客户端，来发送UDP包，发现，每发送一次UDP包，UDPServer这端的进程，会增加两个socket句柄。<br><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> socket</div><div class="line"><span class="keyword">import</span> sys</div><div class="line"></div><div class="line">HOST, PORT = <span class="string">"127.0.0.1"</span>, LISTEN_SOCKET</div><div class="line">data = <span class="string">" "</span>.join(sys.argv[<span class="number">1</span>:])</div><div class="line"></div><div class="line"><span class="comment"># SOCK_DGRAM is the socket type to use for UDP sockets</span></div><div class="line">sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)</div><div class="line"></div><div class="line"><span class="comment"># As you can see, there is no connect() call; UDP has no connections.</span></div><div class="line"><span class="comment"># Instead, data is directly sent to the recipient via sendto().</span></div><div class="line">sock.sendto(data + <span class="string">"\n"</span>, (HOST, PORT))</div><div class="line">received = sock.recv(<span class="number">1024</span>)</div><div class="line"></div><div class="line"><span class="keyword">print</span> <span class="string">"Sent:     &#123;&#125;"</span>.format(data)</div><div class="line"><span class="keyword">print</span> <span class="string">"Received: &#123;&#125;"</span>.format(received)</div></pre></td></tr></table></figure></p>
+<p>又将官方的UDPServer示例代码拷贝下来，执行，同样的客户端发给UDPServer，没有句柄泄漏。</p>
+<p>现在怀疑是UDPServer和多线程嵌套后，有BUG，于是在官方示例代码基础上，加了多线程，也没有句柄泄漏。</p>
+<p>目前看，只能用笨方法，代码移除法，一点一点验证，好在是Python代码，移除代码执行非常方便。没几下，便定位到了一段序列号验证函数。<br>有它的时候，便会句柄泄漏，没它的时候，正常。</p>
+<p>单独对这段代码做strace，发现：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">[pid 34351] 00:45:25 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = 14 &lt;0.000017&gt;</div><div class="line">[pid 34351] 00:45:25 ioctl(14, SIOCGIFHWADDR, &#123;ifr_name="ethX", ifr_hwaddr=aa:aa:aa:aa:aa:aa&#125;) = 0 &lt;0.000010&gt;</div><div class="line">[pid 34351] 00:45:25 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = 15 &lt;0.000012&gt;</div><div class="line">[pid 34351] 00:45:25 ioctl(15, SIOCGIFHWADDR, &#123;ifr_name="ethY", ifr_hwaddr=bb:bb:bb:bb:bb:bb&#125;) = 0 &lt;0.000012&gt;</div></pre></td></tr></table></figure></p>
+<p>这段序列号验证函数是C代码书写，外层调用没什么问题，后来定位到一公共库，公共库是公共技术部提供的动态库，其中一个函数，获取网卡信息没有关闭句柄：<br><img src="/2018/06/01/handle-leak-cause-logic-error/no-close-fd.png" alt="没关闭句柄汇编"></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/BUG/" rel="tag"># BUG</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/01/31/who-kill-me-audit/" rel="next" title="谁KILL了进程定位工具之auditd">
+                <i class="fa fa-chevron-left"></i> 谁KILL了进程定位工具之auditd
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">52</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">62</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#现象"><span class="nav-number">1.</span> <span class="nav-text">现象</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#inotify和audit监控"><span class="nav-number">2.</span> <span class="nav-text">inotify和audit监控</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#python代码分析"><span class="nav-number">3.</span> <span class="nav-text">python代码分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#进程strace监控"><span class="nav-number">4.</span> <span class="nav-text">进程strace监控</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#LINUX线程问题"><span class="nav-number">4.1.</span> <span class="nav-text">LINUX线程问题</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#代码移除法"><span class="nav-number">5.</span> <span class="nav-text">代码移除法</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>
