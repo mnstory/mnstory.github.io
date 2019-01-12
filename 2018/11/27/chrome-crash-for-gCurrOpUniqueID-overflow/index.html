@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="BUG,开源," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="背景有一个大屏展示页面，利用Canvas做了大量的2D图像绘制，在某客户处发现，当大屏持续开启一个周左右，Chrome会崩溃，崩溃UI类似： 我们从客户的Chrome://crashes里面获取到了崩溃的dump文件（位于：C:\Users\你的用户名\AppData\Local\Google\Chrome\User Data\Crashpad\reports）（注：下面的截图是我们自己的截图，不">
+<meta name="keywords" content="BUG,开源">
+<meta property="og:type" content="article">
+<meta property="og:title" content="gCurrOpUniqueID溢出导致Chrome进程崩溃">
+<meta property="og:url" content="http://mnstory.net/2018/11/27/chrome-crash-for-gCurrOpUniqueID-overflow/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="背景有一个大屏展示页面，利用Canvas做了大量的2D图像绘制，在某客户处发现，当大屏持续开启一个周左右，Chrome会崩溃，崩溃UI类似： 我们从客户的Chrome://crashes里面获取到了崩溃的dump文件（位于：C:\Users\你的用户名\AppData\Local\Google\Chrome\User Data\Crashpad\reports）（注：下面的截图是我们自己的截图，不">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-12-13T00:58:27.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="gCurrOpUniqueID溢出导致Chrome进程崩溃">
+<meta name="twitter:description" content="背景有一个大屏展示页面，利用Canvas做了大量的2D图像绘制，在某客户处发现，当大屏持续开启一个周左右，Chrome会崩溃，崩溃UI类似： 我们从客户的Chrome://crashes里面获取到了崩溃的dump文件（位于：C:\Users\你的用户名\AppData\Local\Google\Chrome\User Data\Crashpad\reports）（注：下面的截图是我们自己的截图，不">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2018/11/27/chrome-crash-for-gCurrOpUniqueID-overflow/"/>
+
+
+
+
+
+  <title>gCurrOpUniqueID溢出导致Chrome进程崩溃 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2018/11/27/chrome-crash-for-gCurrOpUniqueID-overflow/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">gCurrOpUniqueID溢出导致Chrome进程崩溃</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-11-27T13:00:00+00:00">
+                2018-11-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>有一个大屏展示页面，利用Canvas做了大量的2D图像绘制，在某客户处发现，当大屏持续开启一个周左右，Chrome会崩溃，崩溃UI类似：</p>
+<p>我们从客户的Chrome://crashes里面获取到了崩溃的dump文件（位于：C:\Users\你的用户名\AppData\Local\Google\Chrome\User Data\Crashpad\reports）（注：下面的截图是我们自己的截图，不是客户的）。</p>
+<p>原因分析<br>由于网络原因，之前一直没有下载到对应的Chrome符号，昨晚第二次分析，发现符号可以下载了，于是使用Windbg，加入symbols路径：<br>SRV<em>C:\Symbols</em><a href="http://msdl.microsoft.com/download/symbols;SRV*C:\Symbols*https://chromium-browser-symsrv.commondatastorage.googleapis.com" target="_blank" rel="external">http://msdl.microsoft.com/download/symbols;SRV*C:\Symbols*https://chromium-browser-symsrv.commondatastorage.googleapis.com</a></p>
+<ol>
+<li>先看下analyze结果<br>Executable search path is:<br>Windows 7 Version 17134 (1) MP (4 procs) Free x64<br>Product: WinNt<br>Machine Name:<br>Debug session time: Sat Nov 24 20:32:02.000 2018 (UTC + 8:00) //周六晚上崩溃的<br>System Uptime: not available<br>Process Uptime: 2 days 11:52:48.000<br>0:000&gt; !analyze -v</li>
+</ol>
+<hr>
+<ul>
+<li>*</li>
+<li>Exception Analysis                                   *</li>
+<li>*</li>
+</ul>
+<hr>
+<p>Failed calling InternetOpenUrl, GLE=12002</p>
+<p>FAULTING_IP:<br>chrome_child!base::win::<code>anonymous namespace&#39;::ForceCrashOnSigAbort+0 [C:\b\c\b\win64_clang\src\base\win\win_util.cc @ 87]
+00007ff9</code>48b9cd80 c704250000000037130000 mov dword ptr [0],1337h   // 这是一段强制Abort代码，访问空指针。</p>
+<p>EXCEPTION_RECORD:  ffffffffffffffff – (.exr 0xffffffffffffffff)<br>ExceptionAddress: 00007ff948b9cd80 (chrome_child!base::win::`anonymous namespace’::ForceCrashOnSigAbort)<br>   ExceptionCode: c0000005 (Access violation)<br>  ExceptionFlags: 00000000<br>NumberParameters: 2<br>   Parameter[0]: 0000000000000001<br>   Parameter[1]: 0000000000000000<br>Attempt to write to address 0000000000000000</p>
+<p>DEFAULT_BUCKET_ID:  NULL_POINTER_WRITE</p>
+<p>PROCESS_NAME:  chrome.exe</p>
+<p>ERROR_CODE: (NTSTATUS) 0xc0000005 - 0x%08lx</p>
+<p>EXCEPTION_CODE: (NTSTATUS) 0xc0000005 - 0x%08lx</p>
+<p>EXCEPTION_PARAMETER1:  0000000000000001</p>
+<p>EXCEPTION_PARAMETER2:  0000000000000000</p>
+<p>WRITE_ADDRESS:  0000000000000000 </p>
+<p>FOLLOWUP_IP:<br>chrome_child!base::win::<code>anonymous namespace&#39;::ForceCrashOnSigAbort+0 [C:\b\c\b\win64_clang\src\base\win\win_util.cc @ 87]
+00007ff9</code>48b9cd80 c704250000000037130000 mov dword ptr [0],1337h</p>
+<p>NTGLOBALFLAG:  0</p>
+<p>FAULTING_THREAD:  00000000000016cc</p>
+<p>PRIMARY_PROBLEM_CLASS:  NULL_POINTER_WRITE</p>
+<p>BUGCHECK_STR:  APPLICATION_FAULT_NULL_POINTER_WRITE</p>
+<p>LAST_CONTROL_TRANSFER:  from 00007ff94b10f6e7 to 00007ff948b9cd80</p>
+<p>STACK_TEXT:<br>000000bc<code>c85fca78 00007ff9</code>4b10f6e7 : 00007ff9<code>4bf74c98 00007ff9</code>4b10f857 000000bc<code>c85fcaf8 00000000</code>00000201 : chrome_child!base::win::<code>anonymous namespace&#39;::ForceCrashOnSigAbort [C:\b\c\b\win64_clang\src\base\win\win_util.cc @ 87]
+000000bc</code>c85fca80 00007ff9<code>4b0fe654 : 00000000</code>00000101 0000027a<code>00000000 00000000</code>00000000 0000027a<code>c7be07c8 : chrome_child!raise+0x22b [minkernel\crts\ucrt\src\appcrt\misc\signal.cpp @ 547]
+000000bc</code>c85fcaf0 00007ff9<code>48d2c5c5 : 0000027a</code>c7be07c8 0000027a<code>c91d4af8 00000000</code>00000000 000000bc<code>c85fcc60 : chrome_child!abort+0x18 [minkernel\crts\ucrt\src\appcrt\startup\abort.cpp @ 71]
+000000bc</code>c85fcb20 00007ff9<code>47995d44 : 43978309</code>00000000 00000000<code>00000000 00000000</code>00000000 00000000<code>00000000 : chrome_child!sk_abort_no_print+0x15 [C:\b\c\b\win64_clang\src\skia\ext\SkMemory_new_handler.cpp @ 41]
+000000bc</code>c85fcb50 00007ff9<code>4a111464 : 0000027a</code>b3f31650 00007ff9<code>48f5e14f 00007ff9</code>4b432658 00007ff9<code>4b432658 : chrome_child!GrOpFlushState::draw+0x1b4 [C:\b\c\b\win64_clang\src\third_party\skia\src\gpu\GrOpFlushState.cpp @ 120] // 这里是abort调用之前的代码。
+000000bc</code>c85fcbe0 00007ff9<code>47990cf7 : 0000027a</code>be6fdca8 0000027a<code>be6fdca8 00000000</code>00000005 000000bc<code>c85fd540 : chrome_child!</code>anonymous namespace’::AAConvexPathOp::onPrepareDraws+0x2754 [C:\b\c\b\win64_clang\src\third_party\skia\src\gpu\ops\GrAAConvexPathRenderer.cpp @ 943]<br>000000bc<code>c85fd110 00007ff9</code>47990b41 : 0000027a<code>c9406730 000000bc</code>c85fd4b0 000000bc<code>c85fd304 000000bc</code>c85fd4b0 : chrome_child!GrRenderTargetOpList::onPrepare+0x197 [C:\b\c\b\win64_clang\src\third_party\skia\src\gpu\GrRenderTargetOpList.cpp @ 105]<br>000000bc<code>c85fd1b0 00007ff9</code>47990830 : 0000027a<code>bac81dd0 0000027a</code>bac81e18 00000000<code>000000ff 00000000</code>00000006 : chrome_child!GrOpList::prepare+0x61 [C:\b\c\b\win64_clang\src\third_party\skia\src\gpu\GrOpList.cpp @ 88]<br>000000bc<code>c85fd210 00007ff9</code>4798f4cf : 00000000<code>00000000 00000000</code>00000000 00000000<code>00000000 00005c10</code>68089d0f : chrome_child!GrDrawingManager::executeOpLists+0xb0 [C:\b\c\b\win64_clang\src\third_party\skia\src\gpu\GrDrawingManager.cpp @ 315]<br>000000bc<code>c85fd280 00007ff9</code>47bda0d7 : 00007ff9<code>4b299e07 00005c10</code>6808981f 00007ff9<code>4b299e07 00007ff9</code>4b299dfe : chrome_child!GrDrawingManager::internalFlush+0x75f [C:\b\c\b\win64_clang\src\third_party\skia\src\gpu\GrDrawingManager.cpp @ 232]<br>000000bc<code>c85fd7a0 00007ff9</code>48d896b4 : 000000bc<code>c85fd830 0000027a</code>8127fd18 0000027a<code>c8b5fef0 00007ff9</code>4b3a2d30 : chrome_child!GrContext::flush+0x27 [C:\b\c\b\win64_clang\src\third_party\skia\src\gpu\GrContext.cpp @ 366]<br>000000bc<code>c85fd7d0 00007ff9</code>4798be1b : 0000027a<code>b40b0000 00007ff9</code>917b2b55 0000027a<code>31000031 0000027a</code>00000002 : chrome_child!cc::SkiaPaintCanvas::FlushAfterDrawIfNeeded+0x74 [C:\b\c\b\win64_clang\src\cc\paint\skia_paint_canvas.cc @ 376]<br>000000bc<code>c85fd8b0 00007ff9</code>48d8a3bd : 0000027a<code>c84e89e0 00007ff9</code>475d2bb5 000000bc<code>c85fdce8 00007ff9</code>4b0c343b : chrome_child!cc::PaintOpBuffer::Playback+0x20b [C:\b\c\b\win64_clang\src\cc\paint\paint_op_buffer.cc @ 2333]<br>000000bc<code>c85fdb20 00007ff9</code>48d8a2c1 : 00000000<code>00000000 00000000</code>00000000 00005c10<code>6808958f 00005c10</code>680894ef : chrome_child!cc::SkiaPaintCanvas::drawPicture+0xcd [C:\b\c\b\win64_clang\src\cc\paint\skia_paint_canvas.cc @ 364]<br>000000bc<code>c85fdbe0 00007ff9</code>4a298fd8 : 00007ff9<code>4b299e07 00007ff9</code>4b299dfe 00000000<code>00000000 00000000</code>00000000 : chrome_child!cc::SkiaPaintCanvas::drawPicture+0x41 [C:\b\c\b\win64_clang\src\cc\paint\skia_paint_canvas.cc @ 321]<br>000000bc<code>c85fdc30 00007ff9</code>4a299e67 : 00000000<code>00000000 00005c10</code>680893ff 00005c10<code>6808938f 00000000</code>00000000 : chrome_child!blink::Canvas2DLayerBridge::FlushRecording+0xb4 [C:\b\c\b\win64_clang\src\third_party\blink\renderer\platform\graphics\canvas_2d_layer_bridge.cc @ 517]<br>000000bc<code>c85fdd20 00007ff9</code>492e5695 : 0000027a<code>b671c8f0 00007ff9</code>47493fcc 00000000<code>00000000 00000000</code>00000000 : chrome_child!blink::Canvas2DLayerBridge::PrepareTransferableResource+0x5d [C:\b\c\b\win64_clang\src\third_party\blink\renderer\platform\graphics\canvas_2d_layer_bridge.cc @ 615]<br>000000bc<code>c85fdd80 00007ff9</code>477d1c6a : 00000000<code>00000000 00000000</code>00000000 00000003<code>c85fde00 00000000</code>00000000 : chrome_child!cc::TextureLayer::Update+0x65 [C:\b\c\b\win64_clang\src\cc\layers\texture_layer.cc @ 179]<br>000000bc<code>c85fde80 00007ff9</code>477d0f71 : 0000027a<code>c8cfd300 00005c10</code>6808aedf 00000000<code>00000002 000000bc</code>c85fe520 : chrome_child!cc::LayerTreeHost::DoUpdateLayers+0xc2a [C:\b\c\b\win64_clang\src\cc\trees\layer_tree_host.cc @ 820]<br>000000bc<code>c85fe2a0 00007ff9</code>477c44a3 : 0000027a<code>b3ef1358 0000027a</code>b3ef1700 0000027a<code>c7ac6f48 0000027a</code>c7ac6ec0 : chrome_child!cc::LayerTreeHost::UpdateLayers+0x41 [C:\b\c\b\win64_clang\src\cc\trees\layer_tree_host.cc @ 647]<br>000000bc<code>c85fe320 00007ff9</code>477c4076 : 00000000<code>00000002 0000027a</code>b3ee1c60 000000bc<code>c85fe7c0 00007ff9</code>473b86e8 : chrome_child!cc::ProxyMain::BeginMainFrame+0x403 [C:\b\c\b\win64_clang\src\cc\trees\proxy_main.cc @ 270]<br>000000bc<code>c85fe4f0 00007ff9</code>473b851c : 0000027a<code>b3ef1708 00007ff9</code>4b87ee9a 00000000<code>00000001 0000027a</code>b3ef1700 : chrome_child!base::internal::Invoker<base::internal::bindstate<void (cc::proxymain::*)(std::unique_ptr<cc::beginmainframeandcommitstate,std::default_delete<cc::beginmainframeandcommitstate=""> &gt;),base::WeakPtr<cc::proxymain>,base::internal::PassedWrapper<std::unique_ptr<cc::beginmainframeandcommitstate,std::default_delete<cc::beginmainframeandcommitstate> &gt; &gt; &gt;,void ()&gt;::RunOnce+0xa6 [C:\b\c\b\win64_clang\src\base\bind_internal.h @ 662]<br>000000bc<code>c85fe560 00007ff9</code>47414996 : 00000000<code>00000000 0000027a</code>b3ee1bc0 000000bc<code>c85fe7c8 00007ff9</code>47419275 : chrome_child!base::debug::TaskAnnotator::RunTask+0x12c [C:\b\c\b\win64_clang\src\base\debug\task_annotator.cc @ 101]<br>000000bc<code>c85fe680 00007ff9</code>473b851c : 00000000<code>00000000 00005c10</code>6808a83f 00000000<code>00000000 00000000</code>00000000 : chrome_child!base::sequence_manager::internal::ThreadControllerImpl::DoWork+0x1b6 [C:\b\c\b\win64_clang\src\base\task\sequence_manager\thread_controller_impl.cc @ 179]<br>000000bc<code>c85fe8c0 00007ff9</code>473b7d7f : 00005c10<code>6808a69f 00000000</code>b3ee1a01 000000bc<code>c85ff101 000000bc</code>c85feaa8 : chrome_child!base::debug::TaskAnnotator::RunTask+0x12c [C:\b\c\b\win64_clang\src\base\debug\task_annotator.cc @ 101]<br>000000bc<code>c85fe9e0 00007ff9</code>473b1215 : 000000bc<code>c85fecb0 00007ff9</code>473b0436 0000027a<code>b3ee1b20 00007ff9</code>47414e02 : chrome_child!base::MessageLoop::RunTask+0xdf [C:\b\c\b\win64_clang\src\base\message_loop\message_loop.cc @ 436]<br>000000bc<code>c85feb20 00007ff9</code>473b1069 : 000000bc<code>c85feef0 00007ff9</code>47393d74 000000bc<code>c85fee68 00007ff9</code>4bdde830 : chrome_child!base::MessageLoop::DoWork+0x185 [C:\b\c\b\win64_clang\src\base\message_loop\message_loop.cc @ 517]<br>000000bc<code>c85fed50 00007ff9</code>473b05f1 : 00000000<code>00000000 00000000</code>b71d5e01 00007ff9<code>4bd77780 000000bc</code>c85fee68 : chrome_child!base::MessagePumpDefault::Run+0x99 [C:\b\c\b\win64_clang\src\base\message_loop\message_pump_default.cc @ 37]<br>000000bc<code>c85fedb0 00007ff9</code>473939cc : 0000027a<code>b40b0340 000000bc</code>c85fee98 00000000<code>00000000 000000bc</code>c85feeb0 : chrome_child!base::RunLoop::Run+0x31 [C:\b\c\b\win64_clang\src\base\run_loop.cc @ 108]<br>000000bc<code>c85fede0 00007ff9</code>4738d2e3 : 000000bc<code>c85ff080 00007ff9</code>4b0c343b 000000bc<code>c85ff080 00000000</code>00000003 : chrome_child!content::RendererMain+0x3d6 [C:\b\c\b\win64_clang\src\content\renderer\renderer_main.cc @ 200]<br>000000bc<code>c85fefa0 00007ff9</code>47364968 : 00000000<code>00000000 00000000</code>00000027 00000000<code>00000000 00000000</code>00000000 : chrome_child!content::ContentMainRunnerImpl::Run+0x171 [C:\b\c\b\win64_clang\src\content\app\content_main_runner_impl.cc @ 898]<br>000000bc<code>c85ff140 00007ff9</code>47364568 : 000000bc<code>c85ff6a8 00007ff9</code>47361d5b 00000000<code>000001f6 00007ff9</code>4736111b : chrome_child!service_manager::Main+0x333 [C:\b\c\b\win64_clang\src\services\service_manager\embedder\main.cc @ 472]<br>000000bc<code>c85ff4b0 00007ff9</code>473619f8 : 000000bc<code>c85ff560 00007ff6</code>b70a0000 000000bc<code>c85ff680 00000000</code>00000000 : chrome_child!content::ContentMain+0x41 [C:\b\c\b\win64_clang\src\content\app\content_main.cc @ 19]<br>000000bc<code>c85ff540 00007ff6</code>b70a376c : 0000027a<code>b3b88a60 00007ff9</code>473618e0 000000bc<code>c85ff6a8 0000027a</code>b3b88a50 : chrome_child!ChromeMain+0x118 [C:\b\c\b\win64_clang\src\chrome\app\chrome_main.cc @ 0]<br>000000bc<code>c85ff620 00007ff6</code>b70a1697 : 00000000<code>00000018 ffffffff</code>fffffffe 0000027a<code>b3b8030c 00000000</code>0000001a : chrome!MainDllLoader::Launch+0x28c [C:\b\c\b\win64_clang\src\chrome\app\main_dll_loader_win.cc @ 205]<br>000000bc<code>c85ff710 00000000</code>00000000 : 00007ff6<code>e2000000 00000000</code>00000000 72657265<code>646e6572 0000027a</code>b3b83400 : chrome!std::operator&lt;&lt;<std::char_traits<char> &gt;+0x47 [C:\b\c\b\win64_clang\src\third_party\depot_tools\win_toolchain\vs_files\3bc0ec615cf20ee342f3bc29bc991b5ad66d8d2c\VC\Tools\MSVC\14.14.26428\include\ostream @ 787]</std::char_traits<char></std::unique_ptr<cc::beginmainframeandcommitstate,std::default_delete<cc::beginmainframeandcommitstate></cc::proxymain></base::internal::bindstate<void></p>
+<p>STACK_COMMAND:  ~0s; .ecxr ; kb</p>
+<p>SYMBOL_STACK_INDEX:  0</p>
+<p>SYMBOL_NAME:  chrome!base::win::`anonymous namespace’::ForceCrashOnSigAbort+0</p>
+<p>FOLLOWUP_NAME:  MachineOwner</p>
+<p>MODULE_NAME: chrome_child</p>
+<p>IMAGE_NAME:  chrome_child.dll</p>
+<p>DEBUG_FLR_IMAGE_TIMESTAMP:  5becfd50</p>
+<p>FAILURE_BUCKET_ID:  NULL_POINTER_WRITE_c0000005_chrome_child.dll!base::win::_anonymous<em>namespace</em>::ForceCrashOnSigAbort</p>
+<p>BUCKET_ID:  X64_APPLICATION_FAULT_NULL_POINTER_WRITE_chrome!base::win::_anonymous<em>namespace</em>::ForceCrashOnSigAbort+0</p>
+<p>WATSON_STAGEONE_URL:  <a href="http://watson.microsoft.com/StageOne/chrome_exe/70_0_3538_110/5becfd50/chrome_child_dll/70_0_3538_110/5becfd50/c0000005/0183cd80.htm?Retriage=1" target="_blank" rel="external">http://watson.microsoft.com/StageOne/chrome_exe/70_0_3538_110/5becfd50/chrome_child_dll/70_0_3538_110/5becfd50/c0000005/0183cd80.htm?Retriage=1</a></p>
+<h2 id="Followup-MachineOwner"><a href="#Followup-MachineOwner" class="headerlink" title="Followup: MachineOwner"></a>Followup: MachineOwner</h2><p>0:000&gt; lmvm chrome_child<br>start             end                 module name<br>00007ff9<code>47360000 00007ff9</code>4c253000   chrome_child C (private pdb symbols)  c:\symbols\chrome_child.dll.pdb\61754B485B7E8429FE4BA7DC749B3ECC1\chrome_child.dll.pdb<br>    Loaded symbol image file: chrome_child.dll<br>    Mapped memory image file: c:\symbols\chrome_child.dll\5BECFD504ef3000\chrome_child.dll<br>    Image path: D:\Google\Chrome\Application\70.0.3538.110\chrome_child.dll<br>    Image name: chrome_child.dll<br>    Timestamp:        Thu Nov 15 13:00:00 2018 (5BECFD50)<br>    CheckSum:         00000000<br>    ImageSize:        04EF3000<br>    File version:     70.0.3538.110<br>    Product version:  70.0.3538.110<br>    File flags:       0 (Mask 0)<br>    File OS:          0 Unknown Base<br>    File type:        1.0 App<br>    File date:        00000000.00000000<br>    Translations:     0409.04b0<br>    CompanyName:      Google Inc.<br>    ProductName:      Google Chrome<br>    InternalName:     chrome_dll<br>    OriginalFilename: chrome.dll<br>    ProductVersion:   70.0.3538.110 //这是客户的Chrome版本<br>    FileVersion:      70.0.3538.110<br>    FileDescription:  Google Chrome<br>LegalCopyright:   Copyright 2017 Google Inc. All rights reserved.</p>
+<p>0:000&gt; ~*kv</p>
+<p>.  0  Id: 1704.16cc Suspend: 0 Teb: 000000bc<code>c83e2000 Unfrozen
+Child-SP          RetAddr           : Args to Child                                                           : Call Site
+000000bc</code>c85fb7e8 00007ff9<code>8de25e9a : 000000bc</code>c85fb8a8 00000000<code>00000000 00000000</code>00000000 00000000<code>00000000 : ntdll!ZwDelayExecution+0x14
+000000bc</code>c85fb7f0 00007ff9<code>7d5d2e15 : 000000bc</code>c85fb998 00001b18<code>00000000 00000000</code>c00000bb 00000000<code>00000000 : KERNELBASE!SleepEx+0x9a
+000000bc</code>c85fb890 00007ff9<code>8decbcf0 : 00000000</code>00000000 000000bc<code>c85ffb60 00000000</code>00000000 00007ff9<code>917b5c52 : chrome_elf!crashpad::</code>anonymous namespace’::UnhandledExceptionHandler+0xdd [C:\b\c\b\win64_clang\src\third_party\crashpad\crashpad\client\crashpad_client_win.cc @ 174]<br>000000bc<code>c85fb9e0 00007ff9</code>91842757 : 00007ff6<code>b71ceb60 00007ff9</code>918dc15c 00000000<code>00000000 00000000</code>00000000 : KERNELBASE!UnhandledExceptionFilter+0x190<br>000000bc<code>c85fbaf0 00007ff9</code>9182ab46 : 000000bc<code>c85fbb89 0000027a</code>b40b0150 00000000<code>00000000 000000bc</code>c85fc7b0 : ntdll!RtlUserThreadStart$filt$0+0x38<br>000000bc<code>c85fbb20 00007ff9</code>9183ed3d : 00000000<code>00000000 000000bc</code>c85fbcc0 000000bc<code>c85fc2c0 000000bc</code>c85fbcc0 : ntdll!_C_specific_handler+0x96<br>000000bc<code>c85fbb90 00007ff9</code>917a6c86 : 000000bc<code>c85fbcc0 000000bc</code>c85fc2c0 00007ff9<code>8ee7ab10 00000000</code>00000000 : ntdll!RtlpExecuteHandlerForException+0xd<br>000000bc<code>c85fbbc0 00007ff9</code>9183dc6e : 00000000<code>000000d0 435fd7c3</code>447a34e2 00000000<code>00000016 00000000</code>000000d0 : ntdll!RtlDispatchException+0x3c6<br>000000bc<code>c85fc2c0 00007ff9</code>48b9cd80 : 00007ff9<code>4b10f6e7 00007ff9</code>4bf74c98 00007ff9<code>4b10f857 000000bc</code>c85fcaf8 : ntdll!KiUserExceptionDispatcher+0x2e (TrapFrame @ 000000bc<code>c85fc6e8)
+000000bc</code>c85fca78 00007ff9<code>4b10f6e7 : 00007ff9</code>4bf74c98 00007ff9<code>4b10f857 000000bc</code>c85fcaf8 00000000<code>00000201 : chrome_child!base::win::</code>anonymous namespace’::ForceCrashOnSigAbort [C:\b\c\b\win64_clang\src\base\win\win_util.cc @ 87]<br>000000bc<code>c85fca80 00007ff9</code>4b0fe654 : 00000000<code>00000101 0000027a</code>00000000 00000000<code>00000000 0000027a</code>c7be07c8 : chrome_child!raise+0x22b [minkernel\crts\ucrt\src\appcrt\misc\signal.cpp @ 547]<br>000000bc<code>c85fcaf0 00007ff9</code>48d2c5c5 : 0000027a<code>c7be07c8 0000027a</code>c91d4af8 00000000<code>00000000 000000bc</code>c85fcc60 : chrome_child!abort+0x18 [minkernel\crts\ucrt\src\appcrt\startup\abort.cpp @ 71]<br>000000bc<code>c85fcb20 00007ff9</code>47995d44 : 43978309<code>00000000 00000000</code>00000000 00000000<code>00000000 00000000</code>00000000 : chrome_child!sk_abort_no_print+0x15 [C:\b\c\b\win64_clang\src\skia\ext\SkMemory_new_handler.cpp @ 41]<br>000000bc<code>c85fcb50 00007ff9</code>4a111464 : 0000027a<code>b3f31650 00007ff9</code>48f5e14f 00007ff9<code>4b432658 00007ff9</code>4b432658 : chrome_child!GrOpFlushState::draw+0x1b4 [C:\b\c\b\win64_clang\src\third_party\skia\src\gpu\GrOpFlushState.cpp @ 120]<br>000000bc<code>c85fcbe0 00007ff9</code>47990cf7 : 0000027a<code>be6fdca8 0000027a</code>be6fdca8 00000000<code>00000005 000000bc</code>c85fd540 : chrome_child!<code>anonymous namespace&#39;::AAConvexPathOp::onPrepareDraws+0x2754 [C:\b\c\b\win64_clang\src\third_party\skia\src\gpu\ops\GrAAConvexPathRenderer.cpp @ 943]
+000000bc</code>c85fd110 00007ff9<code>47990b41 : 0000027a</code>c9406730 000000bc<code>c85fd4b0 000000bc</code>c85fd304 000000bc<code>c85fd4b0 : chrome_child!GrRenderTargetOpList::onPrepare+0x197 [C:\b\c\b\win64_clang\src\third_party\skia\src\gpu\GrRenderTargetOpList.cpp @ 105]
+000000bc</code>c85fd1b0 00007ff9<code>47990830 : 0000027a</code>bac81dd0 0000027a<code>bac81e18 00000000</code>000000ff 00000000<code>00000006 : chrome_child!GrOpList::prepare+0x61 [C:\b\c\b\win64_clang\src\third_party\skia\src\gpu\GrOpList.cpp @ 88]
+000000bc</code>c85fd210 00007ff9<code>4798f4cf : 00000000</code>00000000 00000000<code>00000000 00000000</code>00000000 00005c10<code>68089d0f : chrome_child!GrDrawingManager::executeOpLists+0xb0 [C:\b\c\b\win64_clang\src\third_party\skia\src\gpu\GrDrawingManager.cpp @ 315]
+000000bc</code>c85fd280 00007ff9<code>47bda0d7 : 00007ff9</code>4b299e07 00005c10<code>6808981f 00007ff9</code>4b299e07 00007ff9<code>4b299dfe : chrome_child!GrDrawingManager::internalFlush+0x75f [C:\b\c\b\win64_clang\src\third_party\skia\src\gpu\GrDrawingManager.cpp @ 232]
+000000bc</code>c85fd7a0 00007ff9<code>48d896b4 : 000000bc</code>c85fd830 0000027a<code>8127fd18 0000027a</code>c8b5fef0 00007ff9`4b3a2d30 : chrome_child!GrContext::flush+0x27 [C:\b\c\b\win64_clang\src\third_party\skia\src\gpu\GrContext.cpp @ 366]</p>
+<p>   1  Id: 1704.215c Suspend: 0 Teb: 000000bc`c83e4000 Unfrozen</p>
+<ol>
+<li>分析汇编代码<br>因为源代码行号对应不上，我们看一下汇编代码：<br>0:000&gt; u chrome_child!GrOpFlushState::draw+0x1b4<br>chrome_child!GrOpFlushState::draw+0x1b4 [C:\b\c\b\win64_clang\src\third_party\skia\src\gpu\GrOpFlushState.cpp @ 120]:<br>00007ff9<code>47995d44 897d1c          mov     dword ptr [rbp+1Ch],edi
+00007ff9</code>47995d47 897b2c          mov     dword ptr [rbx+2Ch],edi<br>00007ff9<code>47995d4a 48837c244000    cmp     qword ptr [rsp+40h],0
+00007ff9</code>47995d50 7507            jne     chrome_child!GrOpFlushState::draw+0x1c9 (00007ff9`47995d59)</li>
+</ol>
+<p>往前一点：<br>0:000&gt; u chrome_child!GrOpFlushState::draw+0x164 L20<br>chrome_child!GrOpFlushState::draw+0x164 [C:\b\c\b\win64_clang\src\third_party\skia\src\gpu\GrOpFlushState.cpp @ 120]:<br>00007ff9<code>47995cf4 1c85            sbb     al,85h
+00007ff9</code>47995cf6 ff754e          push    qword ptr [rbp+4Eh]<br>00007ff9<code>47995cf9 bf01000000      mov     edi,1
+00007ff9</code>47995cfe f00fc13d02675204 lock xadd dword ptr [chrome_child!gCurrOpUniqueID (00007ff9<code>4bebc408)],edi
+00007ff9</code>47995d06 83c701          add     edi,1<br>00007ff9<code>47995d09 7539            jne     chrome_child!GrOpFlushState::draw+0x1b4 (00007ff9</code>47995d44)<br>00007ff9<code>47995d0b 488d057e2bad03  lea     rax,[chrome_child!</code>string’ (00007ff9<code>4b468890)]
+00007ff9</code>47995d12 4889442430      mov     qword ptr [rsp+30h],rax<br>00007ff9<code>47995d17 488d0dc22bad03  lea     rcx,[chrome_child!</code>string’ (00007ff9<code>4b4688e0)]
+00007ff9</code>47995d1e 48894c2420      mov     qword ptr [rsp+20h],rcx<br>00007ff9<code>47995d23 c744242817010000 mov     dword ptr [rsp+28h],117h
+00007ff9</code>47995d2b 4c8d0d7fa97b03  lea     r9,[chrome_child!<code>string&#39; (00007ff9</code>4b1506b1)]<br>00007ff9<code>47995d32 ba17010000      mov     edx,117h
+00007ff9</code>47995d37 4531c0          xor     r8d,r8d<br>00007ff9<code>47995d3a e8016a3901      call    chrome_child!SkDebugf_FileLine (00007ff9</code>48d2c740)<br>00007ff9<code>47995d3f e86c683901      call    chrome_child!sk_abort_no_print (00007ff9</code>48d2c5b0) //堆栈位置<br>00007ff9<code>47995d44 897d1c          mov     dword ptr [rbp+1Ch],edi
+00007ff9</code>47995d47 897b2c          mov     dword ptr [rbx+2Ch],edi<br>00007ff9<code>47995d4a 48837c244000    cmp     qword ptr [rsp+40h],0
+00007ff9</code>47995d50 7507            jne     chrome_child!GrOpFlushState::draw+0x1c9 (00007ff9<code>47995d59)
+00007ff9</code>47995d52 4d89a618010000  mov     qword ptr [r14+118h],r12</p>
+<p>打印一下几个关键的string<br>0:000&gt; da 00007ff9<code>4b1506b1
+00007ff9</code>4b1506b1  “%s(%d): fatal error: “%s”.”<br>0:000&gt; da 00007ff9<code>4b4688e0
+00007ff9</code>4b4688e0  “../../third_party/skia/src/gpu/o”<br>00007ff9<code>4b468900  &quot;ps/GrOp.h&quot;
+0:000&gt; da 00007ff9</code>4b468890<br>00007ff9<code>4b468890  &quot;This should never wrap as it sho&quot;
+00007ff9</code>4b4688b0  “uld only be called once for each”<br>00007ff9`4b4688d0  “ GrOp subclass.”</p>
+<ol>
+<li>定位源码<br>通过这些string和汇编，我们定位到源码调用栈为：<br><a href="https://chromium.googlesource.com/skia/+/master/src/gpu/GrOpFlushState.cpp" target="_blank" rel="external">https://chromium.googlesource.com/skia/+/master/src/gpu/GrOpFlushState.cpp</a><br>void GrOpFlushState::draw(sk_sp<const grgeometryprocessor=""> gp, const GrPipeline* pipeline,<pre><code>const GrPipeline::FixedDynamicState* fixedDynamicState,
+const GrPipeline::DynamicStateArrays* dynamicStateArrays,
+const GrMesh meshes[], int meshCnt) {
+</code></pre>SkASSERT(fOpArgs);<br>SkASSERT(fOpArgs-&gt;fOp);<br>bool firstDraw = fDraws.begin() == fDraws.end();<br>auto&amp; draw = fDraws.append(&amp;fArena);<br>GrDeferredUploadToken token = fTokenTracker-&gt;issueDrawToken();<br>if (fixedDynamicState &amp;&amp; fixedDynamicState-&gt;fPrimitiveProcessorTextures) {<br>  for (int i = 0; i &lt; gp-&gt;numTextureSamplers(); ++i) {<pre><code>fixedDynamicState-&gt;fPrimitiveProcessorTextures[i]-&gt;addPendingRead();
+</code></pre>  }<br>}<br>if (dynamicStateArrays &amp;&amp; dynamicStateArrays-&gt;fPrimitiveProcessorTextures) {<br>  int n = gp-&gt;numTextureSamplers() * meshCnt;<br>  for (int i = 0; i &lt; n; ++i) {<pre><code>dynamicStateArrays-&gt;fPrimitiveProcessorTextures[i]-&gt;addPendingRead();
+</code></pre>  }<br>}<br>draw.fGeometryProcessor = std::move(gp);<br>draw.fPipeline = pipeline;<br>draw.fFixedDynamicState = fixedDynamicState;<br>draw.fDynamicStateArrays = dynamicStateArrays;<br>draw.fMeshes = meshes;<br>draw.fMeshCnt = meshCnt;<br>draw.fOpID = fOpArgs-&gt;fOp-&gt;uniqueID();<br>if (firstDraw) {<br>  fBaseDrawToken = token;<br>}<br>}</const></li>
+</ol>
+<p><a href="https://chromium.googlesource.com/skia/+/master/src/gpu/ops/GrOp.h" target="_blank" rel="external">https://chromium.googlesource.com/skia/+/master/src/gpu/ops/GrOp.h</a><br>// We lazily initialize the uniqueID because currently the only user is GrAuditTrail<br>uint32_t uniqueID() const {<br>    if (kIllegalOpID == fUniqueID) {<br>        fUniqueID = GenOpID();<br>    }<br>    return fUniqueID;<br>}</p>
+<p><a href="https://chromium.googlesource.com/skia/+/master/src/gpu/ops/GrOp.h" target="_blank" rel="external">https://chromium.googlesource.com/skia/+/master/src/gpu/ops/GrOp.h</a><br>static uint32_t GenOpID() { return GenID(&amp;gCurrOpUniqueID); }</p>
+<p><a href="https://chromium.googlesource.com/skia/+/master/src/gpu/ops/GrOp.h" target="_blank" rel="external">https://chromium.googlesource.com/skia/+/master/src/gpu/ops/GrOp.h</a><br>static uint32_t GenID(int32_t* idCounter) {<br>    // The atomic inc returns the old value not the incremented value. So we add<br>    // 1 to the returned value.<br>    uint32_t id = static_cast<uint32_t>(sk_atomic_inc(idCounter)) + 1;<br>    if (!id) {<br>        SK_ABORT(“This should never wrap as it should only be called once for each GrOp “<br>               “subclass.”);<br>    }<br>    return id;<br>}</uint32_t></p>
+<p><a href="https://github.com/google/skia/blob/81abc43e6f0b1a789e1bf116820c8ede68d778ab/include/core/SkPostConfig.h" target="_blank" rel="external">https://github.com/google/skia/blob/81abc43e6f0b1a789e1bf116820c8ede68d778ab/include/core/SkPostConfig.h</a> </p>
+<p>#if !defined(SkNO_RETURN_HINT)</p>
+<h1 id="if-SK-HAS-COMPILER-FEATURE-attribute-analyzer-noreturn"><a href="#if-SK-HAS-COMPILER-FEATURE-attribute-analyzer-noreturn" class="headerlink" title="if SK_HAS_COMPILER_FEATURE(attribute_analyzer_noreturn)"></a>if SK_HAS_COMPILER_FEATURE(attribute_analyzer_noreturn)</h1><pre><code>static inline void SkNO_RETURN_HINT() __attribute__((analyzer_noreturn));
+static inline void SkNO_RETURN_HINT() {}
+</code></pre><h1 id="else"><a href="#else" class="headerlink" title="else"></a>else</h1><h1 id="define-SkNO-RETURN-HINT-do-while-false"><a href="#define-SkNO-RETURN-HINT-do-while-false" class="headerlink" title="define SkNO_RETURN_HINT() do {} while (false)"></a>define SkNO_RETURN_HINT() do {} while (false)</h1><h1 id="endif"><a href="#endif" class="headerlink" title="endif"></a>endif</h1><p>#endif</p>
+<p>#if defined(SK_BUILD_FOR_GOOGLE3)<br>    void SkDebugfForDumpStackTrace(const char<em> data, void</em> unused);<br>    void DumpStackTrace(int skip_count, void w(const char<em>, void</em>), void* arg);</p>
+<h1 id="define-SK-DUMP-GOOGLE3-STACK-DumpStackTrace-0-SkDebugfForDumpStackTrace-nullptr"><a href="#define-SK-DUMP-GOOGLE3-STACK-DumpStackTrace-0-SkDebugfForDumpStackTrace-nullptr" class="headerlink" title="define SK_DUMP_GOOGLE3_STACK() DumpStackTrace(0, SkDebugfForDumpStackTrace, nullptr)"></a>define SK_DUMP_GOOGLE3_STACK() DumpStackTrace(0, SkDebugfForDumpStackTrace, nullptr)</h1><p>#else</p>
+<h1 id="define-SK-DUMP-GOOGLE3-STACK"><a href="#define-SK-DUMP-GOOGLE3-STACK" class="headerlink" title="define SK_DUMP_GOOGLE3_STACK()"></a>define SK_DUMP_GOOGLE3_STACK()</h1><p>#endif</p>
+<p>#ifdef SK_BUILD_FOR_WIN<br>// permits visual studio to follow error back to source</p>
+<p>#define SK_DUMP_LINE_FORMAT(message) \<br>    SkDebugf(“%s(%d): fatal error: \”%s\”\n”, <strong>FILE</strong>, <strong>LINE</strong>, message)</p>
+<p>#else</p>
+<p>#define SK_DUMP_LINE_FORMAT(message) \<br>    SkDebugf(“%s:%d: fatal error: \”%s\”\n”, <strong>FILE</strong>, <strong>LINE</strong>, message)</p>
+<p>#endif</p>
+<p>#ifndef SK_ABORT</p>
+<h1 id="define-SK-ABORT-message"><a href="#define-SK-ABORT-message" class="headerlink" title="define SK_ABORT(message) \"></a>define SK_ABORT(message) \</h1><pre><code>do { \
+   SkNO_RETURN_HINT(); \
+   SK_DUMP_LINE_FORMAT(message); \
+   SK_DUMP_GOOGLE3_STACK(); \
+   sk_abort_no_print(); \
+} while (false)
+</code></pre><p>#endif</p>
+<p>这个宏展开后，就是<br>SkDebugf(“%s(%d): fatal error: \”%s\”\n”, <strong>FILE</strong>, <strong>LINE</strong>, message)<br>sk_abort_no_print();<br>和汇编能对应上。</p>
+<ol>
+<li>分析Crash原因</li>
+</ol>
+<p>看看idCounter的初始值：<br>enum {<br>    kIllegalOpID = 0,<br>};<br>int32_t GrOp::gCurrOpUniqueID = GrOp::kIllegalOpID;<br>初始为0。</p>
+<p>现在分析为何会abrt：<br>if (!id) {<br>        SK_ABORT(“This should never wrap as it should only be called once for each GrOp “<br>               “subclass.”);<br>    }<br>要abrt，id必须为0，表示：<br>uint32_t id = static_cast<uint32_t>(sk_atomic_inc(idCounter)) + 1;</uint32_t></p>
+<p>sk_atomic_inc(idCounter)返回的值必须是(uint32_t)0xFFFFFFFF</p>
+<p>排除sk_atomic_inc的BUG：<br><a href="https://chromium.googlesource.com/chromium/chromium/+/master/skia/ext/SkThread_chrome.cc" target="_blank" rel="external">https://chromium.googlesource.com/chromium/chromium/+/master/skia/ext/SkThread_chrome.cc</a><br>int32_t sk_atomic_inc(int32_t* addr) {<br>  // sk_atomic_inc is expected to return the old value,<br>  // Barrier_AtomicIncrement returns the new value.<br>  return base::subtle::NoBarrier_AtomicIncrement(addr, 1) - 1;<br>}</p>
+<p><a href="https://github.com/adobe/chromium/blob/cfe5bf0b51b1f6b9fe239c2a3c2f2364da9967d7/third_party/tcmalloc/chromium/src/base/atomicops-internals-x86.h" target="_blank" rel="external">https://github.com/adobe/chromium/blob/cfe5bf0b51b1f6b9fe239c2a3c2f2364da9967d7/third_party/tcmalloc/chromium/src/base/atomicops-internals-x86.h</a><br>inline Atomic64 NoBarrier_AtomicIncrement(volatile Atomic64<em> ptr,<br>                                          Atomic64 increment) {<br>  Atomic64 temp = increment;<br>  <strong>asm</strong> <strong>volatile</strong>(“lock; xaddq %0,%1”<br>                       : “+r” (temp), “+m” (</em>ptr)<br>                       : : “memory”);<br>  // temp now contains the previous value of *ptr<br>  return temp + increment;<br>}</p>
+<p>对应汇编：<br>00007ff9<code>47995cfe f00fc13d02675204 lock xadd dword ptr [chrome_child!gCurrOpUniqueID (00007ff9</code>4bebc408)],edi<br>00007ff9`47995d06 83c701          add     edi,1</p>
+<p>ak_atomic_inc比较就是一个xadd操作，没有问题。</p>
+<p>那要让外部溢出，这个add操作应该返回 0xFFFFFFFF，4294967295为42亿次调用，便会warp。</p>
+<p>验证问题<br>既然怀疑是此处有问题，那么我们修改内存验证来重现一下，首先，需要找一台带有显卡的物理机（之前在虚拟机里面测试，由于虚拟机没有显卡，不会跑到此GPU渲染逻辑），然后保证符号一定能加载上，直接修改内存地址：<br>0:018&gt; ed 00000000<code>570cb120 0xFFFFFFF0
+0:018&gt; dd gCurrOpUniqueID
+00000000</code>570cb120  fffffff0 00000002 8000021f 00000000</p>
+<p>如上，将gCurrOpUniqueID值修改为0xFFFFFFF0，再运行，马上就Crash：<br>0:018&gt; g<br>(211c.c68): Access violation - code c0000005 (first chance)   马上就Crash了<br>First chance exceptions are reported before any exception handling.<br>This exception may be expected and handled.<br>chrome_child!base::win::`anonymous namespace’::ForceCrashOnSigAbort:<br>544f9fb0 c7050000000037130000 mov dword ptr ds:[0],1337h ds:002b:00000000=????????</p>
+<p>此验证说明，前面的堆栈分析和实际是相符合的。</p>
+<p>现在，我们测试一下，到底多久会溢出，通过秒表跑了30秒，获取前后gCurrOpUniqueID的值：<br>0:018&gt; dd gCurrOpUniqueID<br>00000000<code>570cb120  0003bb6f 00000002 8000021f 00000000
+0:018&gt; g
+(211c.918): Break instruction exception - code 80000003 (first chance)
+ntdll!DbgBreakPoint:
+00000000</code>77a0b1f0 cc              int     3<br>0:018&gt; dd gCurrOpUniqueID<br>00000000`570cb120  0003f7ff 00000002 8000021f 00000000</p>
+<p>计算一下，30秒增长53021，一天53021<em>2</em>60*24增长 152700480，需要28天左右才会rewind。考虑到调试时候速度慢一些，假设慢4倍，那正好一周左右会溢出。</p>
+<p>溢出后新产生的Core dump，会出现多个版本，其中一个是和客户的Core dump完全能对应上的，另一个和之前我们自己重现出来的堆栈破坏Core dump也能对应上，此堆栈如下：<br>FAULTING_IP:<br>chrome_child!base::win::IsDeviceUsedAsATablet+a0 [C:\b\c\b\win_clang\src\base\win\win_util.cc @ 516]<br>544f9fb0 c7050000000037130000 mov dword ptr ds:[0],1337h</p>
+<p>EXCEPTION_RECORD:  ffffffff – (.exr 0xffffffffffffffff)<br>ExceptionAddress: 544f9fb0 (chrome_child!base::win::IsDeviceUsedAsATablet+0x000000a0)<br>   ExceptionCode: c0000005 (Access violation)<br>  ExceptionFlags: 00000000<br>NumberParameters: 2<br>   Parameter[0]: 00000001<br>   Parameter[1]: 00000000<br>Attempt to write to address 00000000</p>
+<p>PROCESS_NAME:  chrome.exe</p>
+<p>ERROR_CODE: (NTSTATUS) 0xc0000005 - 0x%08lx</p>
+<p>EXCEPTION_CODE: (NTSTATUS) 0xc0000005 - 0x%08lx</p>
+<p>EXCEPTION_PARAMETER1:  00000001</p>
+<p>EXCEPTION_PARAMETER2:  00000000</p>
+<p>WRITE_ADDRESS:  00000000 </p>
+<p>FOLLOWUP_IP:<br>chrome_child!base::win::IsDeviceUsedAsATablet+a0 [C:\b\c\b\win_clang\src\base\win\win_util.cc @ 516]<br>544f9fb0 c7050000000037130000 mov dword ptr ds:[0],1337h</p>
+<p>MOD_LIST: <analysis></analysis></p>
+<p>CHKIMG_EXTENSION: !chkimg -lo 50 -d !chrome_child<br>    5309526a - chrome_child!base::trace_event::MemoryDumpProviderInfo::MemoryDumpProviderInfo+5a<br>    [ 12:02 ]<br>    530952cd-530952ce  2 bytes - chrome_child!base::internal::LockImpl::Lock+4d (+0x63)<br>    [ c6 3a:46 3b ]<br>    53095331 - chrome_child!base::debug::ScopedLockAcquireActivity::ScopedLockAcquireActivity+41 (+0x64)<br>    [ 62:e2 ]<br>    53095383-53095384  2 bytes - chrome_child!base::debug::GlobalActivityTracker::ScopedThreadActivity::ScopedThreadActivity+43 (+0x52)<br>    [ d9 d4:69 d5 ]<br>    544f9f30-544f9f61  50 bytes - chrome_child!base::win::IsDeviceUsedAsATablet+20 (+0x1464bad)<br>    [ 85 f6 0f 84 33 03 00 00:8a 45 ec 89 f1 88 44 24 ]<br>    544f9f63-544f9f8f  45 bytes - chrome_child!base::win::IsDeviceUsedAsATablet+53 (+0x33)<br>    [ 04 03 00 00 c7 04 24 5f:e8 af ee 02 02 83 c4 08 ]<br>    544f9f91-544f9fec  92 bytes - chrome_child!base::win::IsDeviceUsedAsATablet+81 (+0x2e)<br>    [ 00 00 85 f6 0f 84 d0 02:31 db 8b 4d f0 31 e9 e8 ]<br>    544f9fee-544f9ffb  14 bytes - chrome_child!base::win::IsDeviceUsedAsATablet+de (+0x5d)<br>    [ f9 1f 0f 83 de 01 00 00:e1 00 00 00 8a 45 d8 89 ]<br>    544f9ffe-544fa014  23 bytes - chrome_child!base::win::IsDeviceUsedAsATablet+ee (+0x10)<br>    [ 04 c7 44 24 0c 1f 00 00:08 91 0d 6e 56 c7 04 24 ]<br>    544fa016-544fa030  27 bytes - chrome_child!base::win::IsDeviceUsedAsATablet+106 (+0x18)<br>    [ e8 53 a9 ba fe 83 ec 10:00 c7 04 24 5f 00 00 00 ]<br>    544fa032-544fa056  37 bytes - chrome_child!base::win::IsDeviceUsedAsATablet+122 (+0x1c)<br>    [ 00 00 c7 44 24 04 91 0d:ff 15 28 6e fa 56 83 ec ]<br>    544fa058-544fa0a0  73 bytes - chrome_child!base::win::IsDeviceUsedAsATablet+148 (+0x26)<br>    [ 72 02 8b 0e c7 44 01 0c:0f 83 9f 00 00 00 8a 45 ]<br>    544fa0a2-544fa0f1  80 bytes - chrome_child!base::win::IsDeviceUsedAsATablet+192 (+0x4a)<br>    [ ec 08 85 c0 74 20 8d 4d:de 01 00 00 8a 45 dc 89 ]<br>    544fa0f3-544fa12f  61 bytes - chrome_child!base::win::IsDeviceUsedAsATablet+1e3 (+0x51)<br>    [ 85 c0 0f 84 83 00 00 00:02 c6 47 36 00 e9 1e 02 ]<br>508 errors : !chrome_child (5309526a-544fa12f)</p>
+<p>FAULTING_THREAD:  000031c4</p>
+<p>BUGCHECK_STR:  APPLICATION_FAULT_MEMORY_CORRUPTION_NULL_POINTER_WRITE_LARGE</p>
+<p>PRIMARY_PROBLEM_CLASS:  MEMORY_CORRUPTION_LARGE</p>
+<p>DEFAULT_BUCKET_ID:  MEMORY_CORRUPTION_LARGE</p>
+<p>LAST_CONTROL_TRANSFER:  from 5655b868 to 544f9fb0</p>
+<p>STACK_TEXT:<br>0036d52c 5655b868 00000016 5465f605 0036d564 chrome_child!base::win::IsDeviceUsedAsATablet+0xa0 [C:\b\c\b\win_clang\src\base\win\win_util.cc @ 516]<br>0036d53c 53607be6 00000000 00000000 05a30998 chrome_child!_get_fmode+0x2b [minkernel\crts\ucrt\src\appcrt\lowio\setmode.cpp @ 121]<br>0036d564 53607a31 00000000 0986006c 00000000 chrome_child!GrOpFlushState::draw+0x166 [C:\b\c\b\win_clang\src\third_party\skia\src\gpu\GrOpFlushState.cpp @ 120]<br>0036d66c 5334fa98 0036e7b0 00008000 ac34bc51 chrome_child!GrMeshDrawOp::Target::draw+0x11 [C:\b\c\b\win_clang\src\third_party\skia\src\gpu\ops\GrMeshDrawOp.h @ 93]<br>0036e530 530911da 05a30998 0997b560 00000000 chrome_child!sk_malloc_flags+0x68 [C:\b\c\b\win_clang\src\skia\ext\SkMemory_new_handler.cpp @ 117]<br>0036e534 05a30998 0997b560 00000000 00000000 chrome_child!base::allocator::WinHeapFree+0x1a [C:\b\c\b\win_clang\src\base\allocator\winheap_stubs_win.cc @ 43]<br>WARNING: Frame IP not in any known module. Following frames may be wrong.<br>0036e538 0997b560 00000000 00000000 00000000 0x5a30998<br>0036e53c 00000000 00000000 00000000 00000000 0x997b560</p>
+<p>STACK_COMMAND:  ~0s; .ecxr ; kb</p>
+<p>SYMBOL_NAME:  memory_corruption!chrome_child</p>
+<p>FOLLOWUP_NAME:  MachineOwner</p>
+<p>MODULE_NAME: memory_corruption</p>
+<p>IMAGE_NAME:  memory_corruption</p>
+<p>DEBUG_FLR_IMAGE_TIMESTAMP:  0</p>
+<p>FAILURE_BUCKET_ID:  MEMORY_CORRUPTION_LARGE_c0000005_memory_corruption!chrome_child</p>
+<p>BUCKET_ID:  APPLICATION_FAULT_MEMORY_CORRUPTION_NULL_POINTER_WRITE_LARGE_memory_corruption!chrome_child</p>
+<p>WATSON_STAGEONE_URL:  <a href="http://watson.microsoft.com/StageOne/chrome_exe/70_0_3538_102/5be3c2d0/chrome_child_dll/70_0_3538_102/5be3c2d0/c0000005/01469fb0.htm?Retriage=1" target="_blank" rel="external">http://watson.microsoft.com/StageOne/chrome_exe/70_0_3538_102/5be3c2d0/chrome_child_dll/70_0_3538_102/5be3c2d0/c0000005/01469fb0.htm?Retriage=1</a></p>
+<h2 id="Followup-MachineOwner-1"><a href="#Followup-MachineOwner-1" class="headerlink" title="Followup: MachineOwner"></a>Followup: MachineOwner</h2><p>此堆栈破坏版本，没法跟到根因，导致之前一次分析自己的Core dump时，误以为是踩内存导致，其实应该是Crash handler没有dump好内存。</p>
+<p>还有一种堆栈，是GPU Watch dog超时（15秒），这个Crash的是GPU进程，之前的是render进程：</p>
+<p>Executable search path is:<br>Windows 7 Version 7601 (23391) MP (2 procs) Free x64<br>Product: WinNt<br>Machine Name:<br>Debug session time: Sat Nov 10 12:11:41.000 2018 (GMT+8) //这个时间，应该是客户的老机器<br>System Uptime: not available<br>Process Uptime: 0 days 13:31:03.000<br>……………………………………………………….<br>……………………<br>Loading unloaded module list</p>
+<p>0:001&gt; !analyze -v<br>Failed calling InternetOpenUrl, GLE=12002</p>
+<p>FAULTING_IP:<br>chrome_child!gpu::GpuWatchdogThread::DeliberatelyTerminateToRecoverFromHang+1c1 [C:\b\c\b\win64_clang\src\gpu\ipc\service\gpu_watchdog_thread.cc @ 505]<br>000007fe`ebec081f c704250000000037130000 mov dword ptr [0],1337h</p>
+<p>EXCEPTION_RECORD:  ffffffffffffffff – (.exr 0xffffffffffffffff)<br>ExceptionAddress: 000007feebec081f (chrome_child!gpu::GpuWatchdogThread::DeliberatelyTerminateToRecoverFromHang+0x00000000000001c1)<br>   ExceptionCode: c0000005 (Access violation)<br>  ExceptionFlags: 00000000<br>NumberParameters: 2<br>   Parameter[0]: 0000000000000001<br>   Parameter[1]: 0000000000000000<br>Attempt to write to address 0000000000000000</p>
+<p>DEFAULT_BUCKET_ID:  NULL_POINTER_WRITE</p>
+<p>PROCESS_NAME:  chrome.exe</p>
+<p>ERROR_CODE: (NTSTATUS) 0xc0000005 - 0x%08lx</p>
+<p>EXCEPTION_CODE: (NTSTATUS) 0xc0000005 - 0x%08lx</p>
+<p>EXCEPTION_PARAMETER1:  0000000000000001</p>
+<p>EXCEPTION_PARAMETER2:  0000000000000000</p>
+<p>WRITE_ADDRESS:  0000000000000000 </p>
+<p>FOLLOWUP_IP:<br>chrome_child!gpu::GpuWatchdogThread::DeliberatelyTerminateToRecoverFromHang+1c1 [C:\b\c\b\win64_clang\src\gpu\ipc\service\gpu_watchdog_thread.cc @ 505]<br>000007fe`ebec081f c704250000000037130000 mov dword ptr [0],1337h</p>
+<p>MOD_LIST: <analysis></analysis></p>
+<p>NTGLOBALFLAG:  0</p>
+<p>FAULTING_THREAD:  000000000000135c</p>
+<p>PRIMARY_PROBLEM_CLASS:  NULL_POINTER_WRITE</p>
+<p>BUGCHECK_STR:  APPLICATION_FAULT_NULL_POINTER_WRITE</p>
+<p>LAST_CONTROL_TRANSFER:  from 000007feebec0489 to 000007feebec081f</p>
+<p>STACK_TEXT:<br>00000000<code>0349f440 000007fe</code>ebec0489 : 00000000<code>00000001 00000000</code>00000000 0000deed<code>2785490f 000000d9</code>e819a530 : chrome_child!gpu::GpuWatchdogThread::DeliberatelyTerminateToRecoverFromHang+0x1c1 [C:\b\c\b\win64_clang\src\gpu\ipc\service\gpu_watchdog_thread.cc @ 505]<br>00000000<code>0349f520 000007fe</code>ea16d2cc : 00000000<code>00000000 00000000</code>7751dba8 00000000<code>00000000 000007fe</code>00000002 : chrome_child!gpu::GpuWatchdogThread::OnCheckTimeout+0x61 [C:\b\c\b\win64_clang\src\gpu\ipc\service\gpu_watchdog_thread.cc @ 368]<br>00000000<code>0349f5d0 000007fe</code>ea16cb37 : 00000000<code>00000000 00000000</code>028674d0 00000000<code>00000001 00000000</code>0349f758 : chrome_child!base::debug::TaskAnnotator::RunTask+0x12c [C:\b\c\b\win64_clang\src\base\debug\task_annotator.cc @ 101]<br>00000000<code>0349f6f0 000007fe</code>ea1682bd : 00000000<code>00000048 00000000</code>00000001 00000000<code>00000000 000007fe</code>ee92d8d0 : chrome_child!base::MessageLoop::RunTask+0x247 [C:\b\c\b\win64_clang\src\base\message_loop\message_loop.cc @ 423]<br>00000000<code>0349f850 000007fe</code>ea1678bc : 00000000<code>00000000 000007fe</code>ea14bb94 00000000<code>0349fa70 000007fe</code>ee92d6d8 : chrome_child!base::MessageLoop::DoDelayedWork+0x18d [C:\b\c\b\win64_clang\src\base\message_loop\message_loop.cc @ 521]<br>00000000<code>0349f9c0 000007fe</code>ea167621 : 00000000<code>02867250 00000000</code>00000000 00000000<code>02867260 00000000</code>02867250 : chrome_child!base::MessagePumpDefault::Run+0x4c [C:\b\c\b\win64_clang\src\base\message_loop\message_pump_default.cc @ 42]<br>00000000<code>0349fa20 000007fe</code>ea163f90 : 00000000<code>00000000 00000000</code>00000000 000007fe<code>ea13d4e2 00000000</code>00000000 : chrome_child!base::RunLoop::Run+0x31 [C:\b\c\b\win64_clang\src\base\run_loop.cc @ 108]<br>00000000<code>0349fa50 000007fe</code>eb8670b4 : 00000000<code>00000000 00000000</code>00000000 00000000<code>00000000 00000000</code>00000000 : chrome_child!base::Thread::ThreadMain+0x180 [C:\b\c\b\win64_clang\src\base\threading\thread.cc @ 340]<br>00000000<code>0349fae0 00000000</code>773c59bd : 00000000<code>00000000 00000000</code>00000000 00000000<code>00000000 00000000</code>00000000 : chrome_child!base::<code>anonymous namespace&#39;::ThreadFunc+0xf4 [C:\b\c\b\win64_clang\src\base\threading\platform_thread_win.cc @ 94]
+00000000</code>0349fb60 00000000<code>774fa2e1 : 00000000</code>00000000 00000000<code>00000000 00000000</code>00000000 00000000<code>00000000 : kernel32!BaseThreadInitThunk+0xd
+00000000</code>0349fb90 00000000<code>00000000 : 00000000</code>00000000 00000000<code>00000000 00000000</code>00000000 00000000`00000000 : ntdll!RtlUserThreadStart+0x1d</p>
+<p>STACK_COMMAND:  ~1s; .ecxr ; kb</p>
+<p>SYMBOL_STACK_INDEX:  0</p>
+<p>SYMBOL_NAME:  chrome_child!gpu::GpuWatchdogThread::DeliberatelyTerminateToRecoverFromHang+1c1</p>
+<p>FOLLOWUP_NAME:  MachineOwner</p>
+<p>MODULE_NAME: chrome_child</p>
+<p>IMAGE_NAME:  chrome_child.dll</p>
+<p>DEBUG_FLR_IMAGE_TIMESTAMP:  5b96fc9f</p>
+<p>FAILURE_BUCKET_ID:  NULL_POINTER_WRITE_c0000005_chrome_child.dll!gpu::GpuWatchdogThread::DeliberatelyTerminateToRecoverFromHang</p>
+<p>BUCKET_ID:  X64_APPLICATION_FAULT_NULL_POINTER_WRITE_chrome_child!gpu::GpuWatchdogThread::DeliberatelyTerminateToRecoverFromHang+1c1</p>
+<p>WATSON_STAGEONE_URL:  <a href="http://watson.microsoft.com/StageOne/chrome_exe/69_0_3497_92/5b96fd04/chrome_child_dll/69_0_3497_92/5b96fc9f/c0000005/01da081f.htm?Retriage=1" target="_blank" rel="external">http://watson.microsoft.com/StageOne/chrome_exe/69_0_3497_92/5b96fd04/chrome_child_dll/69_0_3497_92/5b96fc9f/c0000005/01da081f.htm?Retriage=1</a></p>
+<p>Followup: MachineOwner</p>
+<p>此进程是GPU渲染进程：<br>0:001&gt; !peb<br>PEB at 000007fffffdf000<br>CommandLine ‘“C:\Users\Administrator\AppData\Local\Google\Chrome\Application\chrome.exe” –type=gpu-process –field-trial-handle=1028,15351644294314642440,598078252489282679,131072 –gpu-preferences=KAAAAAAAAACAAwBAAQAAAAAAAAAAAGAAAAAAAAAAAAAIAAAAAAAAACgAAAAEAAAAIAAAAAAAAAAoAAAAAAAAADAAAAAAAAAAOAAAAAAAAAAQAAAAAAAAAAAAAAAKAAAAEAAAAAAAAAAAAAAACwAAABAAAAAAAAAAAQAAAAoAAAAQAAAAAAAAAAEAAAALAAAA –service-request-channel-token=2922249399616643618 –mojo-platform-channel-handle=2076 –ignored=” –type=renderer “ /prefetch:2’</p>
+<p>搜索到类似BUG <a href="https://bugs.chromium.org/p/chromium/issues/detail?id=597700" target="_blank" rel="external">https://bugs.chromium.org/p/chromium/issues/detail?id=597700</a> 看讨论说升级intel驱动可解决。</p>
+<p>下断点：<br>bp chrome_child!gpu::GpuWatchdogThread::OnCheckTimeout<br>bp chrome_child!gpu::GpuWatchdogThread::OnCheck</p>
+<p>0:001:x86&gt; bl<br> 0 e x86 10a48680     0001 (0001)  0:<strong><strong> chrome_child!gpu::GpuWatchdogThread::OnCheckTimeout<br> 2 e x86 10a4817c     0001 (0001)  0:</strong></strong> chrome_child!gpu::GpuWatchdogThread::OnCheck<br>0:001:x86&gt; g<br>Breakpoint 2 hit<br>chrome_child!gpu::GpuWatchdogThread::OnCheck:  //在GPU硬件加速开启的情况下定时15秒会断下来，不开启的时候，断不下来。<br>10a4817c 55              push    ebp<br>0:001:x86&gt; kv<br>ChildEBP RetAddr  Args to Child<br>038af968 10338e22 00000000 10a4817c 00000000 chrome_child!gpu::GpuWatchdogThread::OnCheck (CONV: thiscall) [C:\b\c\b\win_clang\src\gpu\ipc\service\gpu_watchdog_thread.cc @ 292]<br>038af984 0f07c562 04e51808 02440000 00000000 chrome_child!base::internal::Invoker<base::internal::bindstate<void (blink::scheduler::mainthreadschedulerimpl::*)(bool)="" __attribute__((thiscall)),base::weakptr<blink::scheduler::mainthreadschedulerimpl="">,bool&gt;,void ()&gt;::RunOnce+0x44 (CONV: cdecl) [C:\b\c\b\win_clang\src\base\bind_internal.h @ 662]<br>038af9f0 0f07bbd3 1267f4c0 038afa98 038afa80 chrome_child!base::debug::TaskAnnotator::RunTask+0xe2 (CONV: thiscall) [C:\b\c\b\win_clang\src\base\debug\task_annotator.cc @ 101]<br>038afa70 0f07baf3 038afa98 0f074740 f687dac3 chrome_child!base::MessageLoop::RunTask+0xb3 (CONV: thiscall) [C:\b\c\b\win_clang\src\base\message_loop\message_loop.cc @ 436]<br>038afa90 0f0752a4 00000000 12848700 128486ac chrome_child!base::MessageLoop::DeferOrRunPendingTask+0x53 (CONV: thiscall) [C:\b\c\b\win_clang\src\base\message_loop\message_loop.cc @ 445]<br>038afb58 0f074b0a 02465a70 02465a70 02465a68 chrome_child!base::MessageLoop::DoDelayedWork+0x134 (CONV: thiscall) [C:\b\c\b\win_clang\src\base\message_loop\message_loop.cc @ 558]<br>038afb78 0f074aaf 0247b6c8 038afbb8 038afb98 chrome_child!base::MessagePumpDefault::Run+0x3a (CONV: thiscall) [C:\b\c\b\win_clang\src\base\message_loop\message_pump_default.cc @ 42]<br>038afb88 0f0748fe 00000001 0247b5e0 038afba0 chrome_child!base::MessageLoop::Run+0x1f (CONV: thiscall) [C:\b\c\b\win_clang\src\base\message_loop\message_loop.cc @ 386]<br>038afb98 0f0748cb 038afbe0 0f073105 038afbb8 chrome_child!base::RunLoop::Run+0x2e (CONV: thiscall) [C:\b\c\b\win_clang\src\base\run_loop.cc @ 108]<br>038afba0 0f073105 038afbb8 0247b6c8 00000000 chrome_child!base::Thread::Run+0xb (CONV: thiscall) [C:\b\c\b\win_clang\src\base\threading\thread.cc @ 263]<br>038afbe0 1047f865 0247b5e0 000001c8 000001c8 chrome_child!base::Thread::ThreadMain+0x165 (CONV: thiscall) [C:\b\c\b\win_clang\src\base\threading\thread.cc @ 360]<br>038afc04 7721343d 0246d408 038afc50 77b99832 chrome_child!base::`anonymous namespace’::ThreadFunc+0x95 (CONV: stdcall) [C:\b\c\b\win_clang\src\base\threading\platform_thread_win.cc @ 103]<br>038afc10 77b99832 0246d408 a7488ffb 00000000 KERNEL32!BaseThreadInitThunk+0xe (FPO: [Non-Fpo])<br>038afc50 77b99805 1047f7d0 0246d408 ffffffff ntdll_77b60000!__RtlUserThreadStart+0x70 (FPO: [Non-Fpo])<br>038afc68 00000000 1047f7d0 0246d408 00000000 ntdll_77b60000!_RtlUserThreadStart+0x1b (FPO: [Non-Fpo])</base::internal::bindstate<void></p>
+<p>还有一种是内存耗光的，但是比较早了：<br>Windows 7 Version 7601 (23391) MP (2 procs) Free x64<br>Product: WinNt<br>Machine Name:<br>Debug session time: Sun Nov 18 06:58:52.000 2018 (UTC + 8:00)<br>System Uptime: not available<br>Process Uptime: 4 days 13:20:33.000<br>版本还是69.0.3497.92<br>0:009&gt; !analyze -v<br><em>*</em> WARNING: Unable to verify checksum for KERNELBASE.dll</p>
+<hr>
+<ul>
+<li>*</li>
+<li>Exception Analysis                                   *</li>
+<li>*</li>
+</ul>
+<hr>
+<p><strong><em> WARNING: Unable to verify checksum for chrome_child.dll
+</em></strong> WARNING: Unable to verify checksum for kernel32.dll<br><strong><em> WARNING: Unable to verify checksum for USER32.dll
+</em></strong> WARNING: Unable to verify checksum for ole32.dll<br><strong><em> WARNING: Unable to verify checksum for chrome_elf.dll<br>Unable to load image C:\Program Files (x86)\360\360Safe\safemon\safemon64.dll, Win32 error 0n2
+</em></strong> WARNING: Unable to verify timestamp for safemon64.dll<br><em>*</em> ERROR: Module load completed but symbols could not be loaded for safemon64.dll<br>Failed calling InternetOpenUrl, GLE=12002</p>
+<p>FAULTING_IP:<br>KERNELBASE!RaiseException+39<br>000007fe`fd12a06d 4881c4c8000000  add     rsp,0C8h</p>
+<p>EXCEPTION_RECORD:  ffffffffffffffff – (.exr 0xffffffffffffffff)<br>ExceptionAddress: 000007fefd12a06d (KERNELBASE!RaiseException+0x0000000000000039)<br>   ExceptionCode: e0000008<br>  ExceptionFlags: 00000001<br>NumberParameters: 1<br>   Parameter[0]: 0000000045c5c040</p>
+<p>DEFAULT_BUCKET_ID:  APPLICATION_FAULT</p>
+<p>PROCESS_NAME:  chrome.exe</p>
+<p>ERROR_CODE: (NTSTATUS) 0xe0000008 - <unable to="" get="" error="" code="" text=""></unable></p>
+<p>EXCEPTION_CODE: (NTSTATUS) 0xe0000008 - <unable to="" get="" error="" code="" text=""></unable></p>
+<p>EXCEPTION_PARAMETER1:  0000000045c5c040</p>
+<p>MOD_LIST: <analysis></analysis></p>
+<p>NTGLOBALFLAG:  0</p>
+<p>FAULTING_THREAD:  0000000000001798</p>
+<p>PRIMARY_PROBLEM_CLASS:  APPLICATION_FAULT</p>
+<p>BUGCHECK_STR:  APPLICATION_FAULT_APPLICATION_FAULT</p>
+<p>LAST_CONTROL_TRANSFER:  from 000007feeb854284 to 000007fefd12a06d</p>
+<p>STACK_TEXT:<br>00000000<code>04aae590 000007fe</code>eb854284 : 000007fe<code>eb854260 00000000</code>00000000 00000000<code>00000000 00000000</code>012a8ed0 : KERNELBASE!RaiseException+0x39<br>00000000<code>04aae660 000007fe</code>ebc26767 : 00000000<code>00000000 00000000</code>00000000 000007fe<code>edf9ff98 00000000</code>45c5c040 : chrome_child!base::<code>anonymous namespace&#39;::OnNoMemory+0x24 [C:\b\c\b\win64_clang\src\base\process\memory_win.cc @ 55]
+00000000</code>04aae690 000007fe<code>ea121136 : 00000000</code>00000003 00000000<code>007f957c 00000000</code>775e03c8 000007fe<code>ea49b5ad : chrome_child!base::allocator::WinCallNewHandler+0x17 [C:\b\c\b\win64_clang\src\base\allocator\winheap_stubs_win.cc @ 90]
+00000000</code>04aae6c0 000007fe<code>ea181b98 : 00000000</code>01302f50 00000000<code>04934395 00000000</code>00000000 000007fe<code>ea125d27 : chrome_child!malloc+0x46 [C:\b\c\b\win64_clang\src\base\allocator\allocator_shim_override_ucrt_symbols_win.h @ 53]
+00000000</code>04aae700 000007fe<code>ea181a1f : 00000000</code>01302e50 00000000<code>01302e40 00000000</code>04aae880 00000000<code>04aae930 : chrome_child!base::circular_deque&lt;base::sequence_manager::internal::TaskQueueImpl::Task&gt;::ExpandCapacityIfNecessary+0x88 [C:\b\c\b\win64_clang\src\base\containers\circular_deque.h @ 960]
+00000000</code>04aae780 000007fe<code>ea1818c2 : 000007fe</code>edf9ff98 00000000<code>00000048 00000000</code>3a4ab518 000007fe<code>ea12111b : chrome_child!base::sequence_manager::internal::TaskQueueImpl::PushOntoImmediateIncomingQueueLocked+0x6f [C:\b\c\b\win64_clang\src\base\task\sequence_manager\task_queue_impl.cc @ 311]
+00000000</code>04aae800 000007fe<code>ea17753c : 00000000</code>04aaebb8 000007fe<code>ea125d83 00000000</code>0373c740 000007fe<code>ea499461 : chrome_child!base::sequence_manager::internal::TaskQueueImpl::PostImmediateTaskImpl+0xd2 [C:\b\c\b\win64_clang\src\base\task\sequence_manager\task_queue_impl.cc @ 209]
+00000000</code>04aae9f0 000007fe<code>ea177458 : 00000000</code>012bb5c0 00000000<code>00000000 00000000</code>00000000 00000000<code>04aaeb18 : chrome_child!base::sequence_manager::internal::TaskQueueImpl::PostDelayedTask+0x6c [C:\b\c\b\win64_clang\src\base\task\sequence_manager\task_queue_impl.cc @ 192]
+00000000</code>04aaeab0 000007fe<code>ea177316 : 00000000</code>012bb740 000007fe<code>ea5ad0a9 00000000</code>00000001 0000123a<code>865fd636 : chrome_child!base::sequence_manager::TaskQueue::PostTaskWithMetadata+0xa8 [C:\b\c\b\win64_clang\src\base\task\sequence_manager\task_queue.cc @ 116]
+00000000</code>04aaeb80 000007fe<code>ea16c7bf : 00000000</code>00000038 00000000<code>01309580 00000000</code>1b9d9da0 000007fe<code>edc8150b : chrome_child!blink::scheduler::TaskQueueWithTaskType::PostDelayedTask+0x7e [C:\b\c\b\win64_clang\src\third_party\blink\renderer\platform\scheduler\child\task_queue_with_task_type.cc @ 37]
+00000000</code>04aaec50 000007fe<code>ea5ace8a : 00000000</code>00000002 000007fe<code>ea5acd78 00000000</code>04aaedc0 000007fe<code>ea138c80 : chrome_child!base::TaskRunner::PostTask+0x3f [C:\b\c\b\win64_clang\src\base\task_runner.cc @ 44]
+00000000</code>04aaeca0 000007fe<code>ea477f1d : 00000000</code>00000000 00000000<code>04aaeea0 000007fe</code>edd5bc30 00000000<code>00000000 : chrome_child!cc::ProxyImpl::DidReceiveCompositorFrameAckOnImplThread+0xea [C:\b\c\b\win64_clang\src\cc\trees\proxy_impl.cc @ 297]
+00000000</code>04aaeda0 000007fe<code>ea1cf431 : 00000000</code>00000000 00000000<code>04aaedc0 00000000</code>04aaedc0 00000000<code>00000000 : chrome_child!viz::mojom::CompositorFrameSinkClientStubDispatch::Accept+0x31b [C:\b\c\b\win64_clang\src\out\Release_x64\gen\services\viz\public\interfaces\compositing\compositor_frame_sink.mojom.cc @ 1387]
+00000000</code>04aaee80 000007fe<code>ea1cef77 : 00000000</code>04aaeffc 000007fe<code>ea1ce782 000007fe</code>ea49ddc2 000007fe<code>ee8c7af0 : chrome_child!mojo::internal::MultiplexRouter::ProcessIncomingMessage+0x17b [C:\b\c\b\win64_clang\src\mojo\public\cpp\bindings\lib\multiplex_router.cc @ 868]
+00000000</code>04aaef50 000007fe<code>ea1ce306 : 00000000</code>04aaf1a8 000007fe<code>ea1be884 0def32d8</code>00020007 00000000<code>012bb350 : chrome_child!mojo::internal::MultiplexRouter::Accept+0xc7 [C:\b\c\b\win64_clang\src\mojo\public\cpp\bindings\lib\multiplex_router.cc @ 594]
+00000000</code>04aaf110 000007fe<code>ea1ce181 : 00000000</code>04aaf2f0 00000000<code>066304d0 00000000</code>04aaf340 000007fe<code>ea9eb007 : chrome_child!mojo::Connector::ReadSingleMessage+0xfe [C:\b\c\b\win64_clang\src\mojo\public\cpp\bindings\lib\connector.cc @ 456]
+00000000</code>04aaf2b0 000007fe<code>ea1ce05f : 00000000</code>00000000 00000000<code>04ad8f88 00000000</code>04aaf600 000007fe<code>ea1cdf85 : chrome_child!mojo::Connector::ReadAllAvailableMessages+0x63 [C:\b\c\b\win64_clang\src\mojo\public\cpp\bindings\lib\connector.cc @ 486]
+00000000</code>04aaf320 000007fe<code>ea16d2cc : 00000000</code>00000000 00000000<code>00000000 00000000</code>00000000 00000000<code>0382b9f8 : chrome_child!mojo::SimpleWatcher::OnHandleReady+0xab [C:\b\c\b\win64_clang\src\mojo\public\cpp\system\simple_watcher.cc @ 274]
+00000000</code>04aaf390 000007fe<code>ea1bc986 : 00000000</code>04aaf618 00000000<code>04aaf680 00000000</code>04ad8f18 000007fe<code>ea165781 : chrome_child!base::debug::TaskAnnotator::RunTask+0x12c [C:\b\c\b\win64_clang\src\base\debug\task_annotator.cc @ 101]
+00000000</code>04aaf4b0 000007fe<code>ea16d2cc : 00000000</code>3a4ab2f0 00000000<code>00000001 000007fe</code>ea1bce04 00000000<code>03825a18 : chrome_child!base::sequence_manager::internal::ThreadControllerImpl::DoWork+0x1b6 [C:\b\c\b\win64_clang\src\base\task\sequence_manager\thread_controller_impl.cc @ 170]
+00000000</code>04aaf6f0 000007fe<code>ea16cb37 : 00000000</code>3a4ab2f0 efefefef<code>efefefef 000007fe</code>ea1bce04 000007fe<code>ea1bce04 : chrome_child!base::debug::TaskAnnotator::RunTask+0x12c [C:\b\c\b\win64_clang\src\base\debug\task_annotator.cc @ 101]
+00000000</code>04aaf810 000007fe<code>ea167ac8 : 000007fe</code>edf9ca2c 000007fe<code>edf9c935 0000123a</code>865fc596 0000123a<code>865fc5f6 : chrome_child!base::MessageLoop::RunTask+0x247 [C:\b\c\b\win64_clang\src\base\message_loop\message_loop.cc @ 423]
+00000000</code>04aaf970 000007fe<code>ea167909 : 00000000</code>00000000 000007fe<code>ea14bb94 00000000</code>04aafc10 000007fe<code>ee92d6d8 : chrome_child!base::MessageLoop::DoWork+0x198 [C:\b\c\b\win64_clang\src\base\message_loop\message_loop.cc @ 480]
+00000000</code>04aafb60 000007fe<code>ea167621 : 00000000</code>00000000 00000000<code>00000000 00000000</code>037df9f0 00000000<code>037df9e0 : chrome_child!base::MessagePumpDefault::Run+0x99 [C:\b\c\b\win64_clang\src\base\message_loop\message_pump_default.cc @ 37]
+00000000</code>04aafbc0 000007fe<code>ea163f90 : 00000000</code>00000000 00000000<code>00000000 000007fe</code>ea13d4e2 00000000<code>00000000 : chrome_child!base::RunLoop::Run+0x31 [C:\b\c\b\win64_clang\src\base\run_loop.cc @ 108]
+00000000</code>04aafbf0 000007fe<code>eb8670b4 : 00000000</code>00000000 00000000<code>00000000 00000000</code>00000000 00000000<code>00000000 : chrome_child!base::Thread::ThreadMain+0x180 [C:\b\c\b\win64_clang\src\base\threading\thread.cc @ 340]
+00000000</code>04aafc80 00000000<code>773c59bd : 00000000</code>00000000 00000000<code>00000000 00000000</code>00000000 00000000<code>00000000 : chrome_child!base::</code>anonymous namespace’::ThreadFunc+0xf4 [C:\b\c\b\win64_clang\src\base\threading\platform_thread_win.cc @ 94]<br>00000000<code>04aafd00 00000000</code>774fa2e1 : 00000000<code>00000000 00000000</code>00000000 00000000<code>00000000 00000000</code>00000000 : kernel32!BaseThreadInitThunk+0xd<br>00000000<code>04aafd30 00000000</code>00000000 : 00000000<code>00000000 00000000</code>00000000 00000000<code>00000000 00000000</code>00000000 : ntdll!RtlUserThreadStart+0x1d</p>
+<p>STACK_COMMAND:  ~9s; .ecxr ; kb</p>
+<p>FOLLOWUP_IP:<br>chrome_child!base::<code>anonymous namespace&#39;::OnNoMemory+24 [C:\b\c\b\win64_clang\src\base\process\memory_win.cc @ 55]
+000007fe</code>eb854284 b9080000e0      mov     ecx,0E0000008h</p>
+<p>SYMBOL_STACK_INDEX:  1</p>
+<p>SYMBOL_NAME:  chrome_child!base::`anonymous namespace’::OnNoMemory+24</p>
+<p>FOLLOWUP_NAME:  MachineOwner</p>
+<p>MODULE_NAME: chrome_child</p>
+<p>IMAGE_NAME:  chrome_child.dll</p>
+<p>DEBUG_FLR_IMAGE_TIMESTAMP:  5b96fc9f</p>
+<p>FAILURE_BUCKET_ID:  APPLICATION_FAULT_e0000008_chrome_child.dll!base::_anonymous<em>namespace</em>::OnNoMemory</p>
+<p>BUCKET_ID:  X64_APPLICATION_FAULT_APPLICATION_FAULT_chrome_child!base::_anonymous<em>namespace</em>::OnNoMemory+24</p>
+<p>WATSON_STAGEONE_URL:  <a href="http://watson.microsoft.com/StageOne/chrome_exe/69_0_3497_92/5b96fd04/KERNELBASE_dll/6_1_7601_23391/56e9ab2a/e0000008/0001a06d.htm?Retriage=1" target="_blank" rel="external">http://watson.microsoft.com/StageOne/chrome_exe/69_0_3497_92/5b96fd04/KERNELBASE_dll/6_1_7601_23391/56e9ab2a/e0000008/0001a06d.htm?Retriage=1</a></p>
+<h2 id="Followup-MachineOwner-2"><a href="#Followup-MachineOwner-2" class="headerlink" title="Followup: MachineOwner"></a>Followup: MachineOwner</h2><p>简化重现<br>因为这是一个标准的2d draw调用，不需要用我们的代码，同事专门写了一段2d Canvas绘制代码，便可验证此问题（需要运行好几天），另外，测试的时候，我还发现，把Chrome浏览器最小化或不是激活Tab，都会停止绘图，需要重现得保证Chrome一直显示：</p>
+<html lang="en"><br><head><br>    <meta charset="UTF-8"><br>    <title>2d draw</title><br>    <script type="text/javascript"><br>        function draw () {<br>            var c=document.getElementById(“myCanvas”);<br>            var ctx=c.getContext(“2d”);<br>            ctx.beginPath();<br>            ctx.arc(100,75,50,0,2*Math.PI);<br>            ctx.stroke();<br>        }<br>        window.onload = function () {<br>            var time = +new Date();<br>            var test = document.getElementById(‘test’);<br>            var func;<br>            window.requestAnimationFrame(func = function () {<br>                var newTime = +new Date();<br>                test.innerHTML = newTime - time;<br>                time = +new Date();<br>                for(var i = 0; i &lt; 100000; i++)<br>                    draw();<br>                window.requestAnimationFrame(func);<br>            });<br>        }<br>    </script><br></head><br><body><br>    <div id="test"></div><br>    <canvas id="myCanvas" width="500" height="500"></canvas><br></body><br></html>
+
+<p>解决方法<br>目前看，最好的方法是更换为非Chrome浏览器，此问题已经反馈给Chrome官方。<br><a href="https://bugs.chromium.org/p/skia/issues/detail?id=8575&amp;can=1&amp;q=gCurrOpUniqueID&amp;colspec=ID%20Type%20Status%20Priority%20M%20Area%20Owner%20Summary" target="_blank" rel="external">https://bugs.chromium.org/p/skia/issues/detail?id=8575&amp;can=1&amp;q=gCurrOpUniqueID&amp;colspec=ID%20Type%20Status%20Priority%20M%20Area%20Owner%20Summary</a></p>
+<p>当天晚上，Chrome就修复了此问题，预计后面的新版本就不会有此问题：</p>
+<p>2018/11/29</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/BUG/" rel="tag"># BUG</a>
+          
+            <a href="/tags/开源/" rel="tag"># 开源</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/11/01/cookies-git/" rel="next" title="Cookies之Git命令">
+                <i class="fa fa-chevron-left"></i> Cookies之Git命令
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/12/05/session-block-php-parallel-execution/" rel="prev" title="PHP Session阻塞验证">
+                PHP Session阻塞验证 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">58</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">68</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Followup-MachineOwner"><span class="nav-number">1.1.</span> <span class="nav-text">Followup: MachineOwner</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#if-SK-HAS-COMPILER-FEATURE-attribute-analyzer-noreturn"><span class="nav-number">2.</span> <span class="nav-text">if SK_HAS_COMPILER_FEATURE(attribute_analyzer_noreturn)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#else"><span class="nav-number">3.</span> <span class="nav-text">else</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#define-SkNO-RETURN-HINT-do-while-false"><span class="nav-number">4.</span> <span class="nav-text">define SkNO_RETURN_HINT() do {} while (false)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#endif"><span class="nav-number">5.</span> <span class="nav-text">endif</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#define-SK-DUMP-GOOGLE3-STACK-DumpStackTrace-0-SkDebugfForDumpStackTrace-nullptr"><span class="nav-number">6.</span> <span class="nav-text">define SK_DUMP_GOOGLE3_STACK() DumpStackTrace(0, SkDebugfForDumpStackTrace, nullptr)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#define-SK-DUMP-GOOGLE3-STACK"><span class="nav-number">7.</span> <span class="nav-text">define SK_DUMP_GOOGLE3_STACK()</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#define-SK-ABORT-message"><span class="nav-number">8.</span> <span class="nav-text">define SK_ABORT(message) \</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Followup-MachineOwner-1"><span class="nav-number">8.1.</span> <span class="nav-text">Followup: MachineOwner</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Followup-MachineOwner-2"><span class="nav-number">8.2.</span> <span class="nav-text">Followup: MachineOwner</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

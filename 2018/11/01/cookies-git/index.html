@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="工具,Git," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="配置gitlib秘钥配置需要自己生成一个秘钥1ssh-keygen -t rsa -C &quot;youremail@example.com&quot; 然后将公钥（默认在~/.ssh/id_rsa.pub）放到网站的个人配置页面，里面有SSH keys添加子页： 基本配置1234567891011121314151617181920git config --global user.name &quot;你的名字&quot;git c">
+<meta name="keywords" content="工具,Git">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Cookies之Git命令">
+<meta property="og:url" content="http://mnstory.net/2018/11/01/cookies-git/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="配置gitlib秘钥配置需要自己生成一个秘钥1ssh-keygen -t rsa -C &quot;youremail@example.com&quot; 然后将公钥（默认在~/.ssh/id_rsa.pub）放到网站的个人配置页面，里面有SSH keys添加子页： 基本配置1234567891011121314151617181920git config --global user.name &quot;你的名字&quot;git c">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-11-01T09:53:26.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Cookies之Git命令">
+<meta name="twitter:description" content="配置gitlib秘钥配置需要自己生成一个秘钥1ssh-keygen -t rsa -C &quot;youremail@example.com&quot; 然后将公钥（默认在~/.ssh/id_rsa.pub）放到网站的个人配置页面，里面有SSH keys添加子页： 基本配置1234567891011121314151617181920git config --global user.name &quot;你的名字&quot;git c">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2018/11/01/cookies-git/"/>
+
+
+
+
+
+  <title>Cookies之Git命令 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2018/11/01/cookies-git/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">Cookies之Git命令</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-10-27T13:00:00+00:00">
+                2018-10-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><h2 id="gitlib秘钥配置"><a href="#gitlib秘钥配置" class="headerlink" title="gitlib秘钥配置"></a>gitlib秘钥配置</h2><p>需要自己生成一个秘钥<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ssh-keygen -t rsa -C "youremail@example.com"</div></pre></td></tr></table></figure></p>
+<p>然后将公钥（默认在~/.ssh/id_rsa.pub）放到网站的个人配置页面，里面有SSH keys添加子页：</p>
+<h2 id="基本配置"><a href="#基本配置" class="headerlink" title="基本配置"></a>基本配置</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">git config --global user.name "你的名字"</div><div class="line">git config --global user.email "你的邮箱"</div><div class="line"><span class="meta">#</span> windows下载代码编码格式，不会进行转换，提交不转换（默认安装会转换成windows）</div><div class="line">git config --global core.autocrlf false</div><div class="line"><span class="meta">#</span> 拒绝提交包含混合换行符的文件</div><div class="line">git config --global core.safecrlf true</div><div class="line"><span class="meta">#</span> 文件名大小写敏感，有人又不需要大小写敏感，因为windows是大小写不敏感的</div><div class="line">git config --global core.ignorecase true</div><div class="line"><span class="meta">#</span> 避免git gui中的中文乱码</div><div class="line">git config --global gui.encoding utf-8</div><div class="line"><span class="meta">#</span> 避免git status显示的中文文件名乱码</div><div class="line">git config --global core.quotepath off</div><div class="line"><span class="meta">#</span> 彩色显示</div><div class="line">git config --global color.ui true</div><div class="line"><span class="meta">#</span> windows支持长路径，要不然代码路径太长会报错</div><div class="line">git config --global core.longpaths true</div><div class="line"><span class="meta">#</span> windows默认下载git代码，没有显示链接link属性问题</div><div class="line">git config --global core.symlinks true</div><div class="line"><span class="meta">#</span> 为查看历史配置一个别名</div><div class="line">git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)&lt;%an&gt;%Creset' --abbrev-commit"</div></pre></td></tr></table></figure>
+<p>别名效果示例：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git lg</div><div class="line">* 1d14eae - (HEAD, origin/master, master) specification v1 (23 minutes ago) &lt;你的名字&gt;</div><div class="line">* 9f7c372 - add README (2 hours ago) &lt;你的名字&gt;</div><div class="line">*</div></pre></td></tr></table></figure></p>
+<h2 id="回车换行的修改"><a href="#回车换行的修改" class="headerlink" title="回车换行的修改"></a>回车换行的修改</h2><p>git add 提示会对回车换行做修改<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git add .gitattributes</div><div class="line">warning: LF will be replaced by CRLF in .gitattributes.</div><div class="line">The file will have its original line endings in your working directory.</div></pre></td></tr></table></figure></p>
+<p>回车换行有两个配置，一个是AutoCRLF：</p>
+<ol>
+<li><p>提交时转换为LF，检出时转换为CRLF</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git config --global core.autocrlf true</div></pre></td></tr></table></figure>
+</li>
+<li><p>提交时转换为LF，检出时不转换</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git config --global core.autocrlf input</div></pre></td></tr></table></figure>
+</li>
+<li><p>提交检出均不转换</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git config --global core.autocrlf false</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>二是SafeCRLF：</p>
+<ol>
+<li>拒绝提交包含混合换行符的文件 <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git config --global core.safecrlf true</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<ol>
+<li><p>允许提交包含混合换行符的文件</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git config --global core.safecrlf false</div></pre></td></tr></table></figure>
+</li>
+<li><p>提交包含混合换行符的文件时给出警告</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git config --global core.safecrlf warn</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<h1 id="入门命令"><a href="#入门命令" class="headerlink" title="入门命令"></a>入门命令</h1><h2 id="创建仓库"><a href="#创建仓库" class="headerlink" title="创建仓库"></a>创建仓库</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git init</div><div class="line"><span class="meta">$</span> ls -a</div><div class="line">./  ../  .git/</div></pre></td></tr></table></figure>
+<h2 id="提交一个文件"><a href="#提交一个文件" class="headerlink" title="提交一个文件"></a>提交一个文件</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> echo i have a dream &gt; readme.txt</div><div class="line"><span class="meta">$</span> git add readme.txt #添加</div><div class="line"><span class="meta">$</span> git status #查看状态</div><div class="line"><span class="meta">#</span> On branch master</div><div class="line"><span class="meta">#</span></div><div class="line"><span class="meta">#</span> Initial commit</div><div class="line"><span class="meta">#</span></div><div class="line"><span class="meta">#</span> Changes to be committed:</div><div class="line"><span class="meta">#</span>   (use "git rm --cached &lt;file&gt;..." to unstage)</div><div class="line"><span class="meta">#</span></div><div class="line"><span class="meta">#</span>	new file:   readme.txt</div><div class="line"><span class="meta">#</span></div><div class="line"></div><div class="line"><span class="meta">$</span> git commit -m "first blood" #提交文件</div><div class="line">[master (root-commit) 9d88046] first blood</div><div class="line"> 1 files changed, 1 insertions(+), 0 deletions(-)</div><div class="line"> create mode 100644 readme.txt</div><div class="line"></div><div class="line"><span class="meta">$</span> git status #再次查看状态</div><div class="line"><span class="meta">#</span> On branch master</div><div class="line">nothing to commit (working directory clean)</div></pre></td></tr></table></figure>
+<h2 id="修改文件后提交"><a href="#修改文件后提交" class="headerlink" title="修改文件后提交"></a>修改文件后提交</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> echo "second line" &gt;&gt; readme.txt </div><div class="line"><span class="meta">$</span> git status</div><div class="line"><span class="meta">#</span> On branch master</div><div class="line"><span class="meta">#</span> Changed but not updated:</div><div class="line"><span class="meta">#</span>   (use "git add &lt;file&gt;..." to update what will be committed)</div><div class="line"><span class="meta">#</span>   (use "git checkout -- &lt;file&gt;..." to discard changes in working directory)</div><div class="line"><span class="meta">#</span></div><div class="line"><span class="meta">#</span>	modified:   readme.txt</div><div class="line"><span class="meta">#</span></div><div class="line">no changes added to commit (use "git add" and/or "git commit -a")</div></pre></td></tr></table></figure>
+<p>查看有什么不一样：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git diff readme.txt </div><div class="line">diff --git a/readme.txt b/readme.txt</div><div class="line">index a23bf50..896de85 100644</div><div class="line">--- a/readme.txt</div><div class="line">+++ b/readme.txt</div><div class="line">@@ -1 +1,2 @@</div><div class="line"> i have a dream</div><div class="line">+second line</div></pre></td></tr></table></figure></p>
+<p>再次提交改动：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git commit -m "second blood" -a</div><div class="line">[master 615b81b] second blood</div><div class="line"> 1 files changed, 1 insertions(+), 0 deletions(-)</div><div class="line"> </div><div class="line"><span class="meta">$</span> git status</div><div class="line"><span class="meta">#</span> On branch master</div><div class="line">nothing to commit (working directory clean)</div></pre></td></tr></table></figure></p>
+<h2 id="查看修改记录"><a href="#查看修改记录" class="headerlink" title="查看修改记录"></a>查看修改记录</h2><p>常规查看：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">$ git log</div><div class="line">commit 615b81b6814eb5441cb304db5c4f11052ce7c654</div><div class="line">Author: 你的名字 &lt;你的邮箱&gt;</div><div class="line">Date:   Tue Mar 20 00:59:39 2018 +0800</div><div class="line"></div><div class="line">    second blood</div><div class="line"></div><div class="line">commit 9d8804680b7b2d9dfe95db84012bd21546271c68</div><div class="line">Author: 你的名字 &lt;你的邮箱&gt;</div><div class="line">Date:   Tue Mar 20 00:56:10 2018 +0800</div><div class="line"></div><div class="line">    first blood</div></pre></td></tr></table></figure></p>
+<p>单行模式查看：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"># git log --pretty=oneline</div><div class="line">615b81b6814eb5441cb304db5c4f11052ce7c654 second blood</div><div class="line">9d8804680b7b2d9dfe95db84012bd21546271c68 first blood</div></pre></td></tr></table></figure></p>
+<h1 id="分支"><a href="#分支" class="headerlink" title="分支"></a>分支</h1><h2 id="提交到一个新分支"><a href="#提交到一个新分支" class="headerlink" title="提交到一个新分支"></a>提交到一个新分支</h2><p>当前分支情况，只有master：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git branch</div><div class="line">* master</div></pre></td></tr></table></figure></p>
+<p>想要提交commit到newBranch1分支（如果这个分支之前不存在，会自动创建），可以：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git push origin master:newBranch1</div><div class="line"> ...</div><div class="line"> * [new branch]          master -&gt; newBranch1</div></pre></td></tr></table></figure></p>
+<h2 id="删除分支"><a href="#删除分支" class="headerlink" title="删除分支"></a>删除分支</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git branch</div><div class="line">  newBranch1</div><div class="line">* master</div><div class="line"></div><div class="line"><span class="meta">$</span> git branch -d newBranch1</div><div class="line">Deleted branch newBranch1 (was 1d14eae).</div><div class="line"></div><div class="line"><span class="meta">$</span> git branch</div><div class="line">* master</div></pre></td></tr></table></figure>
+<h2 id="从分支克隆"><a href="#从分支克隆" class="headerlink" title="从分支克隆"></a>从分支克隆</h2><p>加入-b参数，可以克隆某个分支的数据：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git clone -b newBranch1 git@你的服务器:路径/版本.git</div></pre></td></tr></table></figure></p>
+<p>在这样一个只有分支newBranch1的本地仓库中，你的所有操作都默认在此分支：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git status</div><div class="line">On branch newBranch1</div><div class="line">Your branch is up to date with 'origin/newBranch1'.</div></pre></td></tr></table></figure></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git commit -m "优化性能"</div><div class="line">[newBranch1 ec0177719] 优化性能</div><div class="line"> 7 files changed, 403 insertions(+), 37 deletions(-)</div></pre></td></tr></table></figure>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git push</div><div class="line">...</div><div class="line">To git@你的服务器:路径/版本.git</div><div class="line">   b71ecced5..ec0177719  newBranch1 -&gt; newBranch1</div></pre></td></tr></table></figure>
+<h2 id="切换到分支再提交"><a href="#切换到分支再提交" class="headerlink" title="切换到分支再提交"></a>切换到分支再提交</h2><p>切换分支到newBranch1（如果这个分支之前不存在，会自动创建）：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git checkout -b newBranch1</div></pre></td></tr></table></figure></p>
+<p>默认是在master上创建分支，可以这里指定从其他地方创建，例如 orign/newBranch1 。</p>
+<p>这个checkout -b操作，也可以展开为创建/切换两个步骤：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git branch newBranch1 # 创建分支</div><div class="line"></div><div class="line"><span class="meta">$</span> git branch # 查看当前默认分支情况</div><div class="line">* master</div><div class="line">  newBranch1</div><div class="line"></div><div class="line"><span class="meta">$</span> git checkout newBranch1 # 切换分支</div><div class="line">  已经位于 'newBranch1'</div><div class="line"></div><div class="line"><span class="meta">$</span> git branch</div><div class="line">  master</div><div class="line">* newBranch1</div></pre></td></tr></table></figure></p>
+<p>当然，切换分支前，拉取master的最新改动是一个好习惯，上面的步骤可以改进为：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">git checkout master     #切换到master分支</div><div class="line">git pull origin master  #更新master代码</div><div class="line">git checkout -b newBranch1 master  #从master新建，并切换到新分支</div></pre></td></tr></table></figure></p>
+<p>对于已存在分区，多人更改的时候，你可以拉取分支newBranch1下最新改动：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git pull origin newBranch1</div></pre></td></tr></table></figure></p>
+<p>现在你可以正常add, commit了。<br>最后将commit推送到分支newBranch1<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git push origin newBranch1</div></pre></td></tr></table></figure></p>
+<p>可以随时切换会到其他分支，例如，切换回master分支：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git checkout master</div><div class="line">Switched to branch 'master'</div></pre></td></tr></table></figure></p>
+<h1 id="回滚"><a href="#回滚" class="headerlink" title="回滚"></a>回滚</h1><h2 id="放弃本地更改，强制更新"><a href="#放弃本地更改，强制更新" class="headerlink" title="放弃本地更改，强制更新"></a>放弃本地更改，强制更新</h2><p>先获取远程内容，这时候没有合并：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git fetch --all</div></pre></td></tr></table></figure></p>
+<p>再把HEAD指向刚刚获取的最新内容：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git reset --hard origin/master</div></pre></td></tr></table></figure></p>
+<h2 id="回到历史某版本"><a href="#回到历史某版本" class="headerlink" title="回到历史某版本"></a>回到历史某版本</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git reset --hard 9d88</div><div class="line">HEAD is now at 9d88046 first blood</div><div class="line"></div><div class="line"><span class="meta">$</span> cat readme.txt </div><div class="line">i have a dream</div><div class="line"></div><div class="line"><span class="meta">$</span> git log</div><div class="line">commit 9d8804680b7b2d9dfe95db84012bd21546271c68</div><div class="line">Author: 你的名字 &lt;你的邮箱&gt;</div><div class="line">Date:   Tue Mar 20 00:56:10 2018 +0800</div><div class="line"></div><div class="line">    first blood</div></pre></td></tr></table></figure>
+<h2 id="撤销回滚到历史版本，回到最新版本"><a href="#撤销回滚到历史版本，回到最新版本" class="headerlink" title="撤销回滚到历史版本，回到最新版本"></a>撤销回滚到历史版本，回到最新版本</h2><p>需要记得之前最新版本的commit ID：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git reset --hard 615b</div><div class="line">HEAD is now at 615b81b second blood</div><div class="line"></div><div class="line"><span class="meta">$</span> cat readme.txt </div><div class="line">i have a dream</div><div class="line">second line</div><div class="line"></div><div class="line"><span class="meta">$</span> git log</div><div class="line">commit 615b81b6814eb5441cb304db5c4f11052ce7c654</div><div class="line">Author: 你的名字 &lt;你的邮箱&gt;</div><div class="line">Date:   Tue Mar 20 00:59:39 2018 +0800</div><div class="line"></div><div class="line">    second blood</div><div class="line"></div><div class="line">commit 9d8804680b7b2d9dfe95db84012bd21546271c68</div><div class="line">Author: 你的名字 &lt;你的邮箱&gt;</div><div class="line">Date:   Tue Mar 20 00:56:10 2018 +0800</div><div class="line"></div><div class="line">    first blood</div></pre></td></tr></table></figure></p>
+<h2 id="撤销工作区的修改"><a href="#撤销工作区的修改" class="headerlink" title="撤销工作区的修改"></a>撤销工作区的修改</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> echo third &gt;&gt; readme.txt </div><div class="line"><span class="meta">$</span> cat readme.txt </div><div class="line">i have a dream</div><div class="line">second line</div><div class="line">third</div><div class="line"></div><div class="line"><span class="meta">$</span> git checkout -- readme.txt</div><div class="line">或者</div><div class="line"><span class="meta">$</span> git reset --hard HEAD</div><div class="line"></div><div class="line"><span class="meta">$</span> cat readme.txt </div><div class="line">i have a dream</div><div class="line">second line</div></pre></td></tr></table></figure>
+<h2 id="撤销暂存区修改"><a href="#撤销暂存区修改" class="headerlink" title="撤销暂存区修改"></a>撤销暂存区修改</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> echo third &gt;&gt; readme.txt </div><div class="line"><span class="meta">$</span> git add readme.txt </div><div class="line"><span class="meta">$</span> git status</div><div class="line"><span class="meta">#</span> On branch master</div><div class="line"><span class="meta">#</span> Changes to be committed:</div><div class="line"><span class="meta">#</span>   (use "git reset HEAD &lt;file&gt;..." to unstage)</div><div class="line"><span class="meta">#</span></div><div class="line"><span class="meta">#</span>	modified:   readme.txt</div><div class="line"><span class="meta">#</span></div></pre></td></tr></table></figure>
+<p>上面已经放入暂存区了，下面撤销：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git reset HEAD readme.txt #先撤销暂存区修改</div><div class="line">Unstaged changes after reset:</div><div class="line">M	readme.txt</div><div class="line"></div><div class="line"><span class="meta">$</span> git status</div><div class="line"><span class="meta">#</span> On branch master</div><div class="line"><span class="meta">#</span> Changed but not updated:</div><div class="line"><span class="meta">#</span>   (use "git add &lt;file&gt;..." to update what will be committed)</div><div class="line"><span class="meta">#</span>   (use "git checkout -- &lt;file&gt;..." to discard changes in working directory)</div><div class="line"><span class="meta">#</span></div><div class="line"><span class="meta">#</span>	modified:   readme.txt</div><div class="line"><span class="meta">#</span></div><div class="line">no changes added to commit (use "git add" and/or "git commit -a")</div><div class="line"></div><div class="line"><span class="meta">$</span> git checkout -- readme.txt #再撤销工作区修改</div><div class="line"></div><div class="line"><span class="meta">$</span> git status</div><div class="line"><span class="meta">#</span> On branch master</div><div class="line">nothing to commit (working directory clean)</div></pre></td></tr></table></figure></p>
+<h2 id="撤销Commit"><a href="#撤销Commit" class="headerlink" title="撤销Commit"></a>撤销Commit</h2><p>比如我现在commit了，但是并没有push：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git rm readme.txt </div><div class="line">rm 'readme.txt'</div><div class="line"></div><div class="line"><span class="meta">$</span> git status</div><div class="line"><span class="meta">#</span> On branch master</div><div class="line"><span class="meta">#</span> Changes to be committed:</div><div class="line"><span class="meta">#</span>   (use "git reset HEAD &lt;file&gt;..." to unstage)</div><div class="line"><span class="meta">#</span></div><div class="line"><span class="meta">#</span>	deleted:    readme.txt</div><div class="line"></div><div class="line"><span class="meta">$</span> git commit -m "delete all"</div><div class="line">[master b88b45e] delete all</div><div class="line"> 1 files changed, 0 insertions(+), 2 deletions(-)</div><div class="line"> delete mode 100644 readme.txt</div><div class="line"></div><div class="line"><span class="meta">$</span> git log</div><div class="line">commit b88b45e4cd4fa3750199d43b1f156f1175384e7f</div><div class="line">Author: 你的名字 &lt;你的邮箱&gt;</div><div class="line">Date:   Tue Mar 20 01:19:19 2018 +0800</div><div class="line"></div><div class="line">    delete all</div><div class="line"></div><div class="line">commit 615b81b6814eb5441cb304db5c4f11052ce7c654</div><div class="line">Author: 你的名字 &lt;你的邮箱&gt;</div><div class="line">Date:   Tue Mar 20 00:59:39 2018 +0800</div><div class="line"></div><div class="line">    second blood</div><div class="line"></div><div class="line">commit 9d8804680b7b2d9dfe95db84012bd21546271c68</div><div class="line">Author: 你的名字 &lt;你的邮箱&gt;</div><div class="line">Date:   Tue Mar 20 00:56:10 2018 +0800</div><div class="line"></div><div class="line">    first blood</div></pre></td></tr></table></figure></p>
+<p>找要撤销步骤的commit ID，上述为 b88b45e4cd4fa3750199d43b1f156f1175384e7f<br>一种撤销是，只撤销commit命令，不对修改的代码进行撤销：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git reset b88b45e4cd4fa3750199d43b1f156f1175384e7f</div></pre></td></tr></table></figure></p>
+<p>另一种撤销是，既撤销commit，还要将代码撤销（代码恢复到commit前的对应版本）：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git reset --hard b88b45e4cd4fa3750199d43b1f156f1175384e7f</div></pre></td></tr></table></figure></p>
+<p>对于已经commit的，需要git reset，如果只是放入了暂存区，就不需要git reset，后面还可以加入：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git checkout 改动文件</div></pre></td></tr></table></figure></p>
+<p>这样确保“改动文件”在工作区的内容为最新。</p>
+<h2 id="删除文件"><a href="#删除文件" class="headerlink" title="删除文件"></a>删除文件</h2><p>工作区、暂存区、分支上同时删除<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git rm 路径</div></pre></td></tr></table></figure></p>
+<p>暂存区、分支上删除，但工作区保留（其实就是不希望某文件被版本控制，和.gitignore一个作用，对于已经在分支上的.gitignore无效）<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git rm --cached 路径</div></pre></td></tr></table></figure></p>
+<p>如果递归删除结合reset，可以清除本地的所有改动：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">git rm --cached -r . </div><div class="line">git reset --hard</div></pre></td></tr></table></figure></p>
+<h1 id="合并"><a href="#合并" class="headerlink" title="合并"></a>合并</h1><h2 id="合并newBranch1到当前分支"><a href="#合并newBranch1到当前分支" class="headerlink" title="合并newBranch1到当前分支"></a>合并newBranch1到当前分支</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git merge newBranch1</div><div class="line">Updating 9f7c372..1d14eae</div><div class="line">Fast-forward</div><div class="line"> ...readme.xlsx" |  Bin 0 -&gt; 16048 bytes</div><div class="line"> 6 files changed, 0 insertions(+), 0 deletions(-)</div><div class="line"> create mode 100644 "readme.xlsx"</div></pre></td></tr></table></figure>
+<h2 id="使用mergetool处理冲突"><a href="#使用mergetool处理冲突" class="headerlink" title="使用mergetool处理冲突"></a>使用mergetool处理冲突</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git merge</div><div class="line">Auto-merging .gitattributes</div><div class="line">CONFLICT (content): Merge conflict in .gitattributes</div><div class="line">Automatic merge failed; fix conflicts and then commit the result.</div><div class="line"></div><div class="line"><span class="meta">$</span> git status</div><div class="line"></div><div class="line">Unmerged paths:</div><div class="line">  (use "git add &lt;file&gt;..." to mark resolution)</div><div class="line"></div><div class="line">        both modified:   .gitattributes</div></pre></td></tr></table></figure>
+<p>用mergetool来人工处理冲突:<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git mergetool --tool-help</div><div class="line">'git mergetool --tool=&lt;tool&gt;' may be set to one of the following:</div><div class="line">                tortoisemerge</div><div class="line">                vimdiff</div><div class="line">                vimdiff2</div><div class="line">                vimdiff3</div><div class="line"></div><div class="line"><span class="meta">$</span> git mergetool --tool=tortoisemerge</div></pre></td></tr></table></figure></p>
+<p>或者<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git mergetool</div><div class="line">'git mergetool' will now attempt to use one of the following tools:</div><div class="line">opendiff kdiff3 tkdiff xxdiff meld tortoisemerge gvimdiff diffuse diffmerge ecmerge p4merge araxis bc codecompare emerge vimdiff</div><div class="line">refs/remotes/origin/master is not a valid attribute name: .gitattributes:36</div><div class="line">Merging:</div><div class="line">.gitattributes</div><div class="line"></div><div class="line">Normal merge conflict for '.gitattributes':</div><div class="line">  &#123;local&#125;: modified file</div><div class="line">  &#123;remote&#125;: modified file</div><div class="line">Hit return to start merge resolution tool (tortoisemerge):</div></pre></td></tr></table></figure></p>
+<h2 id="手动处理二进制冲突"><a href="#手动处理二进制冲突" class="headerlink" title="手动处理二进制冲突"></a>手动处理二进制冲突</h2><p>两种选择，要么保留欲合并分支的修改：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git checkout --theirs filename</div></pre></td></tr></table></figure></p>
+<p>要么保留自己的修改：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git checkout --ours filename</div></pre></td></tr></table></figure></p>
+<p>然后提交更改：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">git add filename</div><div class="line">git commit</div></pre></td></tr></table></figure></p>
+<h2 id="放弃本地修改"><a href="#放弃本地修改" class="headerlink" title="放弃本地修改"></a>放弃本地修改</h2><p>单文件放弃：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git checkout [oldversion可选] -- 文件地址</div></pre></td></tr></table></figure></p>
+<p>整体放弃<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">git reset --hard</div><div class="line">git pull</div></pre></td></tr></table></figure></p>
+<h2 id="完全以自己的内容为准（危险）"><a href="#完全以自己的内容为准（危险）" class="headerlink" title="完全以自己的内容为准（危险）"></a>完全以自己的内容为准（危险）</h2><p>比如，你pull的时候，发现有冲突：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git pull</div><div class="line">warning: Cannot merge binary files: /lib64/libutils.so (HEAD vs. 9ac05b78ec9555ef16ab50efe1f31e69617d2be8)</div><div class="line">Auto-merging /lib64/libutils.so</div><div class="line">CONFLICT (content): Merge conflict in /lib64/libutils.so</div><div class="line">Automatic merge failed; fix conflicts and then commit the result.</div></pre></td></tr></table></figure></p>
+<p>你如果<strong>只想</strong>保留本地修改，忽略远端修改，可以<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git merge -s ours origin/master</div><div class="line">Merge made by the 'ours' strategy.</div></pre></td></tr></table></figure></p>
+<blockquote>
+<p><strong>注意</strong><br>这动作非常<strong>危险</strong>，如果你push了你的提交，会导致别人的修改被丢弃。</p>
+</blockquote>
+<p>##保留本地修改<br>$ git fetch origin</p>
+<p>危险，会导致你没有PULL的别人提交的部分在库上也被丢弃。<br>$ git merge -s ours origin/master<br>Merge made by the ‘ours’ strategy.</p>
+<p>如果你不小心提交了，导致别人的提交丢失，可以参考<a href="#rebase-example">rebase示例</a></p>
+<h2 id="放弃合并"><a href="#放弃合并" class="headerlink" title="放弃合并"></a>放弃合并</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git merge --abort</div><div class="line"><span class="meta">$</span> git reset --merge</div></pre></td></tr></table></figure>
+<h2 id="跨版本合并"><a href="#跨版本合并" class="headerlink" title="跨版本合并"></a>跨版本合并</h2><p>例如合并3.0.9代码到3.0.10。</p>
+<ol>
+<li>工作目录目前在3.0.10，把3.0.10下的所有文件都commit，并push。</li>
+<li><p>添加3.0.9为远程分支并取回内容</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">git remote add 3.0.9 git@你的服务器:路径/3.0.9.git</div><div class="line">git fetch 3.0.9</div></pre></td></tr></table></figure>
+</li>
+<li><p>checkout 3.0.9的master分支到本地，给分支取名 3.0.9-master</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git checkout -b 3.0.9-master 3.0.9/master</div></pre></td></tr></table></figure>
+</li>
+<li><p>切换到3.0.10的master分支</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git checkout master</div></pre></td></tr></table></figure>
+</li>
+<li><p>将 3.0.9-master 合入到3.0.10的当前工作目录</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git merge 3.0.9-master --allow-unrelated-histories</div></pre></td></tr></table></figure>
+</li>
+<li><p>期间会有合并失败的，需要先解决冲突。</p>
+</li>
+<li><p>提交代码</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git commit -m "merge sip3.0.9"</div><div class="line">[master cfe833e6f] merge sip3.0.9</div></pre></td></tr></table></figure>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git push -u origin master</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<h2 id="从其他版本的某个分支挑选代码合入当前版本"><a href="#从其他版本的某个分支挑选代码合入当前版本" class="headerlink" title="从其他版本的某个分支挑选代码合入当前版本"></a>从其他版本的某个分支挑选代码合入当前版本</h2><ol>
+<li><p>在预合入的分支下，添加远程分支，将其他版本的某个分支加入进来。</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">(master)$</span> git remote add -m 其他版本的分支名字 本地名字 git@你的服务器:路径/其他版本.git</div></pre></td></tr></table></figure>
+</li>
+<li><p>更新代码。</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">(master)$</span> git fetch 本地名字</div></pre></td></tr></table></figure>
+</li>
+<li><p>把远程分支中要合并的commit Id挑选过来</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">(master)$</span> git cherry-pick e93ca048978f480c0258df2f2d7f0af67cb4f23e</div></pre></td></tr></table></figure>
+<p> 或者用名称也可以：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">(master)$</span> git cherry-pick 本地名字/其他版本的分支名字</div><div class="line">...</div><div class="line">9 files changed（改动了9个文件）, 125 insertions(+)（有125行新增代码）, 7 deletions(-)（有7行删除代码）</div></pre></td></tr></table></figure>
+</li>
+<li><p>提交代码，这里我提交到一个新分支</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="meta">(master)$</span> git checkout -b newBranch1</div><div class="line">Switched to a new branch 'newBranch1'</div><div class="line"></div><div class="line"><span class="meta">(newBranch1)$</span> git push origin newBranch1</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<h2 id="rebase示例"><a href="#rebase示例" class="headerlink" title="rebase示例"></a><span id="rebase-example">rebase示例</span></h2><p>merge和rebase都是用于合并代码，差异在于历史记录看起来不一样。<br>我之前使用 git merge -s ours origin/master 把自己的内容强制merge并push到了master分支，导致我修改期间别人的提交丢失，现在，我准备将别人丢失的部分，重新加入到master分支里面。我这里使用rebase操作，把历史也处理一下。</p>
+<ol>
+<li><p>先把我最新在master上的提叫checkout下来，名称叫mylast，这个版本丢失了其他人的提交的。</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">(master)$</span> git checkout 6ac5d94fdae15a17108cbdc1700656f1d8b3ad70 -b mylast</div><div class="line">Switched to a new branch 'mylast'</div></pre></td></tr></table></figure>
+</li>
+<li><p>把别人的最后一次正确提交checkout下来，取名叫skipPoint</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="meta">(mylast)$</span> git checkout 9ac05b78ec9555ef16ab50efe1f31e69617d2be8 -b skipPoint</div><div class="line">Switched to a new branch 'skipPoint'</div><div class="line"></div><div class="line"><span class="meta">(skipPoint)$</span> git checkout mylast</div><div class="line">Switched to branch 'mylast'</div></pre></td></tr></table></figure>
+</li>
+<li><p>rebase操作，把mylast上的提交取消掉，并将其保存为patch，然后mylast会更新为skipPoint，然后再把mylast原本的path应用到更新后的mylast上。</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="meta">(mylast)$</span> git rebase skipPoint</div><div class="line">First, rewinding head to replay your work on top of it</div><div class="line">...</div><div class="line">Resolve all conflicts manually, mark them as resolved with</div><div class="line">"git add/rm &lt;conflicted_files&gt;", then run "git rebase --continue".</div><div class="line">You can instead skip this commit: run "git rebase --skip".</div><div class="line">To abort and get back to the state before "git rebase", run "git rebase --abort".</div></pre></td></tr></table></figure>
+</li>
+<li><p>rebase过程中会有冲突，我们需要处理冲突。<br> 例如：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">(mylast|REBASE 1/1)$ git rm /lib64/libutils.so</div><div class="line">rm '/lib64/libutils.so'</div><div class="line"></div><div class="line">(mylast|REBASE 1/1)$ git add /lib64/libutils.so</div><div class="line">add '/lib64/libutils.so'</div></pre></td></tr></table></figure>
+</li>
+<li><p>所有冲突处理完，可以继续rebase。</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">(mylast|REBASE 1/1)$ git rebase --continue</div></pre></td></tr></table></figure>
+</li>
+<li><p>对于一些遗漏的commit，佟麟阁cherry-pick合入。</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">(mylast|REBASE 1/1)$ git cherry-pick 92578fc27d978ca092f8773e2a866f79c2e554c3</div></pre></td></tr></table></figure>
+</li>
+<li><p>提交</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">(mylast|CHERRY-PICKING)$ git commit -m "confit"</div></pre></td></tr></table></figure>
+</li>
+<li><p>替换master为mylast分支<br> 删除原本的master分支</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta"> (mylast)$</span> git branch -D master </div><div class="line">Deleted branch master (was 1dea1c102).</div></pre></td></tr></table></figure>
+<p> 或者，把原本的master重命名：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="meta">(mylast)$</span> git branch -m master</div></pre></td></tr></table></figure>
+</li>
+<li><p>推送覆盖到master<br> gitlib禁止了覆盖master，需要在 “设置”/“版本库”/“保护分支”下临时去掉保护。</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">(master|CHERRY-PICKING)$ git push -f --set-upstream origin master</div><div class="line">Counting objects: 202, done.</div><div class="line">To git@你的服务器:路径/版本.git</div><div class="line"> + 1dea1c102...2c7ecba76 master -&gt; master (forced update)</div><div class="line">Branch 'master' set up to track remote branch 'master' from 'origin'.</div></pre></td></tr></table></figure>
+</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/工具/" rel="tag"># 工具</a>
+          
+            <a href="/tags/Git/" rel="tag"># Git</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/06/01/handle-leak-cause-logic-error/" rel="next" title="句柄泄漏引发的逻辑错误">
+                <i class="fa fa-chevron-left"></i> 句柄泄漏引发的逻辑错误
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/11/27/chrome-crash-for-gCurrOpUniqueID-overflow/" rel="prev" title="gCurrOpUniqueID溢出导致Chrome进程崩溃">
+                gCurrOpUniqueID溢出导致Chrome进程崩溃 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">58</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">68</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#配置"><span class="nav-number">1.</span> <span class="nav-text">配置</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#gitlib秘钥配置"><span class="nav-number">1.1.</span> <span class="nav-text">gitlib秘钥配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#基本配置"><span class="nav-number">1.2.</span> <span class="nav-text">基本配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#回车换行的修改"><span class="nav-number">1.3.</span> <span class="nav-text">回车换行的修改</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#入门命令"><span class="nav-number">2.</span> <span class="nav-text">入门命令</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#创建仓库"><span class="nav-number">2.1.</span> <span class="nav-text">创建仓库</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#提交一个文件"><span class="nav-number">2.2.</span> <span class="nav-text">提交一个文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#修改文件后提交"><span class="nav-number">2.3.</span> <span class="nav-text">修改文件后提交</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查看修改记录"><span class="nav-number">2.4.</span> <span class="nav-text">查看修改记录</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分支"><span class="nav-number">3.</span> <span class="nav-text">分支</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#提交到一个新分支"><span class="nav-number">3.1.</span> <span class="nav-text">提交到一个新分支</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#删除分支"><span class="nav-number">3.2.</span> <span class="nav-text">删除分支</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#从分支克隆"><span class="nav-number">3.3.</span> <span class="nav-text">从分支克隆</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#切换到分支再提交"><span class="nav-number">3.4.</span> <span class="nav-text">切换到分支再提交</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#回滚"><span class="nav-number">4.</span> <span class="nav-text">回滚</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#放弃本地更改，强制更新"><span class="nav-number">4.1.</span> <span class="nav-text">放弃本地更改，强制更新</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#回到历史某版本"><span class="nav-number">4.2.</span> <span class="nav-text">回到历史某版本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#撤销回滚到历史版本，回到最新版本"><span class="nav-number">4.3.</span> <span class="nav-text">撤销回滚到历史版本，回到最新版本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#撤销工作区的修改"><span class="nav-number">4.4.</span> <span class="nav-text">撤销工作区的修改</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#撤销暂存区修改"><span class="nav-number">4.5.</span> <span class="nav-text">撤销暂存区修改</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#撤销Commit"><span class="nav-number">4.6.</span> <span class="nav-text">撤销Commit</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#删除文件"><span class="nav-number">4.7.</span> <span class="nav-text">删除文件</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#合并"><span class="nav-number">5.</span> <span class="nav-text">合并</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#合并newBranch1到当前分支"><span class="nav-number">5.1.</span> <span class="nav-text">合并newBranch1到当前分支</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用mergetool处理冲突"><span class="nav-number">5.2.</span> <span class="nav-text">使用mergetool处理冲突</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#手动处理二进制冲突"><span class="nav-number">5.3.</span> <span class="nav-text">手动处理二进制冲突</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#放弃本地修改"><span class="nav-number">5.4.</span> <span class="nav-text">放弃本地修改</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#完全以自己的内容为准（危险）"><span class="nav-number">5.5.</span> <span class="nav-text">完全以自己的内容为准（危险）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#放弃合并"><span class="nav-number">5.6.</span> <span class="nav-text">放弃合并</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#跨版本合并"><span class="nav-number">5.7.</span> <span class="nav-text">跨版本合并</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#从其他版本的某个分支挑选代码合入当前版本"><span class="nav-number">5.8.</span> <span class="nav-text">从其他版本的某个分支挑选代码合入当前版本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rebase示例"><span class="nav-number">5.9.</span> <span class="nav-text">rebase示例</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

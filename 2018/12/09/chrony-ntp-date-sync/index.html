@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Chrony,NTP,时钟," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="目前Centos使用Chrony来提供NTP服务。 将Chrony当成客户端我们可以将Chrony当成客户端来使用，此时，你需要将你想要同步的NTP server加入配置（例如myserver为NTP server）：12server ~ $ cat /etc/chrony.conf server myserver iburst 然后重启：1server ~ $ systemctl restart">
+<meta name="keywords" content="Chrony,NTP,时钟">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Chrony时间同步">
+<meta property="og:url" content="http://mnstory.net/2018/12/09/chrony-ntp-date-sync/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="目前Centos使用Chrony来提供NTP服务。 将Chrony当成客户端我们可以将Chrony当成客户端来使用，此时，你需要将你想要同步的NTP server加入配置（例如myserver为NTP server）：12server ~ $ cat /etc/chrony.conf server myserver iburst 然后重启：1server ~ $ systemctl restart">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-12-11T12:21:56.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Chrony时间同步">
+<meta name="twitter:description" content="目前Centos使用Chrony来提供NTP服务。 将Chrony当成客户端我们可以将Chrony当成客户端来使用，此时，你需要将你想要同步的NTP server加入配置（例如myserver为NTP server）：12server ~ $ cat /etc/chrony.conf server myserver iburst 然后重启：1server ~ $ systemctl restart">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2018/12/09/chrony-ntp-date-sync/"/>
+
+
+
+
+
+  <title>Chrony时间同步 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2018/12/09/chrony-ntp-date-sync/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">Chrony时间同步</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-09T13:00:00+00:00">
+                2018-12-09
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>目前Centos使用<a href="https://chrony.tuxfamily.org/manual.html" target="_blank" rel="external">Chrony</a>来提供NTP服务。</p>
+<h1 id="将Chrony当成客户端"><a href="#将Chrony当成客户端" class="headerlink" title="将Chrony当成客户端"></a>将Chrony当成客户端</h1><p>我们可以将Chrony当成客户端来使用，此时，你需要将你想要同步的NTP server加入配置（例如myserver为NTP server）：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">server ~ $ cat /etc/chrony.conf </div><div class="line">server myserver iburst</div></pre></td></tr></table></figure></p>
+<p>然后重启：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">server ~ $ systemctl restart chronyd</div></pre></td></tr></table></figure></p>
+<h2 id="查看和服务器的连通状态"><a href="#查看和服务器的连通状态" class="headerlink" title="查看和服务器的连通状态"></a>查看和服务器的连通状态</h2><p>下面MS是^*，^（脱字符号） 是服务器的意思，*（星号）代表当前处于同步状态，?（问号）表示连接断开。例如，我将服务器时钟调快一个小时，在客户端会显示yyyy为 -36000s。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">server ~ $ chronyc sources -v</div><div class="line">210 Number of sources = 1</div><div class="line"></div><div class="line">  .-- Source mode  '^' = server, '=' = peer, '#' = local clock.</div><div class="line"> / .- Source state '*' = current synced, '+' = combined , '-' = not combined,</div><div class="line">| /   '?' = unreachable, 'x' = time may be in error, '~' = time too variable.</div><div class="line">||                                                 .- xxxx [ yyyy ] +/- zzzz</div><div class="line">||                                                /   xxxx = adjusted offset,</div><div class="line">||         Log2(Polling interval) -.             |    yyyy = measured offset,</div><div class="line">||                                  \            |    zzzz = estimated error.</div><div class="line">||                                   |           |                         </div><div class="line">MS Name/IP address         Stratum Poll Reach LastRx Last sample</div><div class="line">===============================================================================</div><div class="line">^* myserver                 3   6   377    39   -1274s[ -3600s] +/-   29ms</div></pre></td></tr></table></figure></p>
+<p>如果服务器手动date修改了walltime，客户端效果有点诡异，感觉每次makestep都会跳来跳去的，时间不会跟随服务器变更(没有深究，可能理解有误)，而会变为互联网的正常时间（客户端不联网）：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">server ~ $ date</div><div class="line">Wed Dec  5 11:59:44 CST 2018</div><div class="line">server ~ $ chronyc -a makestep</div><div class="line">200 OK</div><div class="line">200 OK</div><div class="line">server ~ $ date</div><div class="line">Wed Dec  5 11:22:34 CST 2018</div><div class="line">server ~ $ chronyc -a makestep</div><div class="line">200 OK</div><div class="line">200 OK</div><div class="line">server ~ $ date</div><div class="line">Wed Dec  5 12:01:21 CST 2018</div></pre></td></tr></table></figure></p>
+<p>如果是客户端自己的时间被date修改了，可以通过chronyc -a makestep来同步。<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">server ~ $ date -s "-2hour"</div><div class="line">Wed Dec  5 10:04:38 CST 2018</div><div class="line">server ~ $ date</div><div class="line">Wed Dec  5 10:04:53 CST 2018</div><div class="line">server ~ $ chronyc -a makestep</div><div class="line">200 OK</div><div class="line">200 OK</div><div class="line">server ~ $ date</div><div class="line">Wed Dec  5 12:05:00 CST 2018</div></pre></td></tr></table></figure></p>
+<p>而使用waitsync不会跳跃同步：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">server ~ $ chronyc -a waitsync</div><div class="line">200 OK</div><div class="line">try: 1, refid: myserver, correction: 0.000000009, skew: 13.208</div></pre></td></tr></table></figure></p>
+<h1 id="将Chrony当成服务端"><a href="#将Chrony当成服务端" class="headerlink" title="将Chrony当成服务端"></a>将Chrony当成服务端</h1><p>现在我们将其当成服务器来配置，主要修改以下几个地方：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">server ~ $ cat /etc/chrony.conf </div><div class="line"><span class="meta">#</span> 对于安全要求比较高的，这里可以限制谁能访问本机提供的NTP服务。</div><div class="line">allow 客户端IP</div><div class="line"></div><div class="line"><span class="meta">#</span> 修改监听地址</div><div class="line">bindcmdaddress 0.0.0.0</div><div class="line"></div><div class="line"><span class="meta">#</span> Serve time even if not synchronized to any NTP server.</div><div class="line"><span class="meta">#</span> 这个地方很重要，如果服务器本身也不能同步时间，那么就用本地时间替代，层级为10</div><div class="line">local stratum 10</div></pre></td></tr></table></figure></p>
+<p>此程序会监听两个端口：</p>
+<ol>
+<li>端口 323/udp 为默认的管理端口，可以通过cmdport $newPort 来修改。</li>
+<li>端口 123/udp 为标准的NTP监听端口，如果要对外提供ntp server功能，必须开启防火墙和监听地址为外部可访问地址，可以通过port $newPort 来修改。</li>
+</ol>
+<p>想要别人访问自己的ntp端口，必须防火墙放通，通过如下命令可永久放通：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">firewall-cmd --zone=public --add-port=123/udp --permanent</div><div class="line">firewall-cmd --reload</div></pre></td></tr></table></figure></p>
+<p>如果误添加了端口，可以通过类似命令来删除（不存在的时候删除会报错）：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">firewall-cmd --zone=public --remove-port=323/tcp</div></pre></td></tr></table></figure></p>
+<p>看看原本服务器和客户端的时间差，如下相差约11秒：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">server ~ $ echo  -e "local: $(date +"%F %T")\nremote:$(sshpass -p 密码 ssh -p 端口 admin@客户端IP date +\"%F %T\")\n"</div><div class="line">local: 2018-12-10 14:40:02</div><div class="line">remote:2018-12-10 14:40:13</div></pre></td></tr></table></figure></p>
+<p>客户端执行同步命令：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line">client ~ $ ntpdate -v -d 服务端IP</div><div class="line">10 Dec 14:40:03 ntpdate[5190]: ntpdate 4.2.4p8@1.1612-o Wed Aug 25 13:54:52 UTC 2010 (1)</div><div class="line">Looking for host 10.250.250.251 and service ntp</div><div class="line">host found : 10.250.250.251</div><div class="line">transmit(10.250.250.251)</div><div class="line">receive(10.250.250.251)</div><div class="line">transmit(10.250.250.251)</div><div class="line">receive(10.250.250.251)</div><div class="line">transmit(10.250.250.251)</div><div class="line">receive(10.250.250.251)</div><div class="line">transmit(10.250.250.251)</div><div class="line">receive(10.250.250.251)</div><div class="line">transmit(10.250.250.251)</div><div class="line">server 10.250.250.251, port 123</div><div class="line">stratum 10, precision -19, leap 00, trust 000</div><div class="line">refid [10.250.250.251], delay 0.02565, dispersion 0.00000</div><div class="line">transmitted 4, in filter 4</div><div class="line">reference time:    dfb888b8.70b9338e  Mon, Dec 10 2018 14:39:52.440</div><div class="line">originate timestamp: dfb888b9.70b98204  Mon, Dec 10 2018 14:39:53.440</div><div class="line">transmit timestamp:  dfb888c3.e10d573c  Mon, Dec 10 2018 14:40:03.879</div><div class="line">filter delay:  0.02570  0.02565  0.02570  0.02568 </div><div class="line">         0.00000  0.00000  0.00000  0.00000 </div><div class="line">filter offset: -10.4388 -10.4388 -10.4388 -10.4388</div><div class="line">         0.000000 0.000000 0.000000 0.000000</div><div class="line">delay 0.02565, dispersion 0.00000</div><div class="line">offset -10.438836</div><div class="line"></div><div class="line">10 Dec 14:40:03 ntpdate[5190]: step time server 10.250.250.251 offset -10.438836 sec</div></pre></td></tr></table></figure></p>
+<p>这表示执行成功，如果遇到如下错误：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">...</div><div class="line">10.250.250.251: Server dropped: strata too high</div><div class="line">...</div><div class="line">stratum 16, precision -19, leap 11, trust 000</div><div class="line">...</div><div class="line">10 Dec 14:31:43 ntpdate[31119]: no server suitable for synchronization found</div></pre></td></tr></table></figure></p>
+<p>是因为服务端自身也没有同步好自己的时钟，且没有运行本地时间作为时钟源，Chrony服务端记得开启：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">local stratum 10</div></pre></td></tr></table></figure></p>
+<p>再次确认，时钟是否同步成功：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">server ~ $ echo  -e "local: $(date +"%F %T")\nremote:$(sshpass -p 密码 ssh -p 端口 admin@客户端IP date +\"%F %T\")\n"</div><div class="line">local: 2018-12-10 14:40:30</div><div class="line">remote:2018-12-10 14:40:30</div></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Chrony/" rel="tag"># Chrony</a>
+          
+            <a href="/tags/NTP/" rel="tag"># NTP</a>
+          
+            <a href="/tags/时钟/" rel="tag"># 时钟</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/12/05/session-block-php-parallel-execution/" rel="next" title="PHP Session阻塞验证">
+                <i class="fa fa-chevron-left"></i> PHP Session阻塞验证
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/12/14/make-self-signed-certificate/" rel="prev" title="自签名证书制作">
+                自签名证书制作 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">58</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">68</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#将Chrony当成客户端"><span class="nav-number">1.</span> <span class="nav-text">将Chrony当成客户端</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#查看和服务器的连通状态"><span class="nav-number">1.1.</span> <span class="nav-text">查看和服务器的连通状态</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#将Chrony当成服务端"><span class="nav-number">2.</span> <span class="nav-text">将Chrony当成服务端</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

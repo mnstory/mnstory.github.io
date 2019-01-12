@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="证书," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="X509 是一种证书标准，定义了证书应该包含的内容，也是SSL使用的证书标准，可以参考rfc5280。 编码格式存储证书时主要有：  pem(Privacy Enhanced Mail)文本编码 以”—–BEGIN—–”开头，以”—–END—–” 结尾,内容是BASE64编码。 Apache和*NIX服务器偏向于使用此类编码格式。 可通过如下方式查看：  1openssl x509 -in you">
+<meta name="keywords" content="证书">
+<meta property="og:type" content="article">
+<meta property="og:title" content="自签名证书制作">
+<meta property="og:url" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/index.html">
+<meta property="og:site_name" content="码农故事">
+<meta property="og:description" content="X509 是一种证书标准，定义了证书应该包含的内容，也是SSL使用的证书标准，可以参考rfc5280。 编码格式存储证书时主要有：  pem(Privacy Enhanced Mail)文本编码 以”—–BEGIN—–”开头，以”—–END—–” 结尾,内容是BASE64编码。 Apache和*NIX服务器偏向于使用此类编码格式。 可通过如下方式查看：  1openssl x509 -in you">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/err_cert_common_name_invalid.png">
+<meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/err_cert_authority_invalid.png">
+<meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/addto1.png">
+<meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/addto2.png">
+<meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/addto3.png">
+<meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/addto4.png">
+<meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/addto5.png">
+<meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/addto6.png">
+<meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/addto7.png">
+<meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/valid-domain.png">
+<meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/valid-ip.png">
+<meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/firefox-self-sign.png">
+<meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/firefox-self-sign-show.png">
+<meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/ffimport.png">
+<meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/firefox-other-sign-show.png">
+<meta property="og:updated_time" content="2018-12-19T07:46:40.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="自签名证书制作">
+<meta name="twitter:description" content="X509 是一种证书标准，定义了证书应该包含的内容，也是SSL使用的证书标准，可以参考rfc5280。 编码格式存储证书时主要有：  pem(Privacy Enhanced Mail)文本编码 以”—–BEGIN—–”开头，以”—–END—–” 结尾,内容是BASE64编码。 Apache和*NIX服务器偏向于使用此类编码格式。 可通过如下方式查看：  1openssl x509 -in you">
+<meta name="twitter:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/err_cert_common_name_invalid.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://mnstory.net/2018/12/14/make-self-signed-certificate/"/>
+
+
+
+
+
+  <title>自签名证书制作 | 码农故事</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">码农故事</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description"></h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2018/12/14/make-self-signed-certificate/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">自签名证书制作</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-14T13:00:00+00:00">
+                2018-12-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>X509 是一种证书标准，定义了证书应该包含的内容，也是SSL使用的证书标准，可以参考<a href="https://tools.ietf.org/html/rfc5280" target="_blank" rel="external">rfc5280</a>。</p>
+<h1 id="编码格式"><a href="#编码格式" class="headerlink" title="编码格式"></a>编码格式</h1><p>存储证书时主要有：</p>
+<ol>
+<li><p>pem(Privacy Enhanced Mail)文本编码<br> 以”—–BEGIN—–”开头，以”—–END—–” 结尾,内容是BASE64编码。<br> Apache和*NIX服务器偏向于使用此类编码格式。<br> 可通过如下方式查看：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl x509 -in your.pem -text -noout</div></pre></td></tr></table></figure>
+</li>
+<li><p>der(Distinguished Encoding Rules)二进制编<br> 二进制格式不可读，Java和Windows服务器偏向于使用这种编码格式。<br> 可通过如下方式查看：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl x509 -in your.der -inform der -text -noout</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<h1 id="文件扩展名"><a href="#文件扩展名" class="headerlink" title="文件扩展名"></a>文件扩展名</h1><p>上面是编码格式，本来就有pem和der的文件扩展名，但是，我们常常还能看到下面的扩展名（按文件功能来区分），其内可能是如上两种编码格式。</p>
+<ol>
+<li>key<br> key文件后缀一般用于存储私钥。<br> 私钥需要谨慎存储，以防泄漏，可以给私钥加密，并设置文件读取权限。<br> 可以用如下方式生成私钥： <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> openssl genrsa -out ca.key 2048</div><div class="line"></div><div class="line"><span class="meta">$</span> cat ca.key </div><div class="line">-----BEGIN RSA PRIVATE KEY-----</div><div class="line">MIIEpAIBAAKCAQEA2XAVPi2soM0Wtx50r38O2Vilznb38MJnwadsm1OwKpRWHj8I</div><div class="line">...</div><div class="line">vwiKSZ8Tca0PkfoTE4QQRxHxpoI6Guhrqgxp4nTLaDJ6fO8VzSXGJg==</div><div class="line">-----END RSA PRIVATE KEY-----</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<pre><code>私钥生成的时候，如果你想对私钥做加密存储，可以指定加密方法，如-des3，然后输入密码后私钥就被加密存储了，文件内容表现上，会多一些头部信息：
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> openssl genrsa -des3 -out ca.key 2048</div><div class="line"></div><div class="line"><span class="meta">$</span> cat ca.key </div><div class="line">-----BEGIN RSA PRIVATE KEY-----</div><div class="line">Proc-Type: 4,ENCRYPTED</div><div class="line">DEK-Info: DES-EDE3-CBC,24E18B27E7DA3DBA</div><div class="line"></div><div class="line">FEMUvp7Rrjz2RmIqmRCb5Z3EIyqf4pkRM0hxuiu+ouvW08Qs/YATw2A9BXHq7vfX</div><div class="line">...</div><div class="line">8eZjXcPPpTTg8GRht4ScratQzgSx8XJ5ArxF5v3cl1323bYUAJVJnQ==</div><div class="line">-----END RSA PRIVATE KEY-----</div></pre></td></tr></table></figure>
+
+
+可通过如下方式查看：
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl rsa -in your.key -text -noout</div></pre></td></tr></table></figure>
+
+或der格式：
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl rsa -in your.key -inform der -text -noout</div></pre></td></tr></table></figure>
+</code></pre><ol>
+<li><p>csr(Cerificate Signing Request)<br> csr为签名请求文件，其核心内容为自己的公钥和一些附加信息（如域名匹配字串），一般来说，给证书签名的都是受信任机构，主要是浏览器和操作系统里面内置的那几家，而普通厂商或个人，若想让浏览器也信任你的网站，必须先到受信任的证书机构去申请，让其用他们的证书为咱们的证书做一次签名，这个请求过程，理论上就需要咱们提供csr文件。</p>
+<p> 可通过如下方式查看：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl req -in your.csr -text -noout</div></pre></td></tr></table></figure>
+<p> 若是der格式，同理加入-inform der即可。</p>
+</li>
+<li><p>crt(Certificate)<br> 被证书机构签名后的csr，就是crt文件，这是签署人用自己的秘钥给你签署的凭证。（windows下导入证书的时候，扩展名默认是csr，其实应该是crt）。</p>
+</li>
+<li><p>pfx/p12(predecessor of PKCS#12)<br> *nix服务器一般将crt和key分开存放，但Windows的IIS则将它们存在一个pfx文件中，这样的好处是移动方便，但是可能会泄漏私钥，没关系，pfx文件查看是需要输入“提取密码”的，和上面的key文件指定的存储密码类似。</p>
+<p> pfx内部同样可能是der或pem格式，如何将pfx的der格式转换为pfx的pem格式？</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl pkcs12 -in your.pfx -out your.pem -nodes</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<pre><code>如何生成pfx文件：
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl pkcs12 -export -in 你的证书.crt -inkey 你的私钥.key -out your.pfx -certfile 权威机构的签名证书.crt</div></pre></td></tr></table></figure>
+</code></pre><ol>
+<li><p>jks(Java Key Storage)<br> 这是Java自己的一套，和OpenSSL关系不大，需要利用Java自带的keytool工具进行操作。</p>
+</li>
+<li><p>crl(Certificate Revocation List)<br> 证书吊销列表，不是用来存储证书或私钥的。</p>
+</li>
+</ol>
+<h1 id="自签名证书生成"><a href="#自签名证书生成" class="headerlink" title="自签名证书生成"></a>自签名证书生成</h1><p>之前使用的SSL自签名证书，很简陋，怎么做也没法让浏览器真正信任网站，Chrome报错为NET::ERR_CERT_COMMON_NAME_INVALID：<br><img src="/2018/12/14/make-self-signed-certificate/err_cert_common_name_invalid.png" alt="err_cert_common_name_invalid"></p>
+<p>研究了一下，生成自签名证书，需要附加“使用者备用名称”，将域名或IP加入证书，我将关键的配置抽象成模板，如下：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div></pre></td><td class="code"><pre><div class="line">~/cert $ cat cfg/req-ssign-one.template </div><div class="line">[ req ]</div><div class="line">default_bits        = 2048</div><div class="line">default_keyfile     = private/ca.key</div><div class="line">distinguished_name  = req_distinguished_name</div><div class="line">req_extensions      = req_ext</div><div class="line">x509_extensions     = x509_ext</div><div class="line">string_mask         = utf8only</div><div class="line"></div><div class="line">[ req_distinguished_name ] </div><div class="line">countryName                 = Country Name (2 letter code)</div><div class="line">stateOrProvinceName         = State or Province Name (full name)</div><div class="line">localityName                = Locality Name (eg, city)</div><div class="line">organizationName            = Organization Name (eg, company)</div><div class="line">commonName                  = Common Name (e.g. server FQDN or YOUR name)</div><div class="line">emailAddress                = Email Address</div><div class="line"></div><div class="line"><span class="meta">#</span>%distinguish%</div><div class="line"></div><div class="line">[ x509_ext ]</div><div class="line">subjectKeyIdentifier   = hash</div><div class="line">authorityKeyIdentifier = keyid,issuer</div><div class="line"></div><div class="line">basicConstraints       = CA:FALSE</div><div class="line">keyUsage               = digitalSignature, keyEncipherment</div><div class="line">subjectAltName         = @alt_names</div><div class="line"></div><div class="line">[ req_ext ]</div><div class="line">subjectKeyIdentifier = hash</div><div class="line">basicConstraints     = CA:FALSE</div><div class="line">keyUsage             = digitalSignature, keyEncipherment</div><div class="line"></div><div class="line">subjectAltName          = @alt_names</div><div class="line"></div><div class="line">[ alt_names ]</div><div class="line"><span class="meta">#</span>%altnames%</div></pre></td></tr></table></figure></p>
+<p>你只需要替换其中的“#%distinguish%”为自己需要的信息，例如：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">~/cert/ssign $ cat distinguish.userdef </div><div class="line">countryName_default         = CN</div><div class="line">stateOrProvinceName_default = Guangdong</div><div class="line">localityName_default        = ShenZhen</div><div class="line">organizationName_default    = X-Security</div><div class="line">commonName_default          = X-Security Platform</div><div class="line">emailAddress_default        = plat@x-security.com</div></pre></td></tr></table></figure></p>
+<p>替换#%altnames%（使用者备用名称）为自定义域名或IP，例如：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">~/cert/ssign $ ssign/altnames.userdef </div><div class="line">DNS.1 = plat.x-security.com</div><div class="line">DNS.2 = plat1.x-security.com</div><div class="line">DNS.3 = google.plat</div><div class="line">IP.1  = 192.168.111.10</div><div class="line">IP.2  = 200.200.221.186</div></pre></td></tr></table></figure></p>
+<p>配置写成这种方式是不行的，只能取最后一个：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">DNS = plat.x-security.com</div><div class="line">DNS = plat1.x-security.com</div></pre></td></tr></table></figure></p>
+<p>如果同value的话，最后生成的证书也会出现多条同value的项，并不会在生成过程中uniq：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">DNS.1 = plat1.x-security.com</div><div class="line">DNS.2 = plat1.x-security.com</div></pre></td></tr></table></figure></p>
+<p>几者结合起来，综合成一个配置文件（例如req.conf），便可以使用如下命令生成秘钥和证书：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">~/cert/ssign $ openssl req -config req.conf -new -sha256 -newkey rsa:2048 -nodes -keyout server.key -x509 -days 3650 -out server.crt</div></pre></td></tr></table></figure></p>
+<p>将生成的私钥和证书替换到Apache配置下对应位置：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">~ $ cat httpd.conf</div><div class="line">SSLCertificateFile "你的路径/server.crt"</div><div class="line">SSLCertificateKeyFile "你的路径/server.key"</div></pre></td></tr></table></figure></p>
+<p>重启Apache，浏览器ctrl+F5请求便能看到新版本证书。在Windows客户端，可指定伪域名，将证书里面的域名加入hosts文件：C:\Windows\System32\drivers\etc\hosts，例如添加：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">192.168.111.10  plat.x-security.com</div><div class="line">192.168.111.10  plat1.x-security.com</div><div class="line">200.200.221.186 google.plat</div></pre></td></tr></table></figure></p>
+<p>此时打开Chrome浏览器，错误变为了NET::ERR_CERT_AUTHORITY_INVALID：<br><img src="/2018/12/14/make-self-signed-certificate/err_cert_authority_invalid.png" alt="err_cert_authority_invalid"></p>
+<p>看得出，这报错是证书不受信任，而不再是域名匹配不上。</p>
+<h1 id="Windows证书自签名导入"><a href="#Windows证书自签名导入" class="headerlink" title="Windows证书自签名导入"></a>Windows证书自签名导入</h1><p>解决上面的问题，只需要将证书导入Windows即可，以Chrome为例（Chrome和IE都是用的Windows自己的证书管理系统，而Firefox不是），步骤为：</p>
+<ol>
+<li><p>Chrome打开网站，点击“不安全”-&gt;”证书”<br> <img src="/2018/12/14/make-self-signed-certificate/addto1.png" alt="import setup1"></p>
+</li>
+<li><p>点击“详细信息”-&gt;”复制到文件”-&gt;”下一步”<br> <img src="/2018/12/14/make-self-signed-certificate/addto2.png" alt="import setup2"></p>
+</li>
+<li><p>点击”下一步”<br> <img src="/2018/12/14/make-self-signed-certificate/addto3.png" alt="import setup3"></p>
+</li>
+<li><p>点击”浏览”，选择输出路径，然后点击”下一步”<br> <img src="/2018/12/14/make-self-signed-certificate/addto4.png" alt="import setup4"></p>
+</li>
+<li><p>双击导出到桌面的证书文件，点击”安装证书”-&gt;”下一步”<br> <img src="/2018/12/14/make-self-signed-certificate/addto5.png" alt="import setup5"></p>
+</li>
+<li><p>选择”将所有的证书放入下列存储”-&gt;”浏览”选择存储位置为”受信任的根证书颁发机构”-&gt;”确定”-&gt;”下一步”<br> <img src="/2018/12/14/make-self-signed-certificate/addto6.png" alt="import setup6"></p>
+</li>
+<li><p>此时会弹出一个告警框，点击”是”<br> <img src="/2018/12/14/make-self-signed-certificate/addto7.png" alt="import setup7"></p>
+</li>
+</ol>
+<p>经过如上几个步骤，证书便导入了系统，此时再次打开Chrome浏览器，之前的红色告警和阻止页面便会消失：</p>
+<ol>
+<li><p>受信任的域名<br> <img src="/2018/12/14/make-self-signed-certificate/valid-domain.png" alt="valid domain"></p>
+</li>
+<li><p>受信任的IP地址<br> <img src="/2018/12/14/make-self-signed-certificate/valid-ip.png" alt="valid ip"></p>
+</li>
+</ol>
+<p>如果遇到NET::ERR_CERT_DATE_INVALID错误，可能是因为你签名的服务器时钟比较快，导致生效时间还没到。</p>
+<p>##浏览器差异性</p>
+<ol>
+<li>Chrome和Firefox支持<strong>IP地址</strong>的证书认证，而IE（实测IE8）并不支持IP，只支持域名。</li>
+<li><p>自签名的证书，虽然Chrome和IE是认的，但Firefox不认，Firfox会报错MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT，且无法导入自签名证书到Firefox，会提示：这不是一个证书颁发机构证书，因此无法导入到证书颁发机构列表。效果仍然是被拒绝：<br> <img src="/2018/12/14/make-self-signed-certificate/firefox-self-sign.png" alt="firefox-self-sign"></p>
+<p> 你可以添加例外，添加后效果如下：<br> <img src="/2018/12/14/make-self-signed-certificate/firefox-self-sign-show.png" alt="firefox-self-sign-show"></p>
+</li>
+</ol>
+<h1 id="第三方认证证书生成"><a href="#第三方认证证书生成" class="headerlink" title="第三方认证证书生成"></a>第三方认证证书生成</h1><p>自己用自己的秘钥为自己的csr文件签名，叫做自签名。<br>而正常情况下，我们是将自己的csr文件发给第三方权威机构给我们签名，我们模拟一下，假设我们就算第三方权威机构，如何给别人颁发证书。</p>
+<h2 id="角色权威机构"><a href="#角色权威机构" class="headerlink" title="角色权威机构"></a>角色权威机构</h2><ol>
+<li><p>生成私钥</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl genrsa -out private/ca.key 2048</div></pre></td></tr></table></figure>
+</li>
+<li><p>生成csr</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl req -new -key private/ca.key -out ca.csr</div></pre></td></tr></table></figure>
+<p> 上述命令需要一步一步输入提示信息，多次操作比较麻烦，我将输入配置成模板：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">~/cert $ cat cfg/req.template </div><div class="line">[ req ]</div><div class="line">default_bits        = 2048</div><div class="line">default_keyfile     = private/ca.key</div><div class="line">distinguished_name  = req_distinguished_name</div><div class="line">string_mask         = utf8only</div><div class="line"></div><div class="line">[ req_distinguished_name ] </div><div class="line">countryName                 = Country Name (2 letter code)</div><div class="line">stateOrProvinceName         = State or Province Name (full name)</div><div class="line">localityName                = Locality Name (eg, city)</div><div class="line">organizationName            = Organization Name (eg, company)</div><div class="line">commonName                  = Common Name (e.g. server FQDN or YOUR name)</div><div class="line">emailAddress                = Email Address</div><div class="line"></div><div class="line"><span class="meta">#</span>%distinguish%</div></pre></td></tr></table></figure>
+<p> 使用者只需要替换#%distinguish%为自己的信息，例如：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">~/cert $ cat x-securityca/distinguish.userdef </div><div class="line">countryName_default         = CN</div><div class="line">stateOrProvinceName_default = Guangdong</div><div class="line">localityName_default        = ShenZhen</div><div class="line">organizationName_default    = x-security</div><div class="line">commonName_default          = x-security Certification Center</div><div class="line">emailAddress_default        = cert@x-security.com</div></pre></td></tr></table></figure>
+<p> 几者结合起来，综合成一个配置文件（例如req.conf），便可以使用如下命令生成签名请求文件：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">~/cert/x-securityca $ openssl req -new -key private/ca.key -out ca.csr -config req.conf</div></pre></td></tr></table></figure>
+</li>
+<li><p>生成crt<br> 由于是自签名，所以只需要用自己的私钥作为signkey，下面给的签名期限为20年：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">~/cert/x-securityca $ openssl x509 -req -in ca.csr -out ca.crt -signkey private/ca.key -days 7305</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>如上，权威机构一方的私钥和证书生成完毕，但是要用来签名，还需要做一些环境配置：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">~/cert/x-securityca $ mkdir newcerts</div><div class="line">~/cert/x-securityca $ touch index.txt</div><div class="line">~/cert/x-securityca $ echo 01 &gt; serial</div></pre></td></tr></table></figure></p>
+<p>两次为同名证书签名的时候，如果报错：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">failed to update database</div><div class="line">TXT_DB error number 2</div></pre></td></tr></table></figure></p>
+<p>这表示unique_subject选项开启了(见index.txt.attr)，你可以在配置里面关闭或者直接：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">~/cert/x-securityca $ echo "unique_subject = no" &gt; index.txt.attr</div></pre></td></tr></table></figure></p>
+<h2 id="角色第三方"><a href="#角色第三方" class="headerlink" title="角色第三方"></a>角色第三方</h2><p>权威机构一方已经ready，随时可以帮助第三方机构提供签名服务。现在我们模拟第三方机构请求签名过程。<br>其中：</p>
+<pre><code>1. 生成私钥。
+2. 生成csr。
+</code></pre><p>两步骤和“角色权威机构”的做法完全一致，只需要调整 distinguish.userdef 里面的自定义内容。</p>
+<p>差别在于第3步，我们还是通过配置模板的方式来实现：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div></pre></td><td class="code"><pre><div class="line">~/cert $ cat cfg/osign.template </div><div class="line">[ ca ]</div><div class="line">default_ca      = CA_default        # The default ca section</div><div class="line"></div><div class="line">[ CA_default ]</div><div class="line">dir             = %secretRoot%      # Where everything is kept 修改ca目录</div><div class="line">certs           = $dir/certs        # Where the issued certs are kept</div><div class="line">crl_dir         = $dir/crl          # Where the issued crl are kept</div><div class="line">database        = $dir/index.txt    # database index file.</div><div class="line">unique_subject  = no                # 一般我们会多次尝试创建相同subject名称的证书，所以关掉unique_subject功能，默认是yes(开启)</div><div class="line"></div><div class="line">new_certs_dir   = $dir/newcerts     # default place for new certs.</div><div class="line"></div><div class="line">certificate     = $dir/ca.crt       # The CA certificate 修改crt路径</div><div class="line">serial          = $dir/serial       # The current serial number</div><div class="line">crlnumber       = $dir/crlnumber    # the current crl number</div><div class="line">                                    # must be commented out to leave a V1 CRL</div><div class="line">crl             = $dir/crl.pem      # The current CRL</div><div class="line">private_key     = $dir/private/ca.key       # The private key 修改key路径</div><div class="line"></div><div class="line">x509_extensions = v3_req            # The extensions to add to the cert</div><div class="line"></div><div class="line">name_opt    = ca_default            # Subject Name options</div><div class="line">cert_opt    = ca_default            # Certificate field options</div><div class="line"></div><div class="line">default_days    = 3650              # how long to certify for 修改默认天数</div><div class="line">default_crl_days= 30                # how long before next CRL</div><div class="line">default_md      = default           # use public key default MD</div><div class="line">preserve        = no                # keep passed DN ordering</div><div class="line"></div><div class="line">policy          = policy_match</div><div class="line"></div><div class="line">[ policy_match ]</div><div class="line">countryName             = match</div><div class="line">stateOrProvinceName     = match</div><div class="line">organizationName        = match</div><div class="line">organizationalUnitName  = optional</div><div class="line">commonName              = supplied</div><div class="line">emailAddress            = optional</div><div class="line"></div><div class="line">[ v3_req ]</div><div class="line"><span class="meta">#</span> Extensions to add to a certificate request</div><div class="line">basicConstraints        = CA:FALSE</div><div class="line">keyUsage                = nonRepudiation, digitalSignature, keyEncipherment</div><div class="line">subjectAltName          = @alt_names</div><div class="line"></div><div class="line">[ alt_names ]</div><div class="line"><span class="meta">#</span>%altnames%</div></pre></td></tr></table></figure></p>
+<p>对于上述模板，你需要修改两个地方，其一，将 %secretRoot% 替换为刚才权威机构生成证书和相关辅助文件的所在目录（上例为~/cert/x-securityca）；其二，将#%altnames%替换为altnames.userdef文件里面的自定义内容：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">~/cert/user1 $ cat altnames.userdef </div><div class="line">DNS.1   = plat.x-security.com</div><div class="line">DNS.2   = plat1.x-security.com</div><div class="line">DNS.3   = google.plat</div><div class="line">IP.1    = 192.168.111.10</div><div class="line">IP.2    = 200.200.221.186</div></pre></td></tr></table></figure></p>
+<p>执行权威机构的签名：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line">~/cert/user1 $ openssl ca -in ca.csr -out ca.crt -config req.conf</div><div class="line">Using configuration from req.conf</div><div class="line">Check that the request matches the signature</div><div class="line">Signature ok</div><div class="line">Certificate Details:</div><div class="line">        Serial Number: 4 (0x4)</div><div class="line">        Validity</div><div class="line">            Not Before: Dec 14 10:08:26 2018 GMT</div><div class="line">            Not After : Dec 11 10:08:26 2028 GMT</div><div class="line">        Subject:</div><div class="line">            countryName               = CN</div><div class="line">            stateOrProvinceName       = Guangdong</div><div class="line">            organizationName          = x-security</div><div class="line">            commonName                = x-security Security intelligence Platform</div><div class="line">            emailAddress              = plat@x-security.com</div><div class="line">        X509v3 extensions:</div><div class="line">            X509v3 Basic Constraints: </div><div class="line">                CA:FALSE</div><div class="line">            X509v3 Key Usage: </div><div class="line">                Digital Signature, Non Repudiation, Key Encipherment</div><div class="line">            X509v3 Subject Alternative Name: </div><div class="line">                DNS:plat.x-security.com, DNS:plat1.x-security.com, DNS:google.plat, IP Address:192.168.111.10, IP Address:200.200.221.186</div><div class="line">Certificate is to be certified until Dec 11 10:08:26 2028 GMT (3650 days)</div><div class="line">Sign the certificate? [y/n]:y</div><div class="line"></div><div class="line">1 out of 1 certificate requests certified, commit? [y/n]y</div><div class="line">Write out database with 1 new entries</div><div class="line">Data Base Updated</div></pre></td></tr></table></figure></p>
+<h1 id="第三方认证证书导入"><a href="#第三方认证证书导入" class="headerlink" title="第三方认证证书导入"></a>第三方认证证书导入</h1><p>与自签名证书导入有一定差异的是，这里操作系统导入的证书必须是“权威机构”的证书，而不是被签名的第三方证书。<br>表现出来就是，我们需要分发上述步骤中的~/cert/x-securityca/ca.crt到浏览器端，双击ca.crt导入，其导入方法和“Windows证书自签名导入”一节的第5步以后完全一致，略述。</p>
+<h2 id="第三方认证证书导入Firefox"><a href="#第三方认证证书导入Firefox" class="headerlink" title="第三方认证证书导入Firefox"></a>第三方认证证书导入Firefox</h2><p>Firefox并不是使用的Windows的证书管理，所以，导入了Windows的信任证书，对Firefox并不生效，仍然报错SEC_ERROR_UNKNOWN_ISSUER，需要单独导入：</p>
+<ol>
+<li>输入 about:preferences#privacy</li>
+<li>点击“隐私与安全”-&gt;找到“证书”一节-&gt;点击“查看证书”</li>
+<li>点击“证书颁发机构”-&gt;点击“导入”-&gt;勾选两个checkbox-&gt;点击“确定”-&gt;点击“确定”  </li>
+</ol>
+<p>附操作图：<br><img src="/2018/12/14/make-self-signed-certificate/ffimport.png" alt="firefox import"></p>
+<p>导入后，Firefox效果如：<br><img src="/2018/12/14/make-self-signed-certificate/firefox-other-sign-show.png" alt="firefox other sign show"></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/证书/" rel="tag"># 证书</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/12/09/chrony-ntp-date-sync/" rel="next" title="Chrony时间同步">
+                <i class="fa fa-chevron-left"></i> Chrony时间同步
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/12/20/mem-corrupt-for-file-replace/" rel="prev" title="文件替换导致进程内存损坏">
+                文件替换导致进程内存损坏 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">mnstory.net</p>
+            <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">58</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">68</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#编码格式"><span class="nav-number">1.</span> <span class="nav-text">编码格式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#文件扩展名"><span class="nav-number">2.</span> <span class="nav-text">文件扩展名</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#自签名证书生成"><span class="nav-number">3.</span> <span class="nav-text">自签名证书生成</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Windows证书自签名导入"><span class="nav-number">4.</span> <span class="nav-text">Windows证书自签名导入</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#第三方认证证书生成"><span class="nav-number">5.</span> <span class="nav-text">第三方认证证书生成</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#角色权威机构"><span class="nav-number">5.1.</span> <span class="nav-text">角色权威机构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#角色第三方"><span class="nav-number">5.2.</span> <span class="nav-text">角色第三方</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#第三方认证证书导入"><span class="nav-number">6.</span> <span class="nav-text">第三方认证证书导入</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#第三方认证证书导入Firefox"><span class="nav-number">6.1.</span> <span class="nav-text">第三方认证证书导入Firefox</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">mnstory.net</span>
+
+  
+</div>
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  <!-- 背景动画 -->
+  <script type="text/javascript" src="/js/src/particle.js"></script>
+
+</body>
+</html>

@@ -242,6 +242,766 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/01/21/perl-runtime-attach-tool/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2016/01/21/perl-runtime-attach-tool/" itemprop="url">Perl运行时调试工具</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-01-21T23:00:00+08:00">
+                2016-01-21
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>Perl这个语言没有现成的运行时调试工具，网上罗列的办法有：</p>
+<ol>
+<li>strace只能看系统调用的函数，而且是perl解释器执行的流程。</li>
+<li>gdb，只能调试perl解释器。</li>
+<li>gdbperl，bulkdbg，没有用过。</li>
+<li>perl-stacktrace，inspect-perl-proc两款在我们的虚拟化平台都没能正确运行。</li>
+</ol>
+<p>13年的时候，写过一个运行时给Perl注入Enbugger库，使其能调试的脚本，为运行时调试而生。今天想查看某些阻塞进程究竟在做啥，于是加一个新技能，打印运行时的Perl脚本堆栈，是Perl脚本堆栈，不是Perl解释器堆栈。<br>注意：如果Perl处于阻塞状态，是无法interrupt的，例如下面进程处于等待锁状态，无法插入代码：<br></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2016/01/21/perl-runtime-attach-tool/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/01/20/rabbitmq-in-action/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2016/01/20/rabbitmq-in-action/" itemprop="url">RabbitMQ实践场景示例</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-01-20T23:00:00+08:00">
+                2016-01-20
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <h1 id="基本配置"><a href="#基本配置" class="headerlink" title="基本配置"></a>基本配置</h1><p>RabbitMQ是一个成熟稳定的消息队列，对比过几款主流MessageQueue框架，以此框架最为成熟，OpenStack和VMWare这类的虚拟化和云平台都使用此软件作为消息通信，实际测试一个月，相当稳定。<br>利用MessageQueue可以实现，不同地方，不同时间，不同语言间的通信。</p>
+<p><ol></ol></p>
+<p><li><b>不同地方</b>，容易理解，通过网络实现，网络可达的地方都能通信。</li></p>
+<p><li><b>不同时间</b>，是因为MQ本身是有缓存机制，包括内存缓存、文件缓存、数据库缓存等，假设Server端向Client发送消息，但是Client并没有启动，没有关系，等到Client启动的时候，从MQ里面取队列或交换里的消息即可，这种方式能很好地实现异步框架。</li></p>
+<p><li><b>不同语言</b>，所有终端只需要通过网络与MQ交互，换言之，只需要使用本语言的网络API实现Client端封装，即可与MQ交互，所以，使用MessageQueue，可以跨语言。</li><br><br>安装方法不再赘述，网上很多，最新版本下载：<br><a href="https://www.rabbitmq.com/download.html" target="_blank" rel="external">https://www.rabbitmq.com/download.html</a><br></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2016/01/20/rabbitmq-in-action/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/01/20/cookies-ssh/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2016/01/20/cookies-ssh/" itemprop="url">Cookies之SSH命令</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-01-20T22:00:00+08:00">
+                2016-01-20
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <h1 id="免密登录"><a href="#免密登录" class="headerlink" title="免密登录"></a>免密登录</h1><p>内网机器，想要免密码登陆mnstory.net，需要将自己的公钥COPY到mnstory.net上。</p>
+<p>首先，生成公钥：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">[root ~]# ssh-keygen</div><div class="line">[root ~]# ls ~/.ssh</div><div class="line">id_rsa  id_rsa.pub  known_hosts</div></pre></td></tr></table></figure></p>
+<p>使用ssh-copy-id或者直接将公钥id_ras.pub追加到目标主机的~/.ssh/authorized_keys里：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[root ~]# ssh-copy-id root@mnstory.net</div></pre></td></tr></table></figure></p>
+<p>现在就可以免密码登陆mnstory.net了。<br></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2016/01/20/cookies-ssh/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/01/18/asv-webui-speed-optimization/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2016/01/18/asv-webui-speed-optimization/" itemprop="url">WEBUI响应速度优化</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-01-18T23:00:00+08:00">
+                2016-01-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <h1 id="现象"><a href="#现象" class="headerlink" title="现象"></a>现象</h1><p>前端UI卡，卡到什么程度，基本上，在线用户一多，会10s以上没有反应，说10s是比较客气的，毕竟也是我们自己部门做的软件，不能自责太多，如果看我们的公网演示环境，现象可能是直接打不开，我优化性能的环境是测试中心真实设备，该设备一共6台主机组成集群，有315台虚拟机，其中运行的虚拟机为81台。<br></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2016/01/18/asv-webui-speed-optimization/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2016/01/11/laravel-install-on-windows/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2016/01/11/laravel-install-on-windows/" itemprop="url">Windows下安装Laravel</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-01-11T23:00:00+08:00">
+                2016-01-11
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>Windows下，我使用PHP是XAMPP里面自带的，XAMPP可以从 <a href="http://www.xampps.com/" target="_blank">http://www.xampps.com/</a> 下载。</p>
+<h1 id="Composer安装"><a href="#Composer安装" class="headerlink" title="Composer安装"></a>Composer安装</h1><p>本来是应该从官网 <a href="https://getcomposer.org/download/" target="_blank">https://getcomposer.org/download/</a>下载安装的，但是被墙，中国人做了个镜像：<a href="http://packagist.cn/" target="_blank">http://packagist.cn/</a> 我自己用这个镜像安装后还是有问题：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">D:\Programmer\laravel-v5.1.11&gt;composer show monolog/monolog</div><div class="line">  [Composer\Repository\RepositorySecurityException]</div><div class="line">  The contents of http://packagist.cn/p/provider-latest%2496c1323f8988d6ff304275d52caa63774d906b9c1e908e72e2dcb6b4dfce24a5.json do not match its signature. This should indicate a man-in-the-middle attack. Try running composer again and report this if you think it is a mistake.</div><div class="line">show [-i|--installed] [-p|--platform] [-a|--available] [-s|--self] [-N|--name-only] [-P|--path] [-t|--tree] [--] [&lt;package&gt;] [&lt;version&gt;]</div></pre></td></tr></table></figure></p>
+<p>没有深究是什么原因，很有可能是下面介绍的PHP SSL证书问题。<br></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2016/01/11/laravel-install-on-windows/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://mnstory.net/2015/12/27/jsplumb-absolute-offset/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="mnstory.net">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="码农故事">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2015/12/27/jsplumb-absolute-offset/" itemprop="url">改正绝对定位导致jsPlumb偏移问题</a></h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2015-12-27T23:00:00+08:00">
+                2015-12-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>最近用jsPlumb-2.0.5这个插件画点前端UI，总的来说，这个库的功能还是不错，唯API设计不够优雅，还有一些细节问题，例如坐标定位，如所示结构：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">&lt;aside class=&quot;content-wrapper sidebarLeft collapse&quot;&gt;</div><div class="line">    &lt;!-- Page Content --&gt;</div><div class="line">    &lt;div class=&quot;content full-width container-fluid&quot;&gt;</div><div class="line">        &lt;div class=&quot;row&quot;&gt;</div><div class="line">            &lt;div class=&quot;col-sm-12&quot;&gt;</div><div class="line">                &lt;div class=&quot;panel panel-white border-top-green&quot;&gt;</div><div class="line">                    &lt;div class=&quot;panel-body&quot;&gt;</div><div class="line">                        &lt;div id=&quot;canvas&quot; class=&quot;livecanvas row&quot;&gt;</div><div class="line">                            &lt;div id=&quot;source_nodes&quot; class=&quot;grid col-md-6&quot;&gt;</div><div class="line">                            &lt;/div&gt;</div><div class="line">                            &lt;div id=&quot;target_nodes&quot; class=&quot;grid col-md-6&quot;&gt;</div><div class="line">                            &lt;/div&gt;</div><div class="line">                        &lt;/div&gt;</div><div class="line">                    &lt;/div&gt;</div><div class="line">                &lt;/div&gt;</div><div class="line">            &lt;/div&gt;</div></pre></td></tr></table></figure></p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2015/12/27/jsplumb-absolute-offset/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://mnstory.net/2015/12/25/trojan/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -531,7 +1291,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">52</span>
+                <span class="site-state-item-count">58</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -544,7 +1304,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">62</span>
+                <span class="site-state-item-count">68</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -586,7 +1346,7 @@
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2018</span>
+  <span itemprop="copyrightYear">2019</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
