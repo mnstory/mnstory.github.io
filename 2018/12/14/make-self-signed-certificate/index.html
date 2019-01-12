@@ -92,7 +92,7 @@
 <meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/firefox-self-sign-show.png">
 <meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/ffimport.png">
 <meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/firefox-other-sign-show.png">
-<meta property="og:updated_time" content="2019-01-12T07:27:25.732Z">
+<meta property="og:updated_time" content="2019-01-12T08:51:16.436Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="自签名证书制作">
 <meta name="twitter:description" content="X509 是一种证书标准，定义了证书应该包含的内容，也是SSL使用的证书标准，可以参考rfc5280。 编码格式存储证书时主要有：  pem(Privacy Enhanced Mail)文本编码 以”—–BEGIN—–”开头，以”—–END—–” 结尾,内容是BASE64编码。 Apache和*NIX服务器偏向于使用此类编码格式。 可通过如下方式查看：  1openssl x509 -in you">
@@ -344,17 +344,17 @@
 <a id="more"></a>
 <h1 id="文件扩展名"><a href="#文件扩展名" class="headerlink" title="文件扩展名"></a>文件扩展名</h1><p>上面是编码格式，本来就有pem和der的文件扩展名，但是，我们常常还能看到下面的扩展名（按文件功能来区分），其内可能是如上两种编码格式。</p>
 <ol>
-<li>key<br> key文件后缀一般用于存储私钥。<br> 私钥需要谨慎存储，以防泄漏，可以给私钥加密，并设置文件读取权限。<br> 可以用如下方式生成私钥： <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> openssl genrsa -out ca.key 2048</div><div class="line"></div><div class="line"><span class="meta">$</span> cat ca.key </div><div class="line">-----BEGIN RSA PRIVATE KEY-----</div><div class="line">MIIEpAIBAAKCAQEA2XAVPi2soM0Wtx50r38O2Vilznb38MJnwadsm1OwKpRWHj8I</div><div class="line">...</div><div class="line">vwiKSZ8Tca0PkfoTE4QQRxHxpoI6Guhrqgxp4nTLaDJ6fO8VzSXGJg==</div><div class="line">-----END RSA PRIVATE KEY-----</div></pre></td></tr></table></figure>
+<li>key<br> key文件后缀一般用于存储私钥。<br> 私钥需要谨慎存储，以防泄漏，可以给私钥加密，并设置文件读取权限。<br> 可以用如下方式生成私钥：   <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> openssl genrsa -out ca.key 2048</div><div class="line"></div><div class="line"><span class="meta">$</span> cat ca.key </div><div class="line">-----BEGIN RSA PRIVATE KEY-----</div><div class="line">MIIEpAIBAAKCAQEA2XAVPi2soM0Wtx50r38O2Vilznb38MJnwadsm1OwKpRWHj8I</div><div class="line">...</div><div class="line">vwiKSZ8Tca0PkfoTE4QQRxHxpoI6Guhrqgxp4nTLaDJ6fO8VzSXGJg==</div><div class="line">-----END RSA PRIVATE KEY-----</div></pre></td></tr></table></figure>
 </li>
 </ol>
-<pre><code>私钥生成的时候，如果你想对私钥做加密存储，可以指定加密方法，如-des3，然后输入密码后私钥就被加密存储了，文件内容表现上，会多一些头部信息：
+<pre><code>私钥生成的时候，如果你想对私钥做加密存储，可以指定加密方法，如-des3，然后输入密码后私钥就被加密存储了，文件内容表现上，会多一些头部信息：  
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> openssl genrsa -des3 -out ca.key 2048</div><div class="line"></div><div class="line"><span class="meta">$</span> cat ca.key </div><div class="line">-----BEGIN RSA PRIVATE KEY-----</div><div class="line">Proc-Type: 4,ENCRYPTED</div><div class="line">DEK-Info: DES-EDE3-CBC,24E18B27E7DA3DBA</div><div class="line"></div><div class="line">FEMUvp7Rrjz2RmIqmRCb5Z3EIyqf4pkRM0hxuiu+ouvW08Qs/YATw2A9BXHq7vfX</div><div class="line">...</div><div class="line">8eZjXcPPpTTg8GRht4ScratQzgSx8XJ5ArxF5v3cl1323bYUAJVJnQ==</div><div class="line">-----END RSA PRIVATE KEY-----</div></pre></td></tr></table></figure>
 
 
-可通过如下方式查看：
+可通过如下方式查看：  
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl rsa -in your.key -text -noout</div></pre></td></tr></table></figure>
 
-或der格式：
+或der格式：  
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl rsa -in your.key -inform der -text -noout</div></pre></td></tr></table></figure>
 </code></pre><ol>
 <li><p>csr(Cerificate Signing Request)<br> csr为签名请求文件，其核心内容为自己的公钥和一些附加信息（如域名匹配字串），一般来说，给证书签名的都是受信任机构，主要是浏览器和操作系统里面内置的那几家，而普通厂商或个人，若想让浏览器也信任你的网站，必须先到受信任的证书机构去申请，让其用他们的证书为咱们的证书做一次签名，这个请求过程，理论上就需要咱们提供csr文件。</p>
@@ -369,7 +369,7 @@
  <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl pkcs12 -in your.pfx -out your.pem -nodes</div></pre></td></tr></table></figure>
 </li>
 </ol>
-<pre><code>如何生成pfx文件：
+<pre><code>如何生成pfx文件：  
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl pkcs12 -export -in 你的证书.crt -inkey 你的私钥.key -out your.pfx -certfile 权威机构的签名证书.crt</div></pre></td></tr></table></figure>
 </code></pre><ol>
 <li><p>jks(Java Key Storage)<br> 这是Java自己的一套，和OpenSSL关系不大，需要利用Java自带的keytool工具进行操作。</p>
@@ -441,7 +441,7 @@
 <p>如上，权威机构一方的私钥和证书生成完毕，但是要用来签名，还需要做一些环境配置：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">~/cert/x-securityca $ mkdir newcerts</div><div class="line">~/cert/x-securityca $ touch index.txt</div><div class="line">~/cert/x-securityca $ echo 01 &gt; serial</div></pre></td></tr></table></figure></p>
 <p>两次为同名证书签名的时候，如果报错：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">failed to update database</div><div class="line">TXT_DB error number 2</div></pre></td></tr></table></figure></p>
 <p>这表示unique_subject选项开启了(见index.txt.attr)，你可以在配置里面关闭或者直接：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">~/cert/x-securityca $ echo "unique_subject = no" &gt; index.txt.attr</div></pre></td></tr></table></figure></p>
-<h2 id="角色第三方"><a href="#角色第三方" class="headerlink" title="角色第三方"></a>角色第三方</h2><p>权威机构一方已经ready，随时可以帮助第三方机构提供签名服务。现在我们模拟第三方机构请求签名过程。<br>其中：</p>
+<h2 id="角色第三方"><a href="#角色第三方" class="headerlink" title="角色第三方"></a>角色第三方</h2><p>权威机构一方已经ready，随时可以帮助第三方机构提供签名服务。现在我们模拟第三方机构请求签名过程。<br>其中：  </p>
 <pre><code>1. 生成私钥。
 2. 生成csr。
 </code></pre><p>两步骤和“角色权威机构”的做法完全一致，只需要调整 distinguish.userdef 里面的自定义内容。</p>
