@@ -77,7 +77,7 @@
 <meta property="og:site_name" content="码农故事">
 <meta property="og:description" content="在function.session-start看到，session_start后，会一直持有锁，建议使用session_write_close/session_commit释放锁，对此表示有点意外，因为这个session_start函数名字取得作实不咋地，怎么看也不想是一段加锁函数，于是写一段代码来验证：123456789101112131415161718&amp;lt;?phpprint_r(date">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-12-12T09:52:36.000Z">
+<meta property="og:updated_time" content="2019-01-12T07:26:25.326Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="PHP Session阻塞验证">
 <meta name="twitter:description" content="在function.session-start看到，session_start后，会一直持有锁，建议使用session_write_close/session_commit释放锁，对此表示有点意外，因为这个session_start函数名字取得作实不咋地，怎么看也不想是一段加锁函数，于是写一段代码来验证：123456789101112131415161718&amp;lt;?phpprint_r(date">
@@ -316,6 +316,7 @@
 
       
         <p>在<a href="http://php.net/manual/zh/function.session-start.php" target="_blank" rel="external">function.session-start</a>看到，session_start后，会一直持有锁，建议使用session_write_close/session_commit释放锁，对此表示有点意外，因为这个session_start函数名字取得作实不咋地，怎么看也不想是一段加锁函数，于是写一段代码来验证：<br><figure class="highlight php"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="meta">&lt;?php</span></div><div class="line">print_r(date(<span class="string">'h:i:s'</span>).<span class="string">" enter&lt;br&gt;"</span>);</div><div class="line"></div><div class="line">session_start();</div><div class="line"></div><div class="line">print_r(date(<span class="string">'h:i:s'</span>).<span class="string">" start in session sleep&lt;br&gt;"</span>);</div><div class="line">$_SESSION[<span class="string">'a'</span>] = date(<span class="string">'h:i:s'</span>);</div><div class="line">sleep(<span class="number">10</span>);</div><div class="line">print_r(date(<span class="string">'h:i:s'</span>).<span class="string">" end in session sleep&lt;br&gt;"</span>);</div><div class="line"></div><div class="line"><span class="comment">// $_SESSION can still be read, but writing will not update the session.</span></div><div class="line"><span class="comment">// the lock is removed and other scripts can now read the session</span></div><div class="line">session_write_close(); <span class="comment">//别名session_commit</span></div><div class="line"></div><div class="line">print_r(date(<span class="string">'h:i:s'</span>).<span class="string">" start after session write sleep&lt;br&gt;"</span>);</div><div class="line">sleep(<span class="number">10</span>);</div><div class="line">print_r(date(<span class="string">'h:i:s'</span>).<span class="string">" end after session write sleep&lt;br&gt;"</span>);</div><div class="line"><span class="meta">?&gt;</span></div></pre></td></tr></table></figure></p>
+<a id="more"></a>
 <p>Chrome上同时（1秒左右的延迟）打开四个页面。</p>
 <p>第一个页面（有0s的Stalled时间，TTFB是20s，总共是20.02s）：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">01:06:31 enter</div><div class="line">01:06:31 start in session sleep</div><div class="line">01:06:41 end in session sleep</div><div class="line">01:06:41 start after session write sleep</div><div class="line">01:06:51 end after session write sleep</div></pre></td></tr></table></figure></p>
 <p>第二个页面（有19.34s的Stalled时间，TTFB是29.99s，总共是49.35s）：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">01:06:51 enter</div><div class="line">01:07:01 start in session sleep</div><div class="line">01:07:11 end in session sleep</div><div class="line">01:07:11 start after session write sleep</div><div class="line">01:07:21 end after session write sleep</div></pre></td></tr></table></figure></p>
@@ -453,7 +454,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">68</span>
+                <span class="site-state-item-count">69</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>

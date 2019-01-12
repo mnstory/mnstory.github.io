@@ -77,7 +77,7 @@
 <meta property="og:site_name" content="码农故事">
 <meta property="og:description" content="配置gitlib秘钥配置需要自己生成一个秘钥1ssh-keygen -t rsa -C &quot;youremail@example.com&quot; 然后将公钥（默认在~/.ssh/id_rsa.pub）放到网站的个人配置页面，里面有SSH keys添加子页： 基本配置1234567891011121314151617181920git config --global user.name &quot;你的名字&quot;git c">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-11-01T09:53:26.000Z">
+<meta property="og:updated_time" content="2019-01-12T07:25:34.658Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Cookies之Git命令">
 <meta name="twitter:description" content="配置gitlib秘钥配置需要自己生成一个秘钥1ssh-keygen -t rsa -C &quot;youremail@example.com&quot; 然后将公钥（默认在~/.ssh/id_rsa.pub）放到网站的个人配置页面，里面有SSH keys添加子页： 基本配置1234567891011121314151617181920git config --global user.name &quot;你的名字&quot;git c">
@@ -319,6 +319,7 @@
 <p>然后将公钥（默认在~/.ssh/id_rsa.pub）放到网站的个人配置页面，里面有SSH keys添加子页：</p>
 <h2 id="基本配置"><a href="#基本配置" class="headerlink" title="基本配置"></a>基本配置</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">git config --global user.name "你的名字"</div><div class="line">git config --global user.email "你的邮箱"</div><div class="line"><span class="meta">#</span> windows下载代码编码格式，不会进行转换，提交不转换（默认安装会转换成windows）</div><div class="line">git config --global core.autocrlf false</div><div class="line"><span class="meta">#</span> 拒绝提交包含混合换行符的文件</div><div class="line">git config --global core.safecrlf true</div><div class="line"><span class="meta">#</span> 文件名大小写敏感，有人又不需要大小写敏感，因为windows是大小写不敏感的</div><div class="line">git config --global core.ignorecase true</div><div class="line"><span class="meta">#</span> 避免git gui中的中文乱码</div><div class="line">git config --global gui.encoding utf-8</div><div class="line"><span class="meta">#</span> 避免git status显示的中文文件名乱码</div><div class="line">git config --global core.quotepath off</div><div class="line"><span class="meta">#</span> 彩色显示</div><div class="line">git config --global color.ui true</div><div class="line"><span class="meta">#</span> windows支持长路径，要不然代码路径太长会报错</div><div class="line">git config --global core.longpaths true</div><div class="line"><span class="meta">#</span> windows默认下载git代码，没有显示链接link属性问题</div><div class="line">git config --global core.symlinks true</div><div class="line"><span class="meta">#</span> 为查看历史配置一个别名</div><div class="line">git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)&lt;%an&gt;%Creset' --abbrev-commit"</div></pre></td></tr></table></figure>
 <p>别名效果示例：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git lg</div><div class="line">* 1d14eae - (HEAD, origin/master, master) specification v1 (23 minutes ago) &lt;你的名字&gt;</div><div class="line">* 9f7c372 - add README (2 hours ago) &lt;你的名字&gt;</div><div class="line">*</div></pre></td></tr></table></figure></p>
+<a id="more"></a>
 <h2 id="回车换行的修改"><a href="#回车换行的修改" class="headerlink" title="回车换行的修改"></a>回车换行的修改</h2><p>git add 提示会对回车换行做修改<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> git add .gitattributes</div><div class="line">warning: LF will be replaced by CRLF in .gitattributes.</div><div class="line">The file will have its original line endings in your working directory.</div></pre></td></tr></table></figure></p>
 <p>回车换行有两个配置，一个是AutoCRLF：</p>
 <ol>
@@ -602,7 +603,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">68</span>
+                <span class="site-state-item-count">69</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>

@@ -92,7 +92,7 @@
 <meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/firefox-self-sign-show.png">
 <meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/ffimport.png">
 <meta property="og:image" content="http://mnstory.net/2018/12/14/make-self-signed-certificate/firefox-other-sign-show.png">
-<meta property="og:updated_time" content="2018-12-19T07:46:40.000Z">
+<meta property="og:updated_time" content="2019-01-12T07:27:25.732Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="自签名证书制作">
 <meta name="twitter:description" content="X509 是一种证书标准，定义了证书应该包含的内容，也是SSL使用的证书标准，可以参考rfc5280。 编码格式存储证书时主要有：  pem(Privacy Enhanced Mail)文本编码 以”—–BEGIN—–”开头，以”—–END—–” 结尾,内容是BASE64编码。 Apache和*NIX服务器偏向于使用此类编码格式。 可通过如下方式查看：  1openssl x509 -in you">
@@ -341,6 +341,7 @@
  <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">openssl x509 -in your.der -inform der -text -noout</div></pre></td></tr></table></figure>
 </li>
 </ol>
+<a id="more"></a>
 <h1 id="文件扩展名"><a href="#文件扩展名" class="headerlink" title="文件扩展名"></a>文件扩展名</h1><p>上面是编码格式，本来就有pem和der的文件扩展名，但是，我们常常还能看到下面的扩展名（按文件功能来区分），其内可能是如上两种编码格式。</p>
 <ol>
 <li>key<br> key文件后缀一般用于存储私钥。<br> 私钥需要谨慎存储，以防泄漏，可以给私钥加密，并设置文件读取权限。<br> 可以用如下方式生成私钥： <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> openssl genrsa -out ca.key 2048</div><div class="line"></div><div class="line"><span class="meta">$</span> cat ca.key </div><div class="line">-----BEGIN RSA PRIVATE KEY-----</div><div class="line">MIIEpAIBAAKCAQEA2XAVPi2soM0Wtx50r38O2Vilznb38MJnwadsm1OwKpRWHj8I</div><div class="line">...</div><div class="line">vwiKSZ8Tca0PkfoTE4QQRxHxpoI6Guhrqgxp4nTLaDJ6fO8VzSXGJg==</div><div class="line">-----END RSA PRIVATE KEY-----</div></pre></td></tr></table></figure>
@@ -587,7 +588,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">68</span>
+                <span class="site-state-item-count">69</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
